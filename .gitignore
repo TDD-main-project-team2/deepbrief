@@ -37,3 +37,5 @@ lerna-debug.log*
 
 # 업로드 및 생성 파일
 uploads/
+
+**/data/raw
