@@ -1,1 +1,61 @@
-dfd
+# QA 파인튜닝 데이터셋 구성 설정
+#
+# 원본(AI Hub 뉴스 기사 기계독해 데이터)은 용량(GitHub 100MiB 파일 제한) 때문에 레포 밖에 둔다.
+# 가공 결과는 기본적으로 qa/data/processed 에 저장한다.
+
+paths:
+  # 원본 json 폴더 (Training/, Validation/ 하위 폴더를 포함한 경로)
+  # null 이면 환경변수 FT_RAW_DIR 를 사용한다. (개인 PC 경로를 레포에 올리지 않기 위해 기본은 null)
+  raw_dir: null
+  # 가공 결과 폴더. null 이면 이 파일 옆의 data/processed 를 사용한다.
+  processed_dir: null
+
+dataset:
+  # 데이터셋별 크기 (기사 1건당 질문 1개이므로 기사 수 = 질문 수)
+  split_sizes:
+    training: 20000
+    validation: 2000
+    golden: 400
+  # 유형별 비율 (세 데이터셋 공통, 합계 1.0)
+  type_ratio:
+    span_extraction: 0.70   # 추출형
+    span_inference: 0.10    # 추론형
+    text_entailment: 0.15   # Yes/No 단문형
+    unanswerable: 0.05      # 응답불가형
+  # Yes/No 단문형에서 '예'가 차지할 비율
+  yes_ratio: 0.5
+  # 기사 1건에서 사용할 질문 수 (원본은 바꿔 말한 질문 2개)
+  questions_per_doc: 1
+  # Training 구간 크기. 모든 구간에서 유형·예/아니오 비율이 같도록 순서를 배치한다.
+  # (batch size 16 x 검증 간격 250배치 = 4,000건)
+  chunk_size: 4000
+  # Golden을 분야별로 고르게 뽑을 때 기준 필드 (원본 doc_class.code)
+  golden_stratify_field: code
+  # 재현 가능한 샘플링을 위한 랜덤 시드
+  random_seed: 42
+  # Golden 전수 검수에서 제외한 question_id (같은 유형·예/아니오의 새 후보로 교체된다)
+  # 교체된 건만 다시 검수하고, 거기서 또 문제가 나오면 이 목록에 추가한다.
+  golden_exclude_ids:
+    - "4957498"   # 추출형, 질문 모호
+    - "4958792"   # 추출형, 정답 오류 (100만원~500만원 지원 중 100만원을 정답으로 처리)
+    - "4960036"   # 추출형, 질문 모호 ('강년' 오타 의심, '강녕'이 맞는 표현)
+    - "4961193"   # 추출형, 질문 모호 ('누가' 표현 부적절)
+    - "5962764"   # 응답불가형, 질문 모호
+    - "5960539"   # 응답불가형, 응답불가 아님 (답 있음)
+    - "5948922"   # Yes/No(아니오), 질문 모호
+    - "5947081"   # Yes/No(아니오), 질문 모호
+    - "5816838"   # Yes/No(예), 질문 모호
+    - "4991787"   # 추론형, 답 범위 이상 (제조기업 56개 / 연구기관 6개)
+    - "5772390"   # 추출형, 질문 모호
+    - "5771309"   # 추출형, 질문 모호
+    - "5769032"   # 추출형, 질문 모호
+    - "5765460"   # 추출형, 답 범위 이상 (정답이 여러 개일 가능성)
+
+answers:
+  unanswerable: "주어진 기사에서 답을 찾을 수 없습니다."
+  "yes": "예"
+  "no": "아니오"
+
+normalization:
+  # 본문·질문·답·근거에서 제거할 목록 기호
+  remove_symbols: ["△", "▲", "◆"]
