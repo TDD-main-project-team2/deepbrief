@@ -328,6 +328,26 @@ def check_distribution(split: str, records: list[dict], report: Report) -> None:
 # 표본 검수 출력
 # ---------------------------------------------------------------------------
 
+# 표본 출력에서 보여줄 본문 길이
+PREVIEW_HEAD = 300    # 답 위치가 없는 유형: 본문 앞부분 글자 수
+PREVIEW_AROUND = 150  # 답 위치가 있는 유형: 답 앞뒤로 보여줄 글자 수
+
+
+def _context_preview(record: dict) -> str:
+    """표본 출력용 본문 일부.
+
+    추출형·추론형은 답 주변 구간을 보여주고 답을 [[ ]]로 표시한다.
+    Yes/No형·응답불가형은 답 위치가 없으므로 본문 앞부분을 보여준다.
+    """
+    context, start = record["context"], record["answer_start"]
+    if start is None:
+        return context[:PREVIEW_HEAD] + (" ..." if len(context) > PREVIEW_HEAD else "")
+    end = start + len(record["answer"])
+    left, right = max(0, start - PREVIEW_AROUND), min(len(context), end + PREVIEW_AROUND)
+    return ("... " if left > 0 else "") + context[left:start] + "[[" + context[start:end] + "]]" \
+        + context[end:right] + (" ..." if right < len(context) else "")
+
+
 def print_samples(datasets: dict[str, list[dict]], config: dict, per_type: int) -> None:
     print(f"\n== 표본 검수용 출력 (데이터셋·유형별 {per_type}건)")
     seed = config["dataset"]["random_seed"]
@@ -344,8 +364,7 @@ def print_samples(datasets: dict[str, list[dict]], config: dict, per_type: int) 
                 print(f"답  : {r['answer']}")
                 if r.get("evidence"):
                     print(f"근거: {r['evidence']}")
-                context = r["context"]
-                print(f"본문: {context[:300]}{' ...' if len(context) > 300 else ''}")
+                print(f"본문: {_context_preview(r)}")
 
 
 # ---------------------------------------------------------------------------
