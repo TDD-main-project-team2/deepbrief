@@ -19,10 +19,12 @@ Training / Validation / Golden 데이터셋을 만들어 저장한다.
        - 같은 원본 안에서 다른 유형 파일과 겹치는 기사 제외
     4. Training 후보에서 Validation 원본(VL)과 겹치는 기사 제외
     5. 샘플링 (유형별 수량, 예/아니오 비율, Golden은 분야별 균등)
+       - config의 golden_exclude_ids 에 있는 Golden만 같은 그룹의 새 후보로 교체
     6. Training 순서 배치 (chunk_size 구간마다 유형·예/아니오 비율 동일)
     7. 저장 + 단계별 건수 출력
 """
 
+import hashlib
 import json
 import os
 import random
@@ -408,6 +410,45 @@ def order_by_chunks(records: list[dict], rng: random.Random) -> list[dict]:
     return [record for _, _, record in keyed]
 
 
+def _stable_key(config: dict, removed_id: str, candidate_id: str) -> str:
+    """교체 후보의 고정 순서 값.
+
+    제외된 id마다 후보 순서를 따로 정한다. 그래서 제외 목록에 새 id가 추가돼도
+    기존 제외 건들의 교체 결과는 (같은 후보를 두고 겹치지 않는 한) 바뀌지 않는다.
+    """
+    raw = f"{config['dataset']['random_seed']}-golden-replace-{removed_id}-{candidate_id}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _replace_excluded(golden: list[dict], candidates: list[dict], exclude_ids: set[str],
+                      config: dict, label: str) -> tuple[list[dict], list[tuple[str, str]]]:
+    """Golden에서 검수 제외 id를 빼고, 같은 그룹(유형, 예/아니오)의 후보로 같은 자리를 채운다.
+
+    - 후보는 Golden·Validation 어디에도 쓰이지 않았고 제외 목록에도 없는 기사
+    - 가능하면 같은 분야(category)를 우선하고, 없으면 같은 그룹 안에서 고른다
+    - 후보 순서는 id 기반 고정값이라, 제외 목록이 늘어나도 기존 교체 결과가 흔들리지 않는다
+    반환: (교체된 Golden, [(제외 id, 대체 id)])
+    """
+    available = [c for c in candidates if c["id"] not in exclude_ids]
+    taken: set[str] = set()
+    result, replaced = [], []
+    for record in golden:
+        if record["id"] not in exclude_ids:
+            result.append(record)
+            continue
+        same_group = sorted(
+            (c for c in available if c["id"] not in taken and group_key(c) == group_key(record)),
+            key=lambda c: _stable_key(config, record["id"], c["id"]))
+        same_category = [c for c in same_group if c["metadata"]["category"] == record["metadata"]["category"]]
+        pick = (same_category or same_group or [None])[0]
+        if pick is None:
+            raise ValueError(f"{label}: 제외 id {record['id']}를 대체할 후보가 없습니다.")
+        taken.add(pick["id"])
+        result.append(pick)
+        replaced.append((record["id"], pick["id"]))
+    return result, replaced
+
+
 # ---------------------------------------------------------------------------
 # 전체 실행
 # ---------------------------------------------------------------------------
@@ -462,16 +503,32 @@ def prepare_datasets(config: dict) -> dict[str, list[dict]]:
     # Golden을 먼저 분야별 균등으로 뽑고, 남은 후보에서 Validation을 뽑는다
     golden_counts = get_type_counts(config, "golden")
     validation_counts = get_type_counts(config, "validation")
+    exclude_ids = {str(i) for i in (config["dataset"].get("golden_exclude_ids") or [])}
+    all_replaced = []
     for qa_type in QA_TYPES:
         pool = pools["validation"][qa_type]
         golden = _sample_type(pool, qa_type, golden_counts[qa_type], config,
                               _rng(config, "golden", qa_type), stratified=True, label=f"golden/{qa_type}")
         golden_ids = {r["id"] for r in golden}
         remaining = [r for r in pool if r["id"] not in golden_ids]
-        datasets["golden"] += golden
-        datasets["validation"] += _sample_type(
+        validation = _sample_type(
             remaining, qa_type, validation_counts[qa_type], config,
             _rng(config, "validation", qa_type), stratified=False, label=f"validation/{qa_type}")
+
+        # 검수에서 제외된 Golden만 교체 (Training·Validation은 그대로 유지)
+        if exclude_ids:
+            validation_ids = {r["id"] for r in validation}
+            candidates = [r for r in remaining if r["id"] not in validation_ids]
+            golden, replaced = _replace_excluded(golden, candidates, exclude_ids, config, f"golden/{qa_type}")
+            all_replaced += replaced
+
+        datasets["golden"] += golden
+        datasets["validation"] += validation
+
+    if exclude_ids:
+        print(f"\n== Golden 검수 제외 교체: {len(all_replaced)}건 (제외 목록 {len(exclude_ids)}건)")
+        for old_id, new_id in all_replaced:
+            print(f"  {old_id} -> {new_id}")
 
     # 6. 순서 배치: Training은 구간별 비율 균일, 나머지는 섞기
     datasets["training"] = order_by_chunks(datasets["training"], _rng(config, "order", "training"))

@@ -15,7 +15,7 @@ data_preparation.py가 만든 Training / Validation / Golden 데이터셋을 검
         3. 유형별 규칙     : 답 위치 / 예·아니오 / 응답불가 문구
         4. 수량·비율       : config.yaml 설정과 일치하는지
         5. 파일 내 중복    : id, 본문
-        6. 데이터셋 간 겹침: id, doc_id, 본문
+        6. 데이터셋 간 겹침: id, doc_id, 본문 + Golden 검수 제외 id 미포함
         7. 출처            : training은 TL, validation·golden은 VL
         8. 정규화          : 제거 대상 기호, 전각 문자, 연속 공백
         9. 구간 구성       : training의 chunk_size 구간마다 유형·예/아니오 수량이 같은지 (허용 오차 ±1)
@@ -246,6 +246,16 @@ def check_overlap(datasets: dict[str, list[dict]], report: Report) -> None:
                     report.error(name, f"{a} - {b}: {field} {len(overlap):,}건 겹침")
 
 
+def check_excluded(datasets: dict[str, list[dict]], config: dict, report: Report) -> None:
+    """Golden 검수에서 제외한 id가 어느 데이터셋에도 남아 있지 않은지 본다."""
+    name = "6. 데이터셋 간 겹침"
+    exclude_ids = {str(i) for i in (config["dataset"].get("golden_exclude_ids") or [])}
+    for split, records in datasets.items():
+        for r in records:
+            if r["id"] in exclude_ids:
+                report.error(name, f"{split} {r['id']}: 검수 제외 id가 포함됨")
+
+
 def check_source(split: str, records: list[dict], report: Report) -> None:
     name = "7. 출처"
     for r in records:
@@ -391,6 +401,7 @@ def validate(sample: int = 0) -> bool:
         check_lengths(split, valid, report)
         check_distribution(split, valid, report)
     check_overlap(valid_datasets, report)
+    check_excluded(valid_datasets, config, report)
 
     report.print()
     if sample > 0:
