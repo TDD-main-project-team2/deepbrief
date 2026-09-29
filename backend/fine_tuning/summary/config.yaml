@@ -1,0 +1,33 @@
+model:
+  name: "kakaocorp/kanana-1.5-8b-instruct-2505"
+  max_seq_length: 2048
+
+dataset:
+  train_path: "data/processed/training_dataset.json"
+  validation_path: "data/processed/validation_dataset.json"
+
+quantization:
+  load_in_4bit: true
+  quant_type: "nf4"
+  compute_dtype: "float16"
+  use_double_quant: true
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+
+training:
+  epochs: 1
+  batch_size: 4
+  learning_rate: 0.0002
+  gradient_accumulation_steps: 4
+  max_train_samples: 400
+  max_validation_samples: 100
+
+evaluation:
+  eval_steps: 5
+
+checkpoint:
+  save_steps: 5
+  save_total_limit: 3
