@@ -1,10 +1,21 @@
 import yaml
 import torch
+import time
 from pathlib import Path
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, TrainerCallback
 from peft import LoraConfig, prepare_model_for_kbit_training, get_peft_model
 from trl import SFTTrainer, SFTConfig
+
+class StepTimerCallback(TrainerCallback):
+    def __init__(self):
+        self.last_time = time.time()
+
+    def on_step_end(self, args, state, control, **kwargs):
+        now = time.time()
+        elapsed = now - self.last_time
+        print(f"Step {state.global_step}: {elapsed:.2f}s")
+        self.last_time = now
 
 def load_config():
     config_path = Path(__file__).parent / "config.yaml"
@@ -119,10 +130,8 @@ def train(model, tokenizer, train_dataset, validation_dataset, lora_config, trai
         train_dataset=train_dataset,
         eval_dataset=validation_dataset,
         processing_class=tokenizer
+        callbacks=[StepTimerCallback()]
     )
-    print("fp16:", trainer.args.fp16)
-    print("bf16:", trainer.args.bf16)
-    print("scaler:", trainer.accelerator.scaler)
     trainer.train()
 
     print("Training complete!")
