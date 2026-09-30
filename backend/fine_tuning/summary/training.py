@@ -88,6 +88,8 @@ def load_model(config, bnb_config):
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         quantization_config=bnb_config
+        device_map="auto",
+        dtype=dtype_map[config["model"]["dtype"]],
     )
     return model, tokenizer
 
@@ -126,12 +128,6 @@ def configure_training(config, dataset):
 
         max_length=config["model"]["max_seq_length"]
     )
-
-    print("Output directory:", training_config.output_dir)
-    print("Save strategy:", training_config.save_strategy)
-    print("Save steps:", training_config.save_steps)
-    print("Save total limit:", training_config.save_total_limit)
-    
     return training_config, train_dataset, validation_dataset
 
 def train(model, tokenizer, train_dataset, validation_dataset, lora_config, training_config):
@@ -153,7 +149,7 @@ def train(model, tokenizer, train_dataset, validation_dataset, lora_config, trai
         processing_class=tokenizer,
         callbacks=[StepTimerCallback()]
     )
-    trainer.train()
+    trainer.train(resume_from_checkpoint=True)
     print(f"Best checkpoint: {trainer.state.best_model_checkpoint}")
     print("Training complete!")
 
