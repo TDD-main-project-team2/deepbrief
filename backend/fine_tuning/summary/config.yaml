@@ -1,6 +1,7 @@
 model:
   name: "Qwen/Qwen3-1.7B"
   max_seq_length: 1400
+  dtype: float16
 
 data_prep:
   combine_clean_train_complete: true
@@ -32,7 +33,7 @@ lora:
   dropout: 0.05
   bias: "none"
   task_type: "CAUSAL_LM"
-  target_modules: "all-linear"
+  target_modules: [q_proj, v_proj]
 
 training:
   epochs: 1
@@ -44,6 +45,9 @@ training:
   bf16: false
   fp16: false
   logging_steps: 1
+  optim: adamw_torch
+  gradient_checkpointing: true
+  dataloader_pin_memory: true
   report_to: "none"
 
 evaluation:
@@ -57,4 +61,7 @@ checkpoint:
   output_dir: "checkpoints"
   save_strategy: "steps"
   save_steps: 5
-  save_total_limit: 6
+  save_total_limit: 5
+
+generation:
+  max_new_tokens: 150
