@@ -104,7 +104,7 @@ def configure_training(config, dataset):
     )
 
     training_config = SFTConfig(
-        output_dir="checkpoints",
+        output_dir=str(Path(__file__).parent / "checkpoints"),
         num_train_epochs=config["training"]["epochs"],
         per_device_train_batch_size=config["training"]["batch_size"],
         learning_rate=config["training"]["learning_rate"],
@@ -144,7 +144,6 @@ def train(model, tokenizer, train_dataset, validation_dataset, lora_config, trai
     trainer.train()
 
     print("Training complete!")
-
 
 if __name__ == "__main__":
     print("1. Loading config...")
