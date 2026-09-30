@@ -127,10 +127,34 @@ def train(model, tokenizer, train_dataset, validation_dataset, lora_config, trai
 
 
 if __name__ == "__main__":
+    print("1. Loading config...")
     config = load_config()
+
+    print("2. Loading dataset...")
     dataset = load_training_data(config)
+
+    print("3. Formatting dataset...")
     dataset = format_dataset(dataset)
+
+    print("4. Configuring QLoRA...")
     bnb_config, lora_config = configure_qlora(config)
+
+    print("5. Loading model...")
     model, tokenizer = load_model(config, bnb_config)
-    training_config, train_dataset, validation_dataset = configure_training(config, dataset)
-    train(model, tokenizer, train_dataset, validation_dataset, lora_config, training_config)
+
+    print("6. Configuring training...")
+    training_config, train_dataset, validation_dataset = configure_training(
+        config, dataset
+    )
+
+    print("7. Starting train()...")
+    train(
+        model,
+        tokenizer,
+        train_dataset,
+        validation_dataset,
+        lora_config,
+        training_config
+    )
+
+    print("8. Finished!")
