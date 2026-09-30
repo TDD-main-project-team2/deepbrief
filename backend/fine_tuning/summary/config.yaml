@@ -1,10 +1,12 @@
 model:
-  name: kakaocorp/kanana-1.5-8b-instruct-2505
+  name: "Qwen/Qwen3-1.7B"
   dtype: float16
 
 data:
   train_path: data/processed/training_dataset.json
+  validation_path: data/processed/validation_dataset.json
   sample_limit: 400 # null이면 전체 학습 데이터 사용
+  validation_sample_limit: null # null이면 전체 검증 데이터 사용
   max_sequence_length: 2048
 
 quantization:
@@ -34,6 +36,13 @@ training:
   gradient_checkpointing: true
   dataloader_pin_memory: false
   report_to: none
+
+evaluation:
+  strategy: epoch
+  eval_steps: 500 # strategy가 steps일 때 적용
+  load_best_model_at_end: false
+  metric_for_best_model: eval_loss
+  greater_is_better: false
 
 generation:
   max_new_tokens: 150

@@ -32,13 +32,29 @@ import sys
 from collections import Counter, defaultdict
 
 try:
-    from .data_preparation import (QA_TYPE_LABELS, QA_TYPES, SOURCE_SPLITS, SPLIT_SOURCES,
-                                   get_output_file, get_type_counts, get_yes_count,
-                                   group_key, load_config)
+    from .data_preparation import (
+        QA_TYPE_LABELS,
+        QA_TYPES,
+        SOURCE_SPLITS,
+        SPLIT_SOURCES,
+        get_output_file,
+        get_type_counts,
+        get_yes_count,
+        group_key,
+        load_config,
+    )
 except ImportError:
-    from data_preparation import (QA_TYPE_LABELS, QA_TYPES, SOURCE_SPLITS, SPLIT_SOURCES,
-                                  get_output_file, get_type_counts, get_yes_count,
-                                  group_key, load_config)
+    from data_preparation import (
+        QA_TYPE_LABELS,
+        QA_TYPES,
+        SOURCE_SPLITS,
+        SPLIT_SOURCES,
+        get_output_file,
+        get_type_counts,
+        get_yes_count,
+        group_key,
+        load_config,
+    )
 
 
 SPLITS = ("training", "validation", "golden")

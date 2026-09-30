@@ -87,6 +87,7 @@ tld==0.13.2
 tldextract==5.3.2
 torch==2.14.0
 trafilatura==2.2.0
+trl>=0.20.0,<1.0.0
 truststore==0.10.4
 Twisted==26.4.0
 typing-inspection==0.4.4
