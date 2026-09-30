@@ -121,22 +121,22 @@ def check_token_lengths(
         article_tokens = len(tokenizer.encode(article))
         summary_tokens = len(tokenizer.encode(summary))
 
-        total_tokens = len(
-            tokenizer.apply_chat_template(
-                [
-                    {
-                        "role": "user",
-                        "content": f"다음 기사를 요약해주세요.\n\n{article}"
-                    },
-                    {
-                        "role": "assistant",
-                        "content": summary
-                    }
-                ],
-                tokenize=True,
-                add_generation_prompt=False
-            )
+        chat_text = tokenizer.apply_chat_template(
+            [
+                {
+                    "role": "user",
+                    "content": f"다음 기사를 요약해주세요.\n\n{article}"
+                },
+                {
+                    "role": "assistant",
+                    "content": summary
+                }
+            ],
+            tokenize=False,
+            add_generation_prompt=False
         )
+
+        total_tokens = len(tokenizer.encode(chat_text))
 
         article_lengths.append(article_tokens)
         summary_lengths.append(summary_tokens)
