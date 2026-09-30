@@ -120,7 +120,9 @@ def train(model, tokenizer, train_dataset, validation_dataset, lora_config, trai
         eval_dataset=validation_dataset,
         processing_class=tokenizer
     )
-
+    print("fp16:", trainer.args.fp16)
+    print("bf16:", trainer.args.bf16)
+    print("scaler:", trainer.accelerator.scaler)
     trainer.train()
 
     print("Training complete!")
