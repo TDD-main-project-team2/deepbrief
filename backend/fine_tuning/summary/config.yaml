@@ -24,6 +24,7 @@ lora:
 
 training:
   output_dir: qlora-output
+  resume_from_checkpoint: null # 저장된 체크포인트에서 학습을 이어갈지 정하는 옵션
   batch_size: 4
   gradient_accumulation_steps: 1
   learning_rate: 0.0001
