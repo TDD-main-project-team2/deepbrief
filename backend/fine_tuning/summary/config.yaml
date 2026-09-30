@@ -49,7 +49,7 @@ training:
   gradient_checkpointing: true
   dataloader_pin_memory: true
   report_to: "none"
-  resume_from_checkpoint: true
+  resume_from_checkpoint: false
 
 evaluation:
   strategy: "steps"
