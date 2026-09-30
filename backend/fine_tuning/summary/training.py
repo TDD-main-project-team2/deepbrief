@@ -14,7 +14,16 @@ class StepTimerCallback(TrainerCallback):
     def on_step_end(self, args, state, control, **kwargs):
         now = time.time()
         elapsed = now - self.last_time
-        print(f"Step {state.global_step}: {elapsed:.2f}s")
+
+        total_steps = state.max_steps
+        current_step = state.global_step
+        progress = (current_step / total_steps) * 100
+
+        print(
+            f"Step {current_step}/{total_steps} "
+            f"({progress:.1f}%) - {elapsed:.2f}s"
+        )
+
         self.last_time = now
 
 def load_config():
