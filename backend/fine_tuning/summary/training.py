@@ -96,7 +96,7 @@ def configure_training(config, dataset):
         save_total_limit=config["checkpoint"]["save_total_limit"],
         max_length=config["model"]["max_seq_length"],
         bf16=False,
-        fp16=True,
+        fp16=False,
         logging_steps=1,
         report_to="none"
     )
