@@ -2,9 +2,23 @@ model:
   name: "Qwen/Qwen3-1.7B"
   max_seq_length: 2048
 
+data_prep:
+  combine_clean_train_complete: true
+  combine_clean_validation_complete: true
+  extract_required_train_and_golden_complete: true
+  extract_required_validation_complete: true
+
 dataset:
   train_path: "data/processed/training_dataset.json"
   validation_path: "data/processed/validation_dataset.json"
+  golden_path: "data/processed/golden_dataset.json"
+  train_size: 20000
+  validation_size: 2000
+  golden_size: 400
+  raw_train_folder: "data/raw/training"
+  raw_validation_folder: "data/raw/validation"
+  raw_combined_train_path: "data/raw/training/summary_training.json"
+  raw_combined_validation_path: "data/raw/validation/summary_validation.json"
 
 quantization:
   load_in_4bit: true
