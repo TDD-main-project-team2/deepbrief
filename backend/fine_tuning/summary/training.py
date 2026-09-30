@@ -76,9 +76,9 @@ def configure_qlora(config):
         r=config["lora"]["r"],
         lora_alpha=config["lora"]["alpha"],
         lora_dropout=config["lora"]["dropout"],
-        bias="none",
-        task_type="CAUSAL_LM",
-        target_modules="all-linear"
+        bias=config["lora"]["bias"],
+        task_type=config["lora"]["task_type"],
+        target_modules=config["lora"]["target_modules"]
     )
     return bnb_config, lora_config
 
@@ -104,21 +104,27 @@ def configure_training(config, dataset):
     )
 
     training_config = SFTConfig(
-        output_dir=str(Path(__file__).parent / "checkpoints"),
         num_train_epochs=config["training"]["epochs"],
         per_device_train_batch_size=config["training"]["batch_size"],
         learning_rate=config["training"]["learning_rate"],
         gradient_accumulation_steps=config["training"]["gradient_accumulation_steps"],
-        eval_strategy="steps",
+        bf16=config["training"]["bf16"],
+        fp16=config["training"]["fp16"],
+        logging_steps=config["training"]["logging_steps"],
+        report_to=config["training"]["report_to"],
+
+        eval_strategy=config["evaluation"]["strategy"],
         eval_steps=config["evaluation"]["eval_steps"],
-        save_strategy="steps",
+        load_best_model_at_end=config["evaluation"]["load_best_model_at_end"],
+        metric_for_best_model=config["evaluation"]["metric_for_best_model"],
+        greater_is_better=config["evaluation"]["greater_is_better"],
+
+        output_dir=str(Path(__file__).parent / config["checkpoint"]["output_dir"]),
+        save_strategy=config["checkpoint"]["save_strategy"],
         save_steps=config["checkpoint"]["save_steps"],
         save_total_limit=config["checkpoint"]["save_total_limit"],
-        max_length=config["model"]["max_seq_length"],
-        bf16=False,
-        fp16=False,
-        logging_steps=1,
-        report_to="none"
+
+        max_length=config["model"]["max_seq_length"]
     )
     return training_config, train_dataset, validation_dataset
 
@@ -142,30 +148,24 @@ def train(model, tokenizer, train_dataset, validation_dataset, lora_config, trai
         callbacks=[StepTimerCallback()]
     )
     trainer.train()
-
+    print(f"Best checkpoint: {trainer.state.best_model_checkpoint}")
     print("Training complete!")
 
 if __name__ == "__main__":
     print("1. Loading config...")
     config = load_config()
-
     print("2. Loading dataset...")
     dataset = load_training_data(config)
-
     print("3. Formatting dataset...")
     dataset = format_dataset(dataset)
-
     print("4. Configuring QLoRA...")
     bnb_config, lora_config = configure_qlora(config)
-
     print("5. Loading model...")
     model, tokenizer = load_model(config, bnb_config)
-
     print("6. Configuring training...")
     training_config, train_dataset, validation_dataset = configure_training(
         config, dataset
     )
-
     print("7. Starting train()...")
     train(
         model,
@@ -175,5 +175,4 @@ if __name__ == "__main__":
         lora_config,
         training_config
     )
-
     print("8. Finished!")

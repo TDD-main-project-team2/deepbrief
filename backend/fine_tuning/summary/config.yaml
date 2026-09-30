@@ -16,6 +16,9 @@ lora:
   r: 16
   alpha: 32
   dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules: "all-linear"
 
 training:
   epochs: 1
@@ -24,10 +27,20 @@ training:
   gradient_accumulation_steps: 4
   max_train_samples: 400
   max_validation_samples: 100
+  bf16: false
+  fp16: false
+  logging_steps: 1
+  report_to: "none"
 
 evaluation:
+  strategy: "steps"
   eval_steps: 5
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
 
 checkpoint:
+  output_dir: "checkpoints"
+  save_strategy: "steps"
   save_steps: 5
-  save_total_limit: 3
+  save_total_limit: 6
