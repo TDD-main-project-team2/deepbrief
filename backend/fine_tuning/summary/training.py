@@ -126,6 +126,12 @@ def configure_training(config, dataset):
 
         max_length=config["model"]["max_seq_length"]
     )
+
+    print("Output directory:", training_config.output_dir)
+    print("Save strategy:", training_config.save_strategy)
+    print("Save steps:", training_config.save_steps)
+    print("Save total limit:", training_config.save_total_limit)
+    
     return training_config, train_dataset, validation_dataset
 
 def train(model, tokenizer, train_dataset, validation_dataset, lora_config, training_config):
