@@ -84,12 +84,14 @@ def configure_qlora(config):
 
 def load_model(config, bnb_config):
     model_name = config["model"]["name"]
+    dtype = getattr(torch, config["model"]["dtype"])
+
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        quantization_config=bnb_config
+        quantization_config=bnb_config,
         device_map="auto",
-        dtype=dtype_map[config["model"]["dtype"]],
+        dtype=dtype
     )
     return model, tokenizer
 
@@ -113,6 +115,8 @@ def configure_training(config, dataset):
         bf16=config["training"]["bf16"],
         fp16=config["training"]["fp16"],
         logging_steps=config["training"]["logging_steps"],
+        optim=config["training"]["optim"],
+        gradient_checkpointing=config["training"]["gradient_checkpointing"],
         report_to=config["training"]["report_to"],
 
         eval_strategy=config["evaluation"]["strategy"],
@@ -130,9 +134,8 @@ def configure_training(config, dataset):
     )
     return training_config, train_dataset, validation_dataset
 
-def train(model, tokenizer, train_dataset, validation_dataset, lora_config, training_config):
+def train(model, tokenizer, train_dataset, validation_dataset, lora_config, training_config, config):
     print("Preparing model for QLoRA...")
-    
     model = prepare_model_for_kbit_training(model)
     model = get_peft_model(model, lora_config)
 
@@ -140,7 +143,6 @@ def train(model, tokenizer, train_dataset, validation_dataset, lora_config, trai
     model.print_trainable_parameters()
 
     print("Starting training...")
-
     trainer = SFTTrainer(
         model=model,
         args=training_config,
@@ -149,7 +151,7 @@ def train(model, tokenizer, train_dataset, validation_dataset, lora_config, trai
         processing_class=tokenizer,
         callbacks=[StepTimerCallback()]
     )
-    trainer.train(resume_from_checkpoint=True)
+    trainer.train(resume_from_checkpoint=config["training"]["resume_from_checkpoint"])
     print(f"Best checkpoint: {trainer.state.best_model_checkpoint}")
     print("Training complete!")
 
@@ -175,6 +177,7 @@ if __name__ == "__main__":
         train_dataset,
         validation_dataset,
         lora_config,
-        training_config
+        training_config,
+        config
     )
     print("8. Finished!")
