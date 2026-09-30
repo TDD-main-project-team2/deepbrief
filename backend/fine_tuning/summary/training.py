@@ -138,7 +138,7 @@ def train(model, tokenizer, train_dataset, validation_dataset, lora_config, trai
         args=training_config,
         train_dataset=train_dataset,
         eval_dataset=validation_dataset,
-        processing_class=tokenizer
+        processing_class=tokenizer,
         callbacks=[StepTimerCallback()]
     )
     trainer.train()
