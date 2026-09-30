@@ -1,0 +1,40 @@
+model:
+  name: kakaocorp/kanana-1.5-8b-instruct-2505
+  dtype: float16
+
+data:
+  train_path: data/processed/training_dataset.json
+  sample_limit: 400 # null이면 전체 학습 데이터 사용
+  max_sequence_length: 2048
+
+quantization:
+  load_in_4bit: true
+  quant_type: nf4
+  double_quant: true
+  compute_dtype: float16
+
+lora:
+  rank: 8
+  alpha: 32
+  dropout: 0.1
+  target_modules: [q_proj, v_proj]
+  bias: none
+
+training:
+  output_dir: qlora-output
+  batch_size: 4
+  gradient_accumulation_steps: 1
+  learning_rate: 0.0001
+  epochs: 1
+  max_steps: -1 # -1이면 epochs 적용, 양수이면 해당 스텝 수 우선
+  logging_steps: 1
+  save_strategy: epoch
+  save_total_limit: 2
+  optim: adamw_torch
+  gradient_checkpointing: true
+  dataloader_pin_memory: false
+  report_to: none
+
+generation:
+  max_new_tokens: 150
+  do_sample: false
