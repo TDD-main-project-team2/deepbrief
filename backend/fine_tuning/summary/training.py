@@ -103,8 +103,15 @@ def configure_training(config, dataset):
     return training_config, train_dataset, validation_dataset
 
 def train(model, tokenizer, train_dataset, validation_dataset, lora_config, training_config):
+    print("Preparing model for QLoRA...")
+    
     model = prepare_model_for_kbit_training(model)
     model = get_peft_model(model, lora_config)
+
+    print("Trainable parameters:")
+    model.print_trainable_parameters()
+
+    print("Starting training...")
 
     trainer = SFTTrainer(
         model=model,
@@ -115,6 +122,8 @@ def train(model, tokenizer, train_dataset, validation_dataset, lora_config, trai
     )
 
     trainer.train()
+
+    print("Training complete!")
 
 
 if __name__ == "__main__":
