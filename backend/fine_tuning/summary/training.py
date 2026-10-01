@@ -43,10 +43,10 @@ def load_training_data(config):
     )
     return dataset
 
-def format_dataset(dataset, sample):
-    passage = sample["Meta(Refine)"]["passage"]
-    summary = sample["Annotation"]["summary3"]
-    def format_example(example):
+def format_dataset(dataset):
+    def format_example(sample):
+        passage = sample["Meta(Refine)"]["passage"]
+        summary = sample["Annotation"]["summary3"]
         return {
             "prompt": [
                 {
