@@ -1,183 +1,213 @@
-import yaml
-import torch
-import time
+import json
 from pathlib import Path
-from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig, TrainerCallback
-from peft import LoraConfig, prepare_model_for_kbit_training, get_peft_model
-from trl import SFTTrainer, SFTConfig
 
-class StepTimerCallback(TrainerCallback):
-    def __init__(self):
-        self.last_time = time.time()
+import torch
+import yaml
+from datasets import Dataset
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+)
+from trl import SFTConfig, SFTTrainer
 
-    def on_step_end(self, args, state, control, **kwargs):
-        now = time.time()
-        elapsed = now - self.last_time
+BASE_DIR = Path(__file__).resolve().parent
 
-        total_steps = state.max_steps
-        current_step = state.global_step
-        progress = (current_step / total_steps) * 100
-
-        print(
-            f"Step {current_step}/{total_steps} "
-            f"({progress:.1f}%) - {elapsed:.2f}s"
-        )
-
-        self.last_time = now
+DTYPE_MAP = {
+    "float16": torch.float16,
+    "bfloat16": torch.bfloat16,
+    "float32": torch.float32,
+}
 
 def load_config():
-    config_path = Path(__file__).parent / "config.yaml"
-    with open(config_path, "r") as f:
-        config = yaml.safe_load(f)
-    return config
+    with (BASE_DIR / "config.yaml").open(encoding="utf-8") as file:
+        return yaml.safe_load(file)
 
-def load_training_data(config):
-    base_dir = Path(__file__).parent
-    dataset = load_dataset(
-        "json",
-        data_files={
-            "train": str(base_dir / config["dataset"]["train_path"]),
-            "validation": str(base_dir / config["dataset"]["validation_path"])
-        }
-    )
-    return dataset
+def load_dataset_file(relative_path, sample_limit=None):
+    data_path = BASE_DIR / relative_path
+    with data_path.open(encoding="utf-8") as file:
+        data = json.load(file)
+    if sample_limit is not None:
+        data = data[:sample_limit]
 
-def format_dataset(dataset):
-    def format_example(example):
-        return {
-            "messages": [
-                {
-                    "role": "user",
-                    "content": (
-                        "다음 기사를 요약해주세요.\n\n"
-                        + example["Meta(Refine)"]["passage"]
-                    )
-                },
-                {
-                    "role": "assistant",
-                    "content": example["Annotation"]["summary3"]
-                }
-            ]
-        }
-    return dataset.map(format_example)
+    return Dataset.from_list(data)
 
-def configure_qlora(config):
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=config["quantization"]["load_in_4bit"],
-        bnb_4bit_quant_type=config["quantization"]["quant_type"],
-        bnb_4bit_compute_dtype=getattr(
-            torch,
-            config["quantization"]["compute_dtype"]),
-        bnb_4bit_use_double_quant=config["quantization"]["use_double_quant"]
-    )
-
-    lora_config = LoraConfig(
-        r=config["lora"]["r"],
-        lora_alpha=config["lora"]["alpha"],
-        lora_dropout=config["lora"]["dropout"],
-        bias=config["lora"]["bias"],
-        task_type=config["lora"]["task_type"],
-        target_modules=config["lora"]["target_modules"]
-    )
-    return bnb_config, lora_config
-
-def load_model(config, bnb_config):
-    model_name = config["model"]["name"]
-    dtype = getattr(torch, config["model"]["dtype"])
-
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        quantization_config=bnb_config,
-        device_map="auto",
-        dtype=dtype
-    )
-    return model, tokenizer
-
-def configure_training(config, dataset):
+def load_datasets(config):
     max_train_samples = config["training"]["max_train_samples"]
     max_validation_samples = config["training"]["max_validation_samples"]
-
-    train_dataset = dataset["train"].select(
-        range(min(max_train_samples, len(dataset["train"])))
+    data_config = config["data"]
+    
+    training_dataset = load_dataset_file(
+        data_config["train_path"], max_train_samples
+    )
+    validation_dataset = load_dataset_file(
+        data_config["validation_path"], max_validation_samples
     )
 
-    validation_dataset = dataset["validation"].select(
-        range(min(max_validation_samples, len(dataset["validation"])))
+    return training_dataset, validation_dataset
+
+def configure_qlora(config):
+    quantization = config["quantization"]
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=quantization["load_in_4bit"],
+        bnb_4bit_quant_type=quantization["quant_type"],
+        bnb_4bit_use_double_quant=quantization["double_quant"],
+        bnb_4bit_compute_dtype=DTYPE_MAP[quantization["compute_dtype"]],
     )
 
-    training_config = SFTConfig(
-        num_train_epochs=config["training"]["epochs"],
-        per_device_train_batch_size=config["training"]["batch_size"],
-        learning_rate=config["training"]["learning_rate"],
-        gradient_accumulation_steps=config["training"]["gradient_accumulation_steps"],
-        bf16=config["training"]["bf16"],
-        fp16=config["training"]["fp16"],
-        logging_steps=config["training"]["logging_steps"],
-        optim=config["training"]["optim"],
-        gradient_checkpointing=config["training"]["gradient_checkpointing"],
-        report_to=config["training"]["report_to"],
-
-        eval_strategy=config["evaluation"]["strategy"],
-        eval_steps=config["evaluation"]["eval_steps"],
-        load_best_model_at_end=config["evaluation"]["load_best_model_at_end"],
-        metric_for_best_model=config["evaluation"]["metric_for_best_model"],
-        greater_is_better=config["evaluation"]["greater_is_better"],
-
-        output_dir=str(Path(__file__).parent / config["checkpoint"]["output_dir"]),
-        save_strategy=config["checkpoint"]["save_strategy"],
-        save_steps=config["checkpoint"]["save_steps"],
-        save_total_limit=config["checkpoint"]["save_total_limit"],
-
-        max_length=config["model"]["max_seq_length"]
+    lora = config["lora"]
+    lora_config = LoraConfig(
+        r=lora["rank"],
+        lora_alpha=lora["alpha"],
+        lora_dropout=lora["dropout"],
+        target_modules=lora["target_modules"],
+        bias=lora["bias"],
+        task_type=lora["task_type"]
     )
-    return training_config, train_dataset, validation_dataset
 
-def train(model, tokenizer, train_dataset, validation_dataset, lora_config, training_config, config):
-    print("Preparing model for QLoRA...")
-    model = prepare_model_for_kbit_training(model)
+    return quantization_config, lora_config
+
+def apply_qlora_config(model, lora_config, gradient_checkpointing):
+    model = prepare_model_for_kbit_training(
+        model, use_gradient_checkpointing=gradient_checkpointing
+    )
     model = get_peft_model(model, lora_config)
-
-    print("Trainable parameters:")
     model.print_trainable_parameters()
+    model.config.use_cache = False
 
-    print("Starting training...")
-    trainer = SFTTrainer(
-        model=model,
-        args=training_config,
-        train_dataset=train_dataset,
-        eval_dataset=validation_dataset,
-        processing_class=tokenizer,
-        callbacks=[StepTimerCallback()]
+    return model
+
+def build_model_config(config, quantization_config):
+    model = config["model"]
+    return {
+        "pretrained_model_name_or_path": model["name"],
+        "quantization_config": quantization_config,
+        "device_map": "auto",
+        "dtype": DTYPE_MAP[model["dtype"]],
+    }
+
+def load_model_and_tokenizer(model_config):
+    model = AutoModelForCausalLM.from_pretrained(**model_config)
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_config["pretrained_model_name_or_path"]
     )
-    trainer.train(resume_from_checkpoint=config["training"]["resume_from_checkpoint"])
-    print(f"Best checkpoint: {trainer.state.best_model_checkpoint}")
-    print("Training complete!")
+    tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.padding_side = "right"
+    return model, tokenizer
+
+def format_training_example(sample):
+    passage = sample["Meta(Refine)"]["passage"]
+    summary = sample["Annotation"]["summary3"]
+
+    return {
+        "prompt": [
+            {
+                "role": "user",
+                "content": (
+                    "다음 원문의 핵심 내용을 한국어로 간결하게 요약하세요. "
+                    "원문에 없는 사실은 추가하지 마세요.\n\n"
+                    f"### 원문 텍스트:\n{passage}"
+                ),
+            }
+        ],
+        "completion": [
+            {
+                "role": "assistant",
+                "content": summary,
+            }
+        ],
+    }
+
+def prepare_training_dataset(dataset):
+    return dataset.map(
+        format_training_example,
+        batched=False,
+        remove_columns=dataset.column_names,
+    )
+
+def configure_training(config):
+    training_config = config["training"]
+    evaluation_config = config["evaluation"]
+    checkpoint_config = config["checkpoint"]
+
+    return SFTConfig(
+        num_train_epochs=training_config["epochs"],
+        per_device_train_batch_size=training_config["batch_size"],
+        learning_rate=training_config["learning_rate"],
+        gradient_accumulation_steps=training_config["gradient_accumulation_steps"],
+        logging_steps=training_config["logging_steps"],
+        optim=training_config["optim"],
+        gradient_checkpointing=training_config["gradient_checkpointing"],
+        dataloader_pin_memory=training_config["dataloader_pin_memory"],
+        report_to=training_config["report_to"],
+
+        eval_strategy=evaluation_config["strategy"],
+        eval_steps=evaluation_config["eval_steps"],
+        load_best_model_at_end=evaluation_config["load_best_model_at_end"],
+        metric_for_best_model=evaluation_config["metric_for_best_model"],
+        greater_is_better=evaluation_config["greater_is_better"],
+
+        output_dir=str(BASE_DIR / checkpoint_config["output_dir"]),
+        save_strategy=checkpoint_config["save_strategy"],
+        save_steps=checkpoint_config["save_steps"],
+        save_total_limit=checkpoint_config["save_total_limit"],
+
+        max_length=config["model"]["max_sequence_length"],
+        completion_only_loss=True,
+    )
+
+def apply_training_config(
+    model, tokenizer, training_dataset, validation_dataset, training_args
+):
+    return SFTTrainer(
+        model=model,
+        args=training_args,
+        processing_class=tokenizer,
+        train_dataset=training_dataset,
+        eval_dataset=validation_dataset,
+    )
+
+def train(trainer, config):
+    resume_from_checkpoint = config["training"]["resume_from_checkpoint"]
+    if isinstance(resume_from_checkpoint, str):
+        resume_from_checkpoint = str(BASE_DIR / resume_from_checkpoint)
+
+    trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+    print(f"    Best checkpoint: {trainer.state.best_model_checkpoint}")
 
 if __name__ == "__main__":
     print("1. Loading config...")
     config = load_config()
-    print("2. Loading dataset...")
-    dataset = load_training_data(config)
-    print("3. Formatting dataset...")
-    dataset = format_dataset(dataset)
+
+    print("2. Loading datasets...")
+    training_dataset, validation_dataset = load_datasets(config)
+    
+    print("3. Formatting datasets...")
+    training_dataset = prepare_training_dataset(training_dataset)
+    validation_dataset = prepare_training_dataset(validation_dataset)
+    
     print("4. Configuring QLoRA...")
-    bnb_config, lora_config = configure_qlora(config)
-    print("5. Loading model...")
-    model, tokenizer = load_model(config, bnb_config)
+    quantization_config, lora_config = configure_qlora(config)
+    
+    print("5. Configuring model...")
+    model_config = build_model_config(config, quantization_config)
+    
     print("6. Configuring training...")
-    training_config, train_dataset, validation_dataset = configure_training(
-        config, dataset
+    training_args = configure_training(config)
+    
+    print("7. Loading model and tokenizer...")
+    model, tokenizer = load_model_and_tokenizer(model_config)
+    
+    print("8. Applying QLoRA config...")
+    model = apply_qlora_config(model, lora_config, training_args.gradient_checkpointing)
+    
+    print("9. Creating trainer and tokenizing datasets...")
+    trainer = apply_training_config(
+        model, tokenizer, training_dataset, validation_dataset, training_args
     )
-    print("7. Starting train()...")
-    train(
-        model,
-        tokenizer,
-        train_dataset,
-        validation_dataset,
-        lora_config,
-        training_config,
-        config
-    )
-    print("8. Finished!")
+    
+    print("10. Starting training...")
+    train(trainer, config)
+    
+    print("11. Finished!")

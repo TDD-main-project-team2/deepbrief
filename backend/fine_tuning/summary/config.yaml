@@ -1,7 +1,19 @@
 model:
-  name: "Qwen/Qwen3-1.7B"
-  max_seq_length: 1400
+  name: Qwen/Qwen3-1.7B
+  max_sequence_length: 1400
   dtype: float16
+
+dataset:
+  train_path: data/processed/training_dataset.json
+  validation_path: data/processed/validation_dataset.json
+  golden_path: data/processed/golden_dataset.json
+  raw_train_folder: data/raw/training
+  raw_validation_folder: data/raw/validation
+  raw_combined_train_path: data/raw/training/summary_training.json
+  raw_combined_validation_path: data/raw/validation/summary_validation.json
+  train_size: 20000
+  validation_size: 2000
+  golden_size: 400
 
 data_prep:
   combine_clean_train_complete: true
@@ -9,60 +21,46 @@ data_prep:
   extract_required_train_and_golden_complete: true
   extract_required_validation_complete: true
 
-dataset:
-  train_path: "data/processed/training_dataset.json"
-  validation_path: "data/processed/validation_dataset.json"
-  golden_path: "data/processed/golden_dataset.json"
-  train_size: 20000
-  validation_size: 2000
-  golden_size: 400
-  raw_train_folder: "data/raw/training"
-  raw_validation_folder: "data/raw/validation"
-  raw_combined_train_path: "data/raw/training/summary_training.json"
-  raw_combined_validation_path: "data/raw/validation/summary_validation.json"
-
 quantization:
   load_in_4bit: true
-  quant_type: "nf4"
-  compute_dtype: "float16"
-  use_double_quant: true
+  quant_type: nf4
+  double_quant: true
+  compute_dtype: float16
 
 lora:
-  r: 16
+  rank: 8
   alpha: 32
-  dropout: 0.05
-  bias: "none"
-  task_type: "CAUSAL_LM"
+  dropout: 0.1
   target_modules: [q_proj, v_proj]
+  bias: none
+  task_type: CAUSAL_LM
 
 training:
   epochs: 1
   batch_size: 4
-  learning_rate: 0.0002
-  gradient_accumulation_steps: 4
+  learning_rate: 0.0001
+  gradient_accumulation_steps: 4 # 단일 GPU 기준 유효 배치: 4 × 4 = 16
+  logging_steps: 1
   max_train_samples: 400
   max_validation_samples: 100
-  bf16: false
-  fp16: false
-  logging_steps: 1
   optim: adamw_torch
   gradient_checkpointing: true
-  dataloader_pin_memory: true
-  report_to: "none"
-  resume_from_checkpoint: false
-
-evaluation:
-  strategy: "steps"
-  eval_steps: 5
-  load_best_model_at_end: true
-  metric_for_best_model: "eval_loss"
-  greater_is_better: false
+  dataloader_pin_memory: false # MPS에서는 pin memory를 사용하지 않음
+  report_to: none
+  resume_from_checkpoint: null # 저장된 체크포인트에서 학습을 이어갈지 정하는 옵션
 
 checkpoint:
-  output_dir: "checkpoints"
-  save_strategy: "steps"
+  output_dir: checkpoints
+  save_strategy: steps
   save_steps: 5
   save_total_limit: 5
+
+evaluation:
+  strategy: steps
+  eval_steps: 5
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
 
 generation:
   max_new_tokens: 150
