@@ -39,3 +39,6 @@ lerna-debug.log*
 uploads/
 
 **/data/raw
+
+# Jupyter notebooks
+*.ipynb
