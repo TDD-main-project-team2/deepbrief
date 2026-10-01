@@ -130,7 +130,8 @@ def configure_training(config, dataset):
         save_steps=config["checkpoint"]["save_steps"],
         save_total_limit=config["checkpoint"]["save_total_limit"],
 
-        max_length=config["model"]["max_seq_length"]
+        max_length=config["model"]["max_seq_length"],
+        completion_only_loss=True
     )
     return training_config, train_dataset, validation_dataset
 
