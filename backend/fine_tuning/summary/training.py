@@ -20,9 +20,11 @@ DTYPE_MAP = {
     "float32": torch.float32,
 }
 
+
 def load_config():
     with (BASE_DIR / "config.yaml").open(encoding="utf-8") as file:
         return yaml.safe_load(file)
+
 
 def load_dataset_file(relative_path, sample_limit=None):
     data_path = BASE_DIR / relative_path
@@ -33,21 +35,21 @@ def load_dataset_file(relative_path, sample_limit=None):
 
     return Dataset.from_list(data)
 
+
 def load_datasets(config):
     max_train_samples = config["training"]["max_train_samples"]
     max_validation_samples = config["training"]["max_validation_samples"]
     data_config = config["data"]
-    
-    training_dataset = load_dataset_file(
-        data_config["train_path"], max_train_samples
-    )
+
+    training_dataset = load_dataset_file(data_config["train_path"], max_train_samples)
     validation_dataset = load_dataset_file(
         data_config["validation_path"], max_validation_samples
     )
 
     return training_dataset, validation_dataset
 
-def configure_qlora(config):
+
+def build_qlora_config(config):
     quantization = config["quantization"]
     quantization_config = BitsAndBytesConfig(
         load_in_4bit=quantization["load_in_4bit"],
@@ -63,10 +65,11 @@ def configure_qlora(config):
         lora_dropout=lora["dropout"],
         target_modules=lora["target_modules"],
         bias=lora["bias"],
-        task_type=lora["task_type"]
+        task_type=lora["task_type"],
     )
 
     return quantization_config, lora_config
+
 
 def apply_qlora_config(model, lora_config, gradient_checkpointing):
     model = prepare_model_for_kbit_training(
@@ -78,6 +81,7 @@ def apply_qlora_config(model, lora_config, gradient_checkpointing):
 
     return model
 
+
 def build_model_config(config, quantization_config):
     model = config["model"]
     return {
@@ -87,6 +91,7 @@ def build_model_config(config, quantization_config):
         "dtype": DTYPE_MAP[model["dtype"]],
     }
 
+
 def load_model_and_tokenizer(model_config):
     model = AutoModelForCausalLM.from_pretrained(**model_config)
     tokenizer = AutoTokenizer.from_pretrained(
@@ -95,6 +100,7 @@ def load_model_and_tokenizer(model_config):
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
     return model, tokenizer
+
 
 def format_training_example(sample):
     passage = sample["Meta(Refine)"]["passage"]
@@ -119,6 +125,7 @@ def format_training_example(sample):
         ],
     }
 
+
 def prepare_training_dataset(dataset):
     return dataset.map(
         format_training_example,
@@ -126,7 +133,8 @@ def prepare_training_dataset(dataset):
         remove_columns=dataset.column_names,
     )
 
-def configure_training(config):
+
+def build_training_config(config):
     training_config = config["training"]
     evaluation_config = config["evaluation"]
     checkpoint_config = config["checkpoint"]
@@ -141,21 +149,19 @@ def configure_training(config):
         gradient_checkpointing=training_config["gradient_checkpointing"],
         dataloader_pin_memory=training_config["dataloader_pin_memory"],
         report_to=training_config["report_to"],
-
         eval_strategy=evaluation_config["strategy"],
         eval_steps=evaluation_config["eval_steps"],
         load_best_model_at_end=evaluation_config["load_best_model_at_end"],
         metric_for_best_model=evaluation_config["metric_for_best_model"],
         greater_is_better=evaluation_config["greater_is_better"],
-
         output_dir=str(BASE_DIR / checkpoint_config["output_dir"]),
         save_strategy=checkpoint_config["save_strategy"],
         save_steps=checkpoint_config["save_steps"],
         save_total_limit=checkpoint_config["save_total_limit"],
-
         max_length=config["model"]["max_sequence_length"],
-        completion_only_loss=True,
+        completion_only_loss=training_config["completion_only_loss"],
     )
+
 
 def apply_training_config(
     model, tokenizer, training_dataset, validation_dataset, training_args
@@ -168,6 +174,7 @@ def apply_training_config(
         eval_dataset=validation_dataset,
     )
 
+
 def train(trainer, config):
     resume_from_checkpoint = config["training"]["resume_from_checkpoint"]
     if isinstance(resume_from_checkpoint, str):
@@ -176,38 +183,39 @@ def train(trainer, config):
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
     print(f"    Best checkpoint: {trainer.state.best_model_checkpoint}")
 
+
 if __name__ == "__main__":
     print("1. Loading config...")
     config = load_config()
 
     print("2. Loading datasets...")
     training_dataset, validation_dataset = load_datasets(config)
-    
+
     print("3. Formatting datasets...")
     training_dataset = prepare_training_dataset(training_dataset)
     validation_dataset = prepare_training_dataset(validation_dataset)
-    
+
     print("4. Configuring QLoRA...")
-    quantization_config, lora_config = configure_qlora(config)
-    
+    quantization_config, lora_config = build_qlora_config(config)
+
     print("5. Configuring model...")
     model_config = build_model_config(config, quantization_config)
-    
+
     print("6. Configuring training...")
-    training_args = configure_training(config)
-    
+    training_args = build_training_config(config)
+
     print("7. Loading model and tokenizer...")
     model, tokenizer = load_model_and_tokenizer(model_config)
-    
+
     print("8. Applying QLoRA config...")
     model = apply_qlora_config(model, lora_config, training_args.gradient_checkpointing)
-    
+
     print("9. Creating trainer and tokenizing datasets...")
     trainer = apply_training_config(
         model, tokenizer, training_dataset, validation_dataset, training_args
     )
-    
+
     print("10. Starting training...")
     train(trainer, config)
-    
+
     print("11. Finished!")
