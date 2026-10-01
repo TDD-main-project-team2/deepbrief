@@ -48,14 +48,23 @@ SOURCE_SPLITS = {
 }
 
 # 각 데이터셋을 뽑아올 원본 (validation과 golden은 같은 VL에서 서로 겹치지 않게)
-SPLIT_SOURCES = {"training": "training", "validation": "validation", "golden": "validation"}
+SPLIT_SOURCES = {
+    "training": "training",
+    "validation": "validation",
+    "golden": "validation",
+}
 
 # 원본 유형 (파일명 기준) 과 한글 이름
 QA_TYPES = ("span_extraction", "span_inference", "text_entailment", "unanswerable")
 
 # 정제 순서. 같은 기사가 여러 유형 파일에 있으면 먼저 처리한 유형에 남긴다.
 # 원본 수량이 적은 유형부터 처리해, 부족한 유형의 후보가 줄지 않게 한다.
-CLEANING_ORDER = ("unanswerable", "text_entailment", "span_inference", "span_extraction")
+CLEANING_ORDER = (
+    "unanswerable",
+    "text_entailment",
+    "span_inference",
+    "span_extraction",
+)
 QA_TYPE_LABELS = {
     "span_extraction": "추출형",
     "span_inference": "추론형",
@@ -115,7 +124,9 @@ def get_type_counts(config: dict, split: str) -> dict[str, int]:
     ratio = config["dataset"]["type_ratio"]
     counts = {qa_type: round(size * ratio[qa_type]) for qa_type in QA_TYPES}
     if sum(counts.values()) != size:
-        raise ValueError(f"{split} 유형별 수량 합계 {sum(counts.values())}가 {size}와 다릅니다. type_ratio를 확인하세요.")
+        raise ValueError(
+            f"{split} 유형별 수량 합계 {sum(counts.values())}가 {size}와 다릅니다. type_ratio를 확인하세요."
+        )
     return counts
 
 
@@ -198,13 +209,20 @@ def _find_normalized_start(norm_map: list[int], original_start: int) -> int | No
 # 원본 로드 + 정제
 # ---------------------------------------------------------------------------
 
+
 def _load_raw(config: dict, source_split: str, qa_type: str) -> list[dict]:
     with open(get_raw_file(config, source_split, qa_type), encoding="utf-8") as f:
         return json.load(f)["data"]
 
 
-def _build_record(qa: dict, qa_type: str, context: str, raw_context: str,
-                  norm_map: list[int], config: dict) -> tuple[dict | None, str | None]:
+def _build_record(
+    qa: dict,
+    qa_type: str,
+    context: str,
+    raw_context: str,
+    norm_map: list[int],
+    config: dict,
+) -> tuple[dict | None, str | None]:
     """질문 1개를 출력 레코드로 변환한다. 제외 대상이면 (None, 제외 사유)를 돌려준다."""
     remove_symbols = set(config["normalization"]["remove_symbols"])
     answers_cfg = config["answers"]
@@ -246,20 +264,34 @@ def _build_record(qa: dict, qa_type: str, context: str, raw_context: str,
         return None, "빈 답"
     raw_start = answers.get("answer_start")
     # 원본 위치 오류
-    if raw_start is None or raw_context[raw_start:raw_start + len(raw_answer)] != raw_answer:
+    if (
+        raw_start is None
+        or raw_context[raw_start : raw_start + len(raw_answer)] != raw_answer
+    ):
         return None, "answer_start 위치 오류"
     # 정규화 후 위치 재확인
     answer = normalize_text(raw_answer, remove_symbols)
     norm_start = _find_normalized_start(norm_map, raw_start)
-    if not answer or norm_start is None or context[norm_start:norm_start + len(answer)] != answer:
+    if (
+        not answer
+        or norm_start is None
+        or context[norm_start : norm_start + len(answer)] != answer
+    ):
         return None, "정규화 후 위치 불일치"
     record["answer"] = answer
     record["answer_start"] = norm_start
     return record, None
 
 
-def _clean_documents(docs: list[dict], qa_type: str, source_split: str, config: dict,
-                     stats: Counter, seen_contexts: set, seen_doc_ids: set) -> list[dict]:
+def _clean_documents(
+    docs: list[dict],
+    qa_type: str,
+    source_split: str,
+    config: dict,
+    stats: Counter,
+    seen_contexts: set,
+    seen_doc_ids: set,
+) -> list[dict]:
     """원본 기사 목록을 정제해 후보 기사 목록으로 만든다.
 
     seen_contexts, seen_doc_ids 는 같은 원본(TL 또는 VL)의 모든 유형이 함께 쓰는 집합이다.
@@ -285,7 +317,9 @@ def _clean_documents(docs: list[dict], qa_type: str, source_split: str, config: 
 
             records = []
             for qa in qas:
-                record, reason = _build_record(qa, qa_type, context, raw_context, norm_map, config)
+                record, reason = _build_record(
+                    qa, qa_type, context, raw_context, norm_map, config
+                )
                 if record is None:
                     stats[f"제외: {reason}"] += 1
                 else:
@@ -305,24 +339,28 @@ def _clean_documents(docs: list[dict], qa_type: str, source_split: str, config: 
             seen_contexts.add(context)
             seen_doc_ids.add(doc.get("doc_id"))
 
-            candidates.append({
-                "context": context,
-                "metadata": {
-                    "doc_id": doc.get("doc_id"),
-                    "doc_title": doc.get("doc_title"),
-                    "source": doc.get("doc_source"),
-                    "published": doc.get("doc_published"),
-                    "category": (doc.get("doc_class") or {}).get(stratify_field),
-                    "source_split": SOURCE_SPLITS[source_split]["prefix"],
-                },
-                "records": records,
-            })
+            candidates.append(
+                {
+                    "context": context,
+                    "metadata": {
+                        "doc_id": doc.get("doc_id"),
+                        "doc_title": doc.get("doc_title"),
+                        "source": doc.get("doc_source"),
+                        "published": doc.get("doc_published"),
+                        "category": (doc.get("doc_class") or {}).get(stratify_field),
+                        "source_split": SOURCE_SPLITS[source_split]["prefix"],
+                    },
+                    "records": records,
+                }
+            )
 
     stats["정제 후 기사"] = len(candidates)
     return candidates
 
 
-def _pick_questions(candidates: list[dict], per_doc: int, rng: random.Random) -> list[dict]:
+def _pick_questions(
+    candidates: list[dict], per_doc: int, rng: random.Random
+) -> list[dict]:
     """기사마다 질문을 per_doc개만 골라 최종 레코드 목록으로 만든다."""
     picked = []
     for cand in candidates:
@@ -335,6 +373,7 @@ def _pick_questions(candidates: list[dict], per_doc: int, rng: random.Random) ->
 # 샘플링
 # ---------------------------------------------------------------------------
 
+
 def _rng(config: dict, *keys: str) -> random.Random:
     """단계별로 독립된 난수 생성기. 한 단계를 바꿔도 다른 단계 결과가 흔들리지 않는다."""
     return random.Random("-".join([str(config["dataset"]["random_seed"]), *keys]))
@@ -342,14 +381,20 @@ def _rng(config: dict, *keys: str) -> random.Random:
 
 def _sample(pool: list[dict], count: int, rng: random.Random, label: str) -> list[dict]:
     if len(pool) < count:
-        raise ValueError(f"{label}: 후보 {len(pool)}건으로 {count}건을 뽑을 수 없습니다.")
+        raise ValueError(
+            f"{label}: 후보 {len(pool)}건으로 {count}건을 뽑을 수 없습니다."
+        )
     return rng.sample(pool, count)
 
 
-def _sample_stratified(pool: list[dict], count: int, rng: random.Random, label: str) -> list[dict]:
+def _sample_stratified(
+    pool: list[dict], count: int, rng: random.Random, label: str
+) -> list[dict]:
     """분야(category)별로 돌아가며 1건씩 뽑아 분야가 고르게 섞이도록 한다."""
     if len(pool) < count:
-        raise ValueError(f"{label}: 후보 {len(pool)}건으로 {count}건을 뽑을 수 없습니다.")
+        raise ValueError(
+            f"{label}: 후보 {len(pool)}건으로 {count}건을 뽑을 수 없습니다."
+        )
     by_category = defaultdict(list)
     for record in pool:
         by_category[record["metadata"]["category"]].append(record)
@@ -366,8 +411,15 @@ def _sample_stratified(pool: list[dict], count: int, rng: random.Random, label: 
     return picked
 
 
-def _sample_type(pool: list[dict], qa_type: str, count: int, config: dict,
-                 rng: random.Random, stratified: bool, label: str) -> list[dict]:
+def _sample_type(
+    pool: list[dict],
+    qa_type: str,
+    count: int,
+    config: dict,
+    rng: random.Random,
+    stratified: bool,
+    label: str,
+) -> list[dict]:
     """유형 1개에서 count건을 뽑는다. Yes/No 단문형은 yes_ratio에 맞춰 나눠 뽑는다."""
     sampler = _sample_stratified if stratified else _sample
     if qa_type != "text_entailment":
@@ -377,8 +429,9 @@ def _sample_type(pool: list[dict], qa_type: str, count: int, config: dict,
     yes_count = get_yes_count(config, count)
     yes_pool = [r for r in pool if r["answer"] == yes_answer]
     no_pool = [r for r in pool if r["answer"] == no_answer]
-    return (sampler(yes_pool, yes_count, rng, f"{label}(예)")
-            + sampler(no_pool, count - yes_count, rng, f"{label}(아니오)"))
+    return sampler(yes_pool, yes_count, rng, f"{label}(예)") + sampler(
+        no_pool, count - yes_count, rng, f"{label}(아니오)"
+    )
 
 
 def group_key(record: dict) -> str:
@@ -416,12 +469,19 @@ def _stable_key(config: dict, removed_id: str, candidate_id: str) -> str:
     제외된 id마다 후보 순서를 따로 정한다. 그래서 제외 목록에 새 id가 추가돼도
     기존 제외 건들의 교체 결과는 (같은 후보를 두고 겹치지 않는 한) 바뀌지 않는다.
     """
-    raw = f"{config['dataset']['random_seed']}-golden-replace-{removed_id}-{candidate_id}"
+    raw = (
+        f"{config['dataset']['random_seed']}-golden-replace-{removed_id}-{candidate_id}"
+    )
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
-def _replace_excluded(golden: list[dict], candidates: list[dict], exclude_ids: set[str],
-                      config: dict, label: str) -> tuple[list[dict], list[tuple[str, str]]]:
+def _replace_excluded(
+    golden: list[dict],
+    candidates: list[dict],
+    exclude_ids: set[str],
+    config: dict,
+    label: str,
+) -> tuple[list[dict], list[tuple[str, str]]]:
     """Golden에서 검수 제외 id를 빼고, 같은 그룹(유형, 예/아니오)의 후보로 같은 자리를 채운다.
 
     - 후보는 Golden·Validation 어디에도 쓰이지 않았고 제외 목록에도 없는 기사
@@ -437,12 +497,23 @@ def _replace_excluded(golden: list[dict], candidates: list[dict], exclude_ids: s
             result.append(record)
             continue
         same_group = sorted(
-            (c for c in available if c["id"] not in taken and group_key(c) == group_key(record)),
-            key=lambda c: _stable_key(config, record["id"], c["id"]))
-        same_category = [c for c in same_group if c["metadata"]["category"] == record["metadata"]["category"]]
+            (
+                c
+                for c in available
+                if c["id"] not in taken and group_key(c) == group_key(record)
+            ),
+            key=lambda c: _stable_key(config, record["id"], c["id"]),
+        )
+        same_category = [
+            c
+            for c in same_group
+            if c["metadata"]["category"] == record["metadata"]["category"]
+        ]
         pick = (same_category or same_group or [None])[0]
         if pick is None:
-            raise ValueError(f"{label}: 제외 id {record['id']}를 대체할 후보가 없습니다.")
+            raise ValueError(
+                f"{label}: 제외 id {record['id']}를 대체할 후보가 없습니다."
+            )
         taken.add(pick["id"])
         result.append(pick)
         replaced.append((record["id"], pick["id"]))
@@ -452,6 +523,7 @@ def _replace_excluded(golden: list[dict], candidates: list[dict], exclude_ids: s
 # ---------------------------------------------------------------------------
 # 전체 실행
 # ---------------------------------------------------------------------------
+
 
 def _print_stats(title: str, stats: Counter) -> None:
     print(f"  [{title}]")
@@ -467,14 +539,17 @@ def prepare_datasets(config: dict) -> dict[str, list[dict]]:
 
     # 1~4. 로드 + 정제 + 기사당 질문 선택 (VL을 먼저 처리해 겹침 확인에 사용)
     for source_split in ("validation", "training"):
-        print(f"\n== 원본 {source_split} ({SOURCE_SPLITS[source_split]['prefix']}) 정제")
+        print(
+            f"\n== 원본 {source_split} ({SOURCE_SPLITS[source_split]['prefix']}) 정제"
+        )
         seen_contexts, seen_doc_ids = set(), set()
         for qa_type in CLEANING_ORDER:
             stats = Counter()
             docs = _load_raw(config, source_split, qa_type)
             stats["원본 기사"] = len(docs)
-            candidates = _clean_documents(docs, qa_type, source_split, config, stats,
-                                          seen_contexts, seen_doc_ids)
+            candidates = _clean_documents(
+                docs, qa_type, source_split, config, stats, seen_contexts, seen_doc_ids
+            )
             del docs
 
             if source_split == "validation":
@@ -482,13 +557,17 @@ def prepare_datasets(config: dict) -> dict[str, list[dict]]:
                 validation_doc_ids.update(c["metadata"]["doc_id"] for c in candidates)
             else:
                 before = len(candidates)
-                candidates = [c for c in candidates
-                              if c["context"] not in validation_contexts
-                              and c["metadata"]["doc_id"] not in validation_doc_ids]
+                candidates = [
+                    c
+                    for c in candidates
+                    if c["context"] not in validation_contexts
+                    and c["metadata"]["doc_id"] not in validation_doc_ids
+                ]
                 stats["제외: Validation 원본과 겹침(기사)"] = before - len(candidates)
 
             pools[source_split][qa_type] = _pick_questions(
-                candidates, per_doc, _rng(config, "pick", source_split, qa_type))
+                candidates, per_doc, _rng(config, "pick", source_split, qa_type)
+            )
             stats["최종 후보(기사당 질문 1개)"] = len(pools[source_split][qa_type])
             _print_stats(QA_TYPE_LABELS[qa_type], stats)
 
@@ -497,8 +576,14 @@ def prepare_datasets(config: dict) -> dict[str, list[dict]]:
 
     for qa_type, count in get_type_counts(config, "training").items():
         datasets["training"] += _sample_type(
-            pools["training"][qa_type], qa_type, count, config,
-            _rng(config, "training", qa_type), stratified=False, label=f"training/{qa_type}")
+            pools["training"][qa_type],
+            qa_type,
+            count,
+            config,
+            _rng(config, "training", qa_type),
+            stratified=False,
+            label=f"training/{qa_type}",
+        )
 
     # Golden을 먼저 분야별 균등으로 뽑고, 남은 후보에서 Validation을 뽑는다
     golden_counts = get_type_counts(config, "golden")
@@ -507,31 +592,50 @@ def prepare_datasets(config: dict) -> dict[str, list[dict]]:
     all_replaced = []
     for qa_type in QA_TYPES:
         pool = pools["validation"][qa_type]
-        golden = _sample_type(pool, qa_type, golden_counts[qa_type], config,
-                              _rng(config, "golden", qa_type), stratified=True, label=f"golden/{qa_type}")
+        golden = _sample_type(
+            pool,
+            qa_type,
+            golden_counts[qa_type],
+            config,
+            _rng(config, "golden", qa_type),
+            stratified=True,
+            label=f"golden/{qa_type}",
+        )
         golden_ids = {r["id"] for r in golden}
         remaining = [r for r in pool if r["id"] not in golden_ids]
         validation = _sample_type(
-            remaining, qa_type, validation_counts[qa_type], config,
-            _rng(config, "validation", qa_type), stratified=False, label=f"validation/{qa_type}")
+            remaining,
+            qa_type,
+            validation_counts[qa_type],
+            config,
+            _rng(config, "validation", qa_type),
+            stratified=False,
+            label=f"validation/{qa_type}",
+        )
 
         # 검수에서 제외된 Golden만 교체 (Training·Validation은 그대로 유지)
         if exclude_ids:
             validation_ids = {r["id"] for r in validation}
             candidates = [r for r in remaining if r["id"] not in validation_ids]
-            golden, replaced = _replace_excluded(golden, candidates, exclude_ids, config, f"golden/{qa_type}")
+            golden, replaced = _replace_excluded(
+                golden, candidates, exclude_ids, config, f"golden/{qa_type}"
+            )
             all_replaced += replaced
 
         datasets["golden"] += golden
         datasets["validation"] += validation
 
     if exclude_ids:
-        print(f"\n== Golden 검수 제외 교체: {len(all_replaced)}건 (제외 목록 {len(exclude_ids)}건)")
+        print(
+            f"\n== Golden 검수 제외 교체: {len(all_replaced)}건 (제외 목록 {len(exclude_ids)}건)"
+        )
         for old_id, new_id in all_replaced:
             print(f"  {old_id} -> {new_id}")
 
     # 6. 순서 배치: Training은 구간별 비율 균일, 나머지는 섞기
-    datasets["training"] = order_by_chunks(datasets["training"], _rng(config, "order", "training"))
+    datasets["training"] = order_by_chunks(
+        datasets["training"], _rng(config, "order", "training")
+    )
     for split in ("validation", "golden"):
         _rng(config, "shuffle", split).shuffle(datasets[split])
     return datasets
