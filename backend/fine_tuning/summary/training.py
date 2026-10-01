@@ -149,6 +149,8 @@ def build_training_config(config):
         gradient_checkpointing=training_config["gradient_checkpointing"],
         dataloader_pin_memory=training_config["dataloader_pin_memory"],
         report_to=training_config["report_to"],
+        completion_only_loss=training_config["completion_only_loss"],
+        disable_tqdm=training_config["disable_tqdm"],
         eval_strategy=evaluation_config["strategy"],
         eval_steps=evaluation_config["eval_steps"],
         load_best_model_at_end=evaluation_config["load_best_model_at_end"],
@@ -159,7 +161,6 @@ def build_training_config(config):
         save_steps=checkpoint_config["save_steps"],
         save_total_limit=checkpoint_config["save_total_limit"],
         max_length=config["model"]["max_sequence_length"],
-        completion_only_loss=training_config["completion_only_loss"],
     )
 
 
