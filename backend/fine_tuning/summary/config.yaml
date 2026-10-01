@@ -44,7 +44,7 @@ training:
   max_train_samples: 400
   max_validation_samples: 100
   optim: adamw_torch
-  gradient_checkpointing: true
+  gradient_checkpointing: false
   dataloader_pin_memory: false
   report_to: none
   resume_from_checkpoint: null # 저장된 체크포인트에서 학습을 이어갈지 정하는 옵션
