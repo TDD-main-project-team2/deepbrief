@@ -5,9 +5,11 @@ model:
 data:
   train_path: data/processed/training_dataset.json
   validation_path: data/processed/validation_dataset.json
-  sample_limit: 400 # null이면 전체 학습 데이터 사용
-  validation_sample_limit: null # null이면 전체 검증 데이터 사용
-  max_sequence_length: 2048
+  # sample_limit: 20000
+  sample_limit: 400
+  # validation_sample_limit: 2000
+  validation_sample_limit: 100
+  max_sequence_length: 1400
 
 quantization:
   load_in_4bit: true
@@ -23,24 +25,28 @@ lora:
   bias: none
 
 training:
-  output_dir: qlora-output
+  # output_dir: qlora-output
+  output_dir: qlora-output-test
   resume_from_checkpoint: null # 저장된 체크포인트에서 학습을 이어갈지 정하는 옵션
   batch_size: 4
-  gradient_accumulation_steps: 1
+  gradient_accumulation_steps: 4 # 단일 GPU 기준 유효 배치: 4 × 4 = 16
   learning_rate: 0.0001
   epochs: 1
   max_steps: -1 # -1이면 epochs 적용, 양수이면 해당 스텝 수 우선
   logging_steps: 1
-  save_strategy: epoch
-  save_total_limit: 2
+  save_strategy: steps
+  # save_steps: 250
+  save_steps: 5
+  save_total_limit: 5
   optim: adamw_torch
   gradient_checkpointing: true
   dataloader_pin_memory: false
   report_to: none
 
 evaluation:
-  strategy: epoch
-  eval_steps: 500 # strategy가 steps일 때 적용
+  strategy: steps
+  # eval_steps: 250
+  eval_steps: 5
   load_best_model_at_end: false
   metric_for_best_model: eval_loss
   greater_is_better: false

@@ -41,16 +41,16 @@ def load_dataset_file(relative_path, sample_limit=None):
     return dataset
 
 
-def load_training_data(config):
+def load_datasets(config):
     data_config = config["data"]
-    train_dataset = load_dataset_file(
+    trainging_dataset = load_dataset_file(
         data_config["train_path"], data_config["sample_limit"]
     )
     validation_dataset = load_dataset_file(
         data_config["validation_path"], data_config["validation_sample_limit"]
     )
 
-    return train_dataset, validation_dataset
+    return trainging_dataset, validation_dataset
 
 
 def configure_qlora(config):
@@ -106,9 +106,9 @@ def apply_model_config(model_config):
     return model, tokenizer
 
 
-def build_training_messages(example):
-    passage = example["Meta(Refine)"]["passage"]
-    summary = example["Annotation"]["summary3"]
+def build_training_messages(sample):
+    passage = sample["Meta(Refine)"]["passage"]
+    summary = sample["Annotation"]["summary3"]
 
     if not isinstance(passage, str) or not passage.strip():
         raise ValueError("학습 원문 passage가 비어 있거나 문자열이 아닙니다.")
@@ -131,14 +131,13 @@ def build_summary_messages(passage):
     ]
 
 
-def format_training_example(example):
-    messages = build_training_messages(example)
-    return {"prompt": messages[:-1], "completion": messages[-1:]}
-
-
 def prepare_training_dataset(dataset):
+    def format_sample(sample):
+        messages = build_training_messages(sample)
+        return {"prompt": messages[:-1], "completion": messages[-1:]}
+
     return dataset.map(
-        format_training_example,
+        format_sample,
         batched=False,
         remove_columns=dataset.column_names,
     )
@@ -158,6 +157,7 @@ def configure_training(config):
         max_steps=training_config["max_steps"],
         logging_steps=training_config["logging_steps"],
         save_strategy=training_config["save_strategy"],
+        save_steps=training_config["save_steps"],
         eval_strategy=evaluation_config["strategy"],
         eval_steps=evaluation_config["eval_steps"],
         load_best_model_at_end=evaluation_config["load_best_model_at_end"],
@@ -174,13 +174,13 @@ def configure_training(config):
 
 
 def apply_training_config(
-    model, tokenizer, train_dataset, validation_dataset, training_args
+    model, tokenizer, trainging_dataset, validation_dataset, training_args
 ):
     return SFTTrainer(
         model=model,
         args=training_args,
         processing_class=tokenizer,
-        train_dataset=train_dataset,
+        train_dataset=trainging_dataset,
         eval_dataset=validation_dataset,
     )
 
@@ -190,27 +190,38 @@ def train(trainer, config):
     if isinstance(resume_from_checkpoint, str):
         resume_from_checkpoint = str(BASE_DIR / resume_from_checkpoint)
 
-    print("Starting training...")
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-    print(f"Best checkpoint: {trainer.state.best_model_checkpoint}")
-    print("Training complete!")
+    print(f"    Best checkpoint: {trainer.state.best_model_checkpoint}")
 
 
 def main():
+    print("1. Loading config...")
     config = load_config()
-    dataset, validation_dataset = load_training_data(config)
-    train_dataset = prepare_training_dataset(dataset)
+    print("2. Loading datasets...")
+    trainging_dataset, validation_dataset = load_datasets(config)
+    print("3. Formatting datasets...")
+    trainging_dataset = prepare_training_dataset(trainging_dataset)
     validation_dataset = prepare_training_dataset(validation_dataset)
+
+    print("4. Configuring QLoRA...")
     quantization_config, lora_config = configure_qlora(config)
+    print("5. Configuring model...")
     model_config = configure_model(config, quantization_config)
+    print("6. Configuring training...")
     training_args = configure_training(config)
 
+    print("7. Loading model and tokenizer...")
     model, tokenizer = apply_model_config(model_config)
+    print("8. Applying QLoRA config...")
     model = apply_qlora_config(model, lora_config, training_args.gradient_checkpointing)
+    print("9. Creating trainer and tokenizing datasets...")
     trainer = apply_training_config(
-        model, tokenizer, train_dataset, validation_dataset, training_args
+        model, tokenizer, trainging_dataset, validation_dataset, training_args
     )
+
+    print("10. Starting training...")
     train(trainer, config)
+    print("11. Finished!")
 
 
 if __name__ == "__main__":
