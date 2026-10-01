@@ -43,20 +43,24 @@ def load_training_data(config):
     )
     return dataset
 
-def format_dataset(dataset):
+def format_dataset(dataset, sample):
+    passage = sample["Meta(Refine)"]["passage"]
+    summary = sample["Annotation"]["summary3"]
     def format_example(example):
         return {
-            "messages": [
+            "prompt": [
                 {
                     "role": "user",
                     "content": (
-                        "다음 기사를 요약해주세요.\n\n"
-                        + example["Meta(Refine)"]["passage"]
+                        "다음 기사를 요약해주세요. 원문 없는 사실은 추가하지 마세요.\n\n"
+                        f"### 원문 텍스트: \n{passage}"
                     )
-                },
+                }
+            ],
+            "completion": [
                 {
                     "role": "assistant",
-                    "content": example["Annotation"]["summary3"]
+                    "content": summary
                 }
             ]
         }
