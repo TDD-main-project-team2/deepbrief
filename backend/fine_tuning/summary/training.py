@@ -4,7 +4,7 @@ from pathlib import Path
 import torch
 import yaml
 from datasets import Dataset
-from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -20,38 +20,32 @@ DTYPE_MAP = {
     "float32": torch.float32,
 }
 
-
 def load_config():
     with (BASE_DIR / "config.yaml").open(encoding="utf-8") as file:
         return yaml.safe_load(file)
-
 
 def load_dataset_file(relative_path, sample_limit=None):
     data_path = BASE_DIR / relative_path
     with data_path.open(encoding="utf-8") as file:
         data = json.load(file)
-
     if sample_limit is not None:
-        if type(sample_limit) is not int or sample_limit < 1:
-            raise ValueError("sample_limit은 양의 정수 또는 null이어야 합니다.")
         data = data[:sample_limit]
 
-    dataset = Dataset.from_list(data)
-
-    return dataset
-
+    return Dataset.from_list(data)
 
 def load_datasets(config):
+    max_train_samples = config["training"]["max_train_samples"]
+    max_validation_samples = config["training"]["max_validation_samples"]
     data_config = config["data"]
-    trainging_dataset = load_dataset_file(
-        data_config["train_path"], data_config["sample_limit"]
+    
+    training_dataset = load_dataset_file(
+        data_config["train_path"], max_train_samples
     )
     validation_dataset = load_dataset_file(
-        data_config["validation_path"], data_config["validation_sample_limit"]
+        data_config["validation_path"], max_validation_samples
     )
 
-    return trainging_dataset, validation_dataset
-
+    return training_dataset, validation_dataset
 
 def configure_qlora(config):
     quantization = config["quantization"]
@@ -66,14 +60,13 @@ def configure_qlora(config):
     lora_config = LoraConfig(
         r=lora["rank"],
         lora_alpha=lora["alpha"],
-        target_modules=lora["target_modules"],
         lora_dropout=lora["dropout"],
+        target_modules=lora["target_modules"],
         bias=lora["bias"],
-        task_type=TaskType.CAUSAL_LM,
+        task_type=lora["task_type"]
     )
 
     return quantization_config, lora_config
-
 
 def apply_qlora_config(model, lora_config, gradient_checkpointing):
     model = prepare_model_for_kbit_training(
@@ -85,8 +78,7 @@ def apply_qlora_config(model, lora_config, gradient_checkpointing):
 
     return model
 
-
-def configure_model(config, quantization_config):
+def build_model_config(config, quantization_config):
     model = config["model"]
     return {
         "pretrained_model_name_or_path": model["name"],
@@ -95,8 +87,7 @@ def configure_model(config, quantization_config):
         "dtype": DTYPE_MAP[model["dtype"]],
     }
 
-
-def apply_model_config(model_config):
+def load_model_and_tokenizer(model_config):
     model = AutoModelForCausalLM.from_pretrained(**model_config)
     tokenizer = AutoTokenizer.from_pretrained(
         model_config["pretrained_model_name_or_path"]
@@ -105,85 +96,77 @@ def apply_model_config(model_config):
     tokenizer.padding_side = "right"
     return model, tokenizer
 
-
-def build_training_messages(sample):
+def format_training_example(sample):
     passage = sample["Meta(Refine)"]["passage"]
     summary = sample["Annotation"]["summary3"]
 
-    if not isinstance(passage, str) or not passage.strip():
-        raise ValueError("학습 원문 passage가 비어 있거나 문자열이 아닙니다.")
-    if not isinstance(summary, str) or not summary.strip():
-        raise ValueError("정답 요약 summary3가 비어 있거나 문자열이 아닙니다.")
-
-    return build_summary_messages(passage) + [{"role": "assistant", "content": summary}]
-
-
-def build_summary_messages(passage):
-    return [
-        {
-            "role": "user",
-            "content": (
-                "다음 원문의 핵심 내용을 한국어로 간결하게 요약하세요. "
-                "원문에 없는 사실은 추가하지 마세요.\n\n"
-                f"### 원문 텍스트:\n{passage}"
-            ),
-        }
-    ]
-
+    return {
+        "prompt": [
+            {
+                "role": "user",
+                "content": (
+                    "다음 원문의 핵심 내용을 한국어로 간결하게 요약하세요. "
+                    "원문에 없는 사실은 추가하지 마세요.\n\n"
+                    f"### 원문 텍스트:\n{passage}"
+                ),
+            }
+        ],
+        "completion": [
+            {
+                "role": "assistant",
+                "content": summary,
+            }
+        ],
+    }
 
 def prepare_training_dataset(dataset):
-    def format_sample(sample):
-        messages = build_training_messages(sample)
-        return {"prompt": messages[:-1], "completion": messages[-1:]}
-
     return dataset.map(
-        format_sample,
+        format_training_example,
         batched=False,
         remove_columns=dataset.column_names,
     )
 
-
 def configure_training(config):
     training_config = config["training"]
     evaluation_config = config["evaluation"]
-    output_dir = BASE_DIR / training_config["output_dir"]
+    checkpoint_config = config["checkpoint"]
 
     return SFTConfig(
-        output_dir=str(output_dir),
-        per_device_train_batch_size=training_config["batch_size"],
-        gradient_accumulation_steps=training_config["gradient_accumulation_steps"],
-        learning_rate=training_config["learning_rate"],
         num_train_epochs=training_config["epochs"],
-        max_steps=training_config["max_steps"],
+        per_device_train_batch_size=training_config["batch_size"],
+        learning_rate=training_config["learning_rate"],
+        gradient_accumulation_steps=training_config["gradient_accumulation_steps"],
         logging_steps=training_config["logging_steps"],
-        save_strategy=training_config["save_strategy"],
-        save_steps=training_config["save_steps"],
+        optim=training_config["optim"],
+        gradient_checkpointing=training_config["gradient_checkpointing"],
+        dataloader_pin_memory=training_config["dataloader_pin_memory"],
+        report_to=training_config["report_to"],
+
         eval_strategy=evaluation_config["strategy"],
         eval_steps=evaluation_config["eval_steps"],
         load_best_model_at_end=evaluation_config["load_best_model_at_end"],
         metric_for_best_model=evaluation_config["metric_for_best_model"],
         greater_is_better=evaluation_config["greater_is_better"],
-        save_total_limit=training_config["save_total_limit"],
-        optim=training_config["optim"],
-        gradient_checkpointing=training_config["gradient_checkpointing"],
-        dataloader_pin_memory=training_config["dataloader_pin_memory"],
-        report_to=training_config["report_to"],
-        max_length=config["data"]["max_sequence_length"],
+
+        output_dir=str(BASE_DIR / checkpoint_config["output_dir"]),
+        save_strategy=checkpoint_config["save_strategy"],
+        save_steps=checkpoint_config["save_steps"],
+        save_total_limit=checkpoint_config["save_total_limit"],
+
+        max_length=config["model"]["max_sequence_length"],
         completion_only_loss=True,
     )
 
-
 def apply_training_config(
-    model, tokenizer, trainging_dataset, validation_dataset, training_args
+    model, tokenizer, training_dataset, validation_dataset, training_args
 ):
     return SFTTrainer(
         model=model,
         args=training_args,
         processing_class=tokenizer,
-        train_dataset=trainging_dataset,
+        train_dataset=training_dataset,
         eval_dataset=validation_dataset,
     )
-
 
 def train(trainer, config):
     resume_from_checkpoint = config["training"]["resume_from_checkpoint"]
@@ -193,36 +176,38 @@ def train(trainer, config):
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
     print(f"    Best checkpoint: {trainer.state.best_model_checkpoint}")
 
-
-def main():
+if __name__ == "__main__":
     print("1. Loading config...")
     config = load_config()
-    print("2. Loading datasets...")
-    trainging_dataset, validation_dataset = load_datasets(config)
-    print("3. Formatting datasets...")
-    trainging_dataset = prepare_training_dataset(trainging_dataset)
-    validation_dataset = prepare_training_dataset(validation_dataset)
 
+    print("2. Loading datasets...")
+    training_dataset, validation_dataset = load_datasets(config)
+    
+    print("3. Formatting datasets...")
+    training_dataset = prepare_training_dataset(training_dataset)
+    validation_dataset = prepare_training_dataset(validation_dataset)
+    
     print("4. Configuring QLoRA...")
     quantization_config, lora_config = configure_qlora(config)
+    
     print("5. Configuring model...")
-    model_config = configure_model(config, quantization_config)
+    model_config = build_model_config(config, quantization_config)
+    
     print("6. Configuring training...")
     training_args = configure_training(config)
-
+    
     print("7. Loading model and tokenizer...")
-    model, tokenizer = apply_model_config(model_config)
+    model, tokenizer = load_model_and_tokenizer(model_config)
+    
     print("8. Applying QLoRA config...")
     model = apply_qlora_config(model, lora_config, training_args.gradient_checkpointing)
+    
     print("9. Creating trainer and tokenizing datasets...")
     trainer = apply_training_config(
-        model, tokenizer, trainging_dataset, validation_dataset, training_args
+        model, tokenizer, training_dataset, validation_dataset, training_args
     )
-
+    
     print("10. Starting training...")
     train(trainer, config)
+    
     print("11. Finished!")
-
-
-if __name__ == "__main__":
-    main()

@@ -1,15 +1,25 @@
 model:
-  name: "Qwen/Qwen3-1.7B"
+  name: Qwen/Qwen3-1.7B
+  max_sequence_length: 1400
   dtype: float16
 
-data:
+dataset:
   train_path: data/processed/training_dataset.json
   validation_path: data/processed/validation_dataset.json
-  # sample_limit: 20000
-  sample_limit: 400
-  # validation_sample_limit: 2000
-  validation_sample_limit: 100
-  max_sequence_length: 1400
+  golden_path: data/processed/golden_dataset.json
+  raw_train_folder: data/raw/training
+  raw_validation_folder: data/raw/validation
+  raw_combined_train_path: data/raw/training/summary_training.json
+  raw_combined_validation_path: data/raw/validation/summary_validation.json
+  train_size: 20000
+  validation_size: 2000
+  golden_size: 400
+
+data_prep:
+  combine_clean_train_complete: true
+  combine_clean_validation_complete: true
+  extract_required_train_and_golden_complete: true
+  extract_required_validation_complete: true
 
 quantization:
   load_in_4bit: true
@@ -23,34 +33,34 @@ lora:
   dropout: 0.1
   target_modules: [q_proj, v_proj]
   bias: none
+  task_type: CAUSAL_LM
 
 training:
-  # output_dir: qlora-output
-  output_dir: qlora-output-test
-  resume_from_checkpoint: null # 저장된 체크포인트에서 학습을 이어갈지 정하는 옵션
-  batch_size: 4
-  gradient_accumulation_steps: 4 # 단일 GPU 기준 유효 배치: 4 × 4 = 16
-  learning_rate: 0.0001
   epochs: 1
-  max_steps: -1 # -1이면 epochs 적용, 양수이면 해당 스텝 수 우선
+  batch_size: 4
+  learning_rate: 0.0001
+  gradient_accumulation_steps: 4 # 단일 GPU 기준 유효 배치: 4 × 4 = 16
   logging_steps: 1
-  save_strategy: steps
-  # save_steps: 250
-  save_steps: 5
-  save_total_limit: 5
+  max_train_samples: 400
+  max_validation_samples: 100
   optim: adamw_torch
   gradient_checkpointing: true
-  dataloader_pin_memory: false
+  dataloader_pin_memory: false # MPS에서는 pin memory를 사용하지 않음
   report_to: none
+  resume_from_checkpoint: null # 저장된 체크포인트에서 학습을 이어갈지 정하는 옵션
+
+checkpoint:
+  output_dir: checkpoints
+  save_strategy: steps
+  save_steps: 5
+  save_total_limit: 5
 
 evaluation:
   strategy: steps
-  # eval_steps: 250
   eval_steps: 5
-  load_best_model_at_end: false
+  load_best_model_at_end: true
   metric_for_best_model: eval_loss
   greater_is_better: false
 
 generation:
   max_new_tokens: 150
-  do_sample: false
