@@ -28,9 +28,9 @@ quantization:
   use_double_quant: true
 
 lora:
-  r: 16
+  r: 8
   alpha: 32
-  dropout: 0.05
+  dropout: 0.1
   bias: "none"
   task_type: "CAUSAL_LM"
   target_modules: [q_proj, v_proj]
@@ -38,7 +38,7 @@ lora:
 training:
   epochs: 1
   batch_size: 4
-  learning_rate: 0.0002
+  learning_rate: 0.0001
   gradient_accumulation_steps: 4
   max_train_samples: 400
   max_validation_samples: 100
