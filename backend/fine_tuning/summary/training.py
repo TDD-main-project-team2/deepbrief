@@ -39,11 +39,11 @@ def load_dataset_file(relative_path, sample_limit=None):
 def load_datasets(config):
     max_train_samples = config["training"]["max_train_samples"]
     max_validation_samples = config["training"]["max_validation_samples"]
-    data_config = config["data"]
+    dataset_config = config["dataset"]
 
-    training_dataset = load_dataset_file(data_config["train_path"], max_train_samples)
+    training_dataset = load_dataset_file(dataset_config["train_path"], max_train_samples)
     validation_dataset = load_dataset_file(
-        data_config["validation_path"], max_validation_samples
+        dataset_config["validation_path"], max_validation_samples
     )
 
     return training_dataset, validation_dataset
@@ -186,37 +186,37 @@ def train(trainer, config):
 
 
 if __name__ == "__main__":
-    print("1. Loading config...")
+    print("1. Loading config...", flush=True)
     config = load_config()
 
-    print("2. Loading datasets...")
+    print("\n2. Loading datasets...", flush=True)
     training_dataset, validation_dataset = load_datasets(config)
 
-    print("3. Formatting datasets...")
+    print("\n3. Formatting datasets...", flush=True)
     training_dataset = prepare_training_dataset(training_dataset)
     validation_dataset = prepare_training_dataset(validation_dataset)
 
-    print("4. Configuring QLoRA...")
+    print("\n4. Configuring QLoRA...", flush=True)
     quantization_config, lora_config = build_qlora_config(config)
 
-    print("5. Configuring model...")
+    print("\n5. Configuring model...", flush=True)
     model_config = build_model_config(config, quantization_config)
 
-    print("6. Configuring training...")
+    print("\n6. Configuring training...", flush=True)
     training_args = build_training_config(config)
 
-    print("7. Loading model and tokenizer...")
+    print("\n7. Loading model and tokenizer...", flush=True)
     model, tokenizer = load_model_and_tokenizer(model_config)
 
-    print("8. Applying QLoRA config...")
+    print("\n8. Applying QLoRA config...", flush=True)
     model = apply_qlora_config(model, lora_config, training_args.gradient_checkpointing)
 
-    print("9. Creating trainer and tokenizing datasets...")
+    print("\n9. Creating trainer and tokenizing datasets...", flush=True)
     trainer = apply_training_config(
         model, tokenizer, training_dataset, validation_dataset, training_args
     )
 
-    print("10. Starting training...")
+    print("\n10. Starting training...", flush=True)
     train(trainer, config)
 
-    print("11. Finished!")
+    print("\n11. Finished!", flush=True)
