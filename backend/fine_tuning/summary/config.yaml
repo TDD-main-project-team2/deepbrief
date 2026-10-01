@@ -45,9 +45,11 @@ training:
   max_validation_samples: 100
   optim: adamw_torch
   gradient_checkpointing: true
-  dataloader_pin_memory: false # MPS에서는 pin memory를 사용하지 않음
+  dataloader_pin_memory: false
   report_to: none
   resume_from_checkpoint: null # 저장된 체크포인트에서 학습을 이어갈지 정하는 옵션
+  completion_only_loss: true
+  disable_tqdm: false
 
 checkpoint:
   output_dir: checkpoints
