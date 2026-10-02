@@ -129,8 +129,8 @@ def format_training_example(sample):
 def prepare_training_dataset(dataset):
     return dataset.map(
         format_training_example,
-        batched=False,
-        remove_columns=dataset.column_names,
+        ## batched=False,
+        ## remove_columns=dataset.column_names,
     )
 
 
