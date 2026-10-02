@@ -1,89 +1,27 @@
 import argparse
+import json
+import time
 from pathlib import Path
 
 import torch
 import yaml
-
-from datasets import load_dataset
-from transformers import (
-    AutoTokenizer,
-    AutoModelForCausalLM,
-    BitsAndBytesConfig,
-)
+from datasets import Dataset
 from peft import (
     LoraConfig,
-    prepare_model_for_kbit_training,
     get_peft_model,
+    prepare_model_for_kbit_training,
 )
-from trl import SFTTrainer, SFTConfig
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    TrainerCallback,
+)
+from trl import SFTConfig, SFTTrainer
 
-
-# ============================================================
-# Config
-# ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent
-CONFIG_PATH = BASE_DIR / "config.yaml"
 
-
-def load_config():
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
-config = load_config()
-
-MODEL_CONFIG = config["model"]
-DATASET_CONFIG = config["dataset"]
-QUANT_CONFIG = config["quantization"]
-LORA_CONFIG = config["lora"]
-TRAINING_CONFIG = config["training"]
-CHECKPOINT_CONFIG = config["checkpoint"]
-EVALUATION_CONFIG = config["evaluation"]
-
-
-# ============================================================
-# Arguments
-# ============================================================
-
-parser = argparse.ArgumentParser()
-
-parser.add_argument(
-    "--sample",
-    type=int,
-    default=None,
-    help="학습/검증 데이터에서 사용할 샘플 수",
-)
-
-args = parser.parse_args()
-
-
-# ============================================================
-# Paths
-# ============================================================
-
-def resolve_path(path):
-    path = Path(path)
-
-    if path.is_absolute():
-        return path
-
-    return BASE_DIR / path
-
-
-TRAIN_PATH = resolve_path(DATASET_CONFIG["train_path"])
-VALIDATION_PATH = resolve_path(DATASET_CONFIG["validation_path"])
-
-CHECKPOINT_DIR = resolve_path(
-    CHECKPOINT_CONFIG["output_dir"]
-)
-
-
-# ============================================================
-# Model Settings
-# ============================================================
-
-MODEL_ID = MODEL_CONFIG["name"]
 
 DTYPE_MAP = {
     "float16": torch.float16,
@@ -91,65 +29,84 @@ DTYPE_MAP = {
     "float32": torch.float32,
 }
 
-MODEL_DTYPE = DTYPE_MAP.get(
-    MODEL_CONFIG["dtype"],
-    torch.float16,
-)
+
+# ============================================================
+# Step Timer Callback
+# ============================================================
+
+class StepTimerCallback(TrainerCallback):
+    def __init__(self):
+        self.last_time = time.time()
+
+    def on_step_end(self, args, state, control, **kwargs):
+        now = time.time()
+        elapsed = now - self.last_time
+
+        total_steps = state.max_steps
+        current_step = state.global_step
+
+        if total_steps > 0:
+            progress = (current_step / total_steps) * 100
+        else:
+            progress = 0
+
+        print(
+            f"Step {current_step}/{total_steps} "
+            f"({progress:.1f}%) - {elapsed:.2f}s",
+            flush=True,
+        )
+
+        self.last_time = now
 
 
 # ============================================================
-# Load Tokenizer
+# Config
 # ============================================================
 
-print("===== Loading Tokenizer =====")
-print(f"Model: {MODEL_ID}")
-
-tokenizer = AutoTokenizer.from_pretrained(
-    MODEL_ID
-)
-
-if tokenizer.pad_token is None:
-    tokenizer.pad_token = tokenizer.eos_token
+def load_config():
+    with (BASE_DIR / "config.yaml").open(
+        encoding="utf-8"
+    ) as file:
+        return yaml.safe_load(file)
 
 
 # ============================================================
-# Load Dataset
+# Dataset
 # ============================================================
 
-print("===== Loading Dataset =====")
+def load_dataset_file(relative_path, sample_limit=None):
+    data_path = BASE_DIR / relative_path
 
-dataset = load_dataset(
-    "json",
-    data_files={
-        "train": str(TRAIN_PATH),
-        "validation": str(VALIDATION_PATH),
-    },
-)
+    with data_path.open(encoding="utf-8") as file:
+        data = json.load(file)
 
-if args.sample is not None:
-    sample_size = min(
-        args.sample,
-        len(dataset["train"]),
-        len(dataset["validation"]),
+    if sample_limit is not None:
+        data = data[:sample_limit]
+
+    return Dataset.from_list(data)
+
+
+def load_datasets(config, sample_limit=None):
+    dataset_config = config["dataset"]
+
+    training_dataset = load_dataset_file(
+        dataset_config["train_path"],
+        sample_limit,
     )
 
-    dataset["train"] = dataset["train"].select(
-        range(sample_size)
+    validation_dataset = load_dataset_file(
+        dataset_config["validation_path"],
+        sample_limit,
     )
 
-    dataset["validation"] = dataset["validation"].select(
-        range(sample_size)
-    )
-
-print(f"학습 데이터: {len(dataset['train'])}개")
-print(f"검증 데이터: {len(dataset['validation'])}개")
+    return training_dataset, validation_dataset
 
 
 # ============================================================
-# Dataset -> Prompt / Completion
+# QA Dataset Formatting
 # ============================================================
 
-def convert_to_prompt_completion(example):
+def format_training_example(sample):
     return {
         "prompt": [
             {
@@ -157,213 +114,394 @@ def convert_to_prompt_completion(example):
                 "content": (
                     "주어진 뉴스 본문을 읽고 질문에 답하세요. "
                     "정답만 간결하게 답하세요. /no_think\n\n"
-                    f"뉴스 본문:\n{example['context']}\n\n"
-                    f"질문:\n{example['question']}"
+                    f"뉴스 본문:\n{sample['context']}\n\n"
+                    f"질문:\n{sample['question']}"
                 ),
             }
         ],
         "completion": [
             {
                 "role": "assistant",
-                "content": example["answer"],
+                "content": sample["answer"],
             }
         ],
     }
 
 
-dataset = dataset.map(
-    convert_to_prompt_completion,
-    remove_columns=dataset["train"].column_names,
-)
+def prepare_training_dataset(dataset):
+    return dataset.map(
+        format_training_example,
+        batched=False,
+        remove_columns=dataset.column_names,
+    )
 
 
 # ============================================================
-# 4-bit Quantization
+# QLoRA
 # ============================================================
 
-print("===== Configuring 4-bit Quantization =====")
+def build_qlora_config(config):
+    quantization = config["quantization"]
 
-bnb_config = BitsAndBytesConfig(
-    load_in_4bit=QUANT_CONFIG["load_in_4bit"],
-    bnb_4bit_quant_type=QUANT_CONFIG["quant_type"],
-    bnb_4bit_compute_dtype=DTYPE_MAP[
-        QUANT_CONFIG["compute_dtype"]
-    ],
-    bnb_4bit_use_double_quant=QUANT_CONFIG["double_quant"],
-)
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=quantization["load_in_4bit"],
+        bnb_4bit_quant_type=quantization["quant_type"],
+        bnb_4bit_use_double_quant=quantization["double_quant"],
+        bnb_4bit_compute_dtype=DTYPE_MAP[
+            quantization["compute_dtype"]
+        ],
+    )
 
+    lora = config["lora"]
 
-# ============================================================
-# Load Model
-# ============================================================
+    lora_config = LoraConfig(
+        r=lora["rank"],
+        lora_alpha=lora["alpha"],
+        lora_dropout=lora["dropout"],
+        target_modules=lora["target_modules"],
+        bias=lora["bias"],
+        task_type=lora["task_type"],
+    )
 
-print(f"===== Loading {MODEL_ID} =====")
-
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_ID,
-    quantization_config=bnb_config,
-    dtype=MODEL_DTYPE,
-    device_map="auto",
-    use_safetensors=True,
-)
-
-model = prepare_model_for_kbit_training(model)
-
-model.config.use_cache = False
+    return quantization_config, lora_config
 
 
-# ============================================================
-# LoRA
-# ============================================================
-
-print("===== Configuring LoRA =====")
-
-peft_config = LoraConfig(
-    r=LORA_CONFIG["rank"],
-    lora_alpha=LORA_CONFIG["alpha"],
-    target_modules=LORA_CONFIG["target_modules"],
-    lora_dropout=LORA_CONFIG["dropout"],
-    bias=LORA_CONFIG["bias"],
-    task_type=LORA_CONFIG["task_type"],
-)
-
-model = get_peft_model(
+def apply_qlora_config(
     model,
-    peft_config,
-)
+    lora_config,
+    gradient_checkpointing,
+):
+    model = prepare_model_for_kbit_training(
+        model,
+        use_gradient_checkpointing=gradient_checkpointing,
+    )
+
+    model = get_peft_model(
+        model,
+        lora_config,
+    )
+
+    model.print_trainable_parameters()
+
+    model.config.use_cache = False
+
+    return model
 
 
-# Trainable parameters -> FP16
-for name, param in model.named_parameters():
-    if param.requires_grad:
-        param.data = param.data.to(torch.float16)
+# ============================================================
+# Model
+# ============================================================
+
+def build_model_config(config, quantization_config):
+    model = config["model"]
+
+    return {
+        "pretrained_model_name_or_path": model["name"],
+        "quantization_config": quantization_config,
+        "device_map": "auto",
+        "dtype": DTYPE_MAP[model["dtype"]],
+    }
 
 
-model.print_trainable_parameters()
+def load_model_and_tokenizer(model_config):
+    model = AutoModelForCausalLM.from_pretrained(
+        **model_config
+    )
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_config["pretrained_model_name_or_path"]
+    )
+
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    tokenizer.padding_side = "right"
+
+    return model, tokenizer
 
 
 # ============================================================
 # Training Config
 # ============================================================
 
-print("===== Configuring Training =====")
+def build_training_config(config):
+    training_config = config["training"]
+    evaluation_config = config["evaluation"]
+    checkpoint_config = config["checkpoint"]
 
-training_args = SFTConfig(
-    output_dir=str(CHECKPOINT_DIR),
+    return SFTConfig(
+        num_train_epochs=training_config["epochs"],
 
-    max_length=MODEL_CONFIG["max_sequence_length"],
+        per_device_train_batch_size=training_config[
+            "batch_size"
+        ],
 
-    num_train_epochs=TRAINING_CONFIG["epochs"],
+        learning_rate=training_config[
+            "learning_rate"
+        ],
 
-    per_device_train_batch_size=TRAINING_CONFIG[
-        "batch_size"
-    ],
+        gradient_accumulation_steps=training_config[
+            "gradient_accumulation_steps"
+        ],
 
-    gradient_accumulation_steps=TRAINING_CONFIG[
-        "gradient_accumulation_steps"
-    ],
+        logging_steps=training_config[
+            "logging_steps"
+        ],
 
-    learning_rate=TRAINING_CONFIG["learning_rate"],
+        optim=training_config["optim"],
 
-    fp16=TRAINING_CONFIG["fp16"],
-    bf16=TRAINING_CONFIG["bf16"],
+        gradient_checkpointing=training_config[
+            "gradient_checkpointing"
+        ],
 
-    max_grad_norm=TRAINING_CONFIG["max_grad_norm"],
+        dataloader_pin_memory=training_config[
+            "dataloader_pin_memory"
+        ],
 
-    logging_steps=TRAINING_CONFIG["logging_steps"],
+        report_to=training_config["report_to"],
 
-    eval_strategy=EVALUATION_CONFIG["strategy"],
-    eval_steps=EVALUATION_CONFIG["eval_steps"],
+        completion_only_loss=training_config[
+            "completion_only_loss"
+        ],
 
-    save_strategy=CHECKPOINT_CONFIG["save_strategy"],
-    save_steps=CHECKPOINT_CONFIG["save_steps"],
-    save_total_limit=CHECKPOINT_CONFIG["save_total_limit"],
+        disable_tqdm=training_config[
+            "disable_tqdm"
+        ],
 
-    load_best_model_at_end=EVALUATION_CONFIG[
-        "load_best_model_at_end"
-    ],
+        eval_strategy=evaluation_config[
+            "strategy"
+        ],
 
-    metric_for_best_model=EVALUATION_CONFIG[
-        "metric_for_best_model"
-    ],
+        eval_steps=evaluation_config[
+            "eval_steps"
+        ],
 
-    greater_is_better=EVALUATION_CONFIG[
-        "greater_is_better"
-    ],
+        load_best_model_at_end=evaluation_config[
+            "load_best_model_at_end"
+        ],
 
-    gradient_checkpointing=TRAINING_CONFIG[
-        "gradient_checkpointing"
-    ],
+        metric_for_best_model=evaluation_config[
+            "metric_for_best_model"
+        ],
 
-    optim=TRAINING_CONFIG["optim"],
+        greater_is_better=evaluation_config[
+            "greater_is_better"
+        ],
 
-    report_to=TRAINING_CONFIG["report_to"],
+        output_dir=str(
+            BASE_DIR / checkpoint_config["output_dir"]
+        ),
 
-    completion_only_loss=TRAINING_CONFIG[
-        "completion_only_loss"
-    ],
+        save_strategy=checkpoint_config[
+            "save_strategy"
+        ],
 
-    dataloader_pin_memory=TRAINING_CONFIG[
-        "dataloader_pin_memory"
-    ],
+        save_steps=checkpoint_config[
+            "save_steps"
+        ],
 
-    disable_tqdm=TRAINING_CONFIG[
-        "disable_tqdm"
-    ],
-)
+        save_total_limit=checkpoint_config[
+            "save_total_limit"
+        ],
+
+        max_length=config["model"][
+            "max_sequence_length"
+        ],
+
+        max_grad_norm=training_config[
+            "max_grad_norm"
+        ],
+
+        bf16=training_config["bf16"],
+
+        fp16=training_config["fp16"],
+    )
 
 
 # ============================================================
 # Trainer
 # ============================================================
 
-print("===== Creating Trainer =====")
-
-trainer = SFTTrainer(
-    model=model,
-    args=training_args,
-    train_dataset=dataset["train"],
-    eval_dataset=dataset["validation"],
-    processing_class=tokenizer,
-)
+def apply_training_config(
+    model,
+    tokenizer,
+    training_dataset,
+    validation_dataset,
+    training_args,
+):
+    return SFTTrainer(
+        model=model,
+        args=training_args,
+        processing_class=tokenizer,
+        train_dataset=training_dataset,
+        eval_dataset=validation_dataset,
+        callbacks=[
+            StepTimerCallback()
+        ],
+    )
 
 
 # ============================================================
 # Training
 # ============================================================
 
-print()
-print("==============================================")
-print(f"       {MODEL_ID} QLoRA Training Start")
-print("==============================================")
-print()
+def train(trainer, config):
+    resume_from_checkpoint = config["training"][
+        "resume_from_checkpoint"
+    ]
 
-resume_checkpoint = TRAINING_CONFIG["resume_from_checkpoint"]
+    if isinstance(
+        resume_from_checkpoint,
+        str,
+    ):
+        resume_from_checkpoint = str(
+            BASE_DIR / resume_from_checkpoint
+        )
 
-if resume_checkpoint:
     trainer.train(
-        resume_from_checkpoint=resume_checkpoint
+        resume_from_checkpoint=resume_from_checkpoint
     )
-else:
-    trainer.train()
+
+    print(
+        f"    Best checkpoint: "
+        f"{trainer.state.best_model_checkpoint}"
+    )
+
+    print(
+        f"    Best eval loss: "
+        f"{trainer.state.best_metric}"
+    )
 
 
 # ============================================================
-# Training Finished
+# Main
 # ============================================================
 
-print()
-print("==============================================")
-print("            Training Finished")
-print("==============================================")
-print()
+if __name__ == "__main__":
 
-print(
-    f"Best checkpoint : "
-    f"{trainer.state.best_model_checkpoint}"
-)
+    parser = argparse.ArgumentParser()
 
-print(
-    f"Best eval loss  : "
-    f"{trainer.state.best_metric}"
-)
+    parser.add_argument(
+        "--sample",
+        type=int,
+        default=None,
+        help="학습/검증 데이터에서 사용할 샘플 수",
+    )
+
+    args = parser.parse_args()
+
+    print(
+        "1. Loading config...",
+        flush=True,
+    )
+
+    config = load_config()
+
+    print(
+        "\n2. Loading datasets...",
+        flush=True,
+    )
+
+    training_dataset, validation_dataset = load_datasets(
+        config,
+        args.sample,
+    )
+
+    print(
+        f"    Training samples: "
+        f"{len(training_dataset)}"
+    )
+
+    print(
+        f"    Validation samples: "
+        f"{len(validation_dataset)}"
+    )
+
+    print(
+        "\n3. Formatting datasets...",
+        flush=True,
+    )
+
+    training_dataset = prepare_training_dataset(
+        training_dataset
+    )
+
+    validation_dataset = prepare_training_dataset(
+        validation_dataset
+    )
+
+    print(
+        "\n4. Configuring QLoRA...",
+        flush=True,
+    )
+
+    quantization_config, lora_config = (
+        build_qlora_config(config)
+    )
+
+    print(
+        "\n5. Configuring model...",
+        flush=True,
+    )
+
+    model_config = build_model_config(
+        config,
+        quantization_config,
+    )
+
+    print(
+        "\n6. Configuring training...",
+        flush=True,
+    )
+
+    training_args = build_training_config(
+        config
+    )
+
+    print(
+        "\n7. Loading model and tokenizer...",
+        flush=True,
+    )
+
+    model, tokenizer = load_model_and_tokenizer(
+        model_config
+    )
+
+    print(
+        "\n8. Applying QLoRA config...",
+        flush=True,
+    )
+
+    model = apply_qlora_config(
+        model,
+        lora_config,
+        training_args.gradient_checkpointing,
+    )
+
+    print(
+        "\n9. Creating trainer and tokenizing datasets...",
+        flush=True,
+    )
+
+    trainer = apply_training_config(
+        model,
+        tokenizer,
+        training_dataset,
+        validation_dataset,
+        training_args,
+    )
+
+    print(
+        "\n10. Starting training...",
+        flush=True,
+    )
+
+    train(
+        trainer,
+        config,
+    )
+
+    print(
+        "\n11. Finished!",
+        flush=True,
+    )
