@@ -9,7 +9,7 @@ from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
-    TrainerCallback,
+    TrainerCallback
 )
 from trl import SFTConfig, SFTTrainer
 
@@ -39,6 +39,7 @@ class StepTimerCallback(TrainerCallback):
         )
 
         self.last_time = now
+
 
 def load_config():
     with (BASE_DIR / "config.yaml").open(encoding="utf-8") as file:
