@@ -39,7 +39,7 @@ training:
   epochs: 1
   batch_size: 4
   learning_rate: 0.0001
-  gradient_accumulation_steps: 4 # 단일 GPU 기준 유효 배치: 4 × 4 = 16
+  gradient_accumulation_steps: 2 # 단일 GPU 기준 유효 배치: 4 × 4 = 16
   logging_steps: 1
   max_train_samples: 400
   max_validation_samples: 100
