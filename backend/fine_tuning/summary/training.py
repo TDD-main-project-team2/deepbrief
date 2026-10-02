@@ -9,6 +9,7 @@ from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
+    TrainerCallback
 )
 from trl import SFTConfig, SFTTrainer
 
@@ -19,6 +20,25 @@ DTYPE_MAP = {
     "bfloat16": torch.bfloat16,
     "float32": torch.float32,
 }
+
+class StepTimerCallback(TrainerCallback):
+    def __init__(self):
+        self.last_time = time.time()
+
+    def on_step_end(self, args, state, control, **kwargs):
+        now = time.time()
+        elapsed = now - self.last_time
+
+        total_steps = state.max_steps
+        current_step = state.global_step
+        progress = (current_step / total_steps) * 100
+
+        print(
+            f"Step {current_step}/{total_steps} "
+            f"({progress:.1f}%) - {elapsed:.2f}s"
+        )
+
+        self.last_time = now
 
 
 def load_config():
@@ -175,6 +195,7 @@ def apply_training_config(
         processing_class=tokenizer,
         train_dataset=training_dataset,
         eval_dataset=validation_dataset,
+        callbacks=[StepTimerCallback()]
     )
 
 
