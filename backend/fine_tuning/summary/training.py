@@ -161,6 +161,8 @@ def build_training_config(config):
         save_steps=checkpoint_config["save_steps"],
         save_total_limit=checkpoint_config["save_total_limit"],
         max_length=config["model"]["max_sequence_length"],
+        bf16=training_config["bf16"],
+        fp16=training_config["fp16"]
     )
 
 

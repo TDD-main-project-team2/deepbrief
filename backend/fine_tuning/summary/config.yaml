@@ -50,6 +50,8 @@ training:
   resume_from_checkpoint: null # 저장된 체크포인트에서 학습을 이어갈지 정하는 옵션
   completion_only_loss: true
   disable_tqdm: false
+  bf16: false,
+  fp16: false,
 
 checkpoint:
   output_dir: checkpoints
