@@ -40,7 +40,6 @@ LORA_CONFIG = config["lora"]
 TRAINING_CONFIG = config["training"]
 CHECKPOINT_CONFIG = config["checkpoint"]
 EVALUATION_CONFIG = config["evaluation"]
-OUTPUT_CONFIG = config["output"]
 
 
 # ============================================================
@@ -77,10 +76,6 @@ VALIDATION_PATH = resolve_path(DATASET_CONFIG["validation_path"])
 
 CHECKPOINT_DIR = resolve_path(
     CHECKPOINT_CONFIG["output_dir"]
-)
-
-BEST_ADAPTER_DIR = resolve_path(
-    OUTPUT_CONFIG["best_adapter_dir"]
 )
 
 
@@ -371,26 +366,4 @@ print(
 print(
     f"Best eval loss  : "
     f"{trainer.state.best_metric}"
-)
-
-
-# ============================================================
-# Save Best Adapter
-# ============================================================
-
-print()
-print("===== Saving Best Adapter =====")
-
-BEST_ADAPTER_DIR.mkdir(
-    parents=True,
-    exist_ok=True,
-)
-
-trainer.save_model(
-    str(BEST_ADAPTER_DIR)
-)
-
-print(
-    f"Best Adapter saved to: "
-    f"{BEST_ADAPTER_DIR}"
 )
