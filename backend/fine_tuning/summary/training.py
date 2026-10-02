@@ -92,7 +92,7 @@ def build_qlora_config(config):
 
 def apply_qlora_config(model, lora_config, gradient_checkpointing):
     model = prepare_model_for_kbit_training(
-        model
+        model, use_gradient_checkpointing=gradient_checkpointing
     )
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
