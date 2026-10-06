@@ -41,7 +41,7 @@ CREATE TABLE public.articles (
     source_url TEXT,
     category TEXT,
     language TEXT,
-    collected_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE public.url_articles (
