@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Identity, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
-class Conversation():
+class User():
     __tablename__ = "users"
     __table_args__ = {"schema": "public"}
 
