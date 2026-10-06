@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Identity, String, text
+from sqlalchemy import BigInteger, DateTime, Identity, String, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 class User():
