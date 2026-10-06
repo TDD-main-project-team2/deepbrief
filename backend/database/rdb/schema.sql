@@ -10,7 +10,7 @@ CREATE TABLE public.users (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE public.conversation (
+CREATE TABLE public.conversations (
     conversation_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES public.users (user_id),
     title TEXT NOT NULL CHECK (btrim(title) <> ''),
@@ -19,9 +19,9 @@ CREATE TABLE public.conversation (
 );
 
 
-CREATE TABLE public.message (
+CREATE TABLE public.messages (
     message_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    conversation_id BIGINT NOT NULL REFERENCES public.conversation (conversation_id),
+    conversation_id BIGINT NOT NULL REFERENCES public.conversations (conversation_id),
     role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
     content TEXT NOT NULL CHECK (btrim(content) <> ''),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -44,7 +44,7 @@ CREATE TABLE public.articles (
     collected_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE public.url_article (
+CREATE TABLE public.url_articles (
     input_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES public.users (user_id),
     article_id BIGINT REFERENCES public.articles (article_id),
@@ -52,7 +52,7 @@ CREATE TABLE public.url_article (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE public.file_article (
+CREATE TABLE public.file_articles (
     input_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES public.users (user_id),
     article_id BIGINT REFERENCES public.articles (article_id),
@@ -84,7 +84,7 @@ BEFORE UPDATE ON public.users
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 CREATE TRIGGER conversations_set_updated_at
-BEFORE UPDATE ON public.conversation
+BEFORE UPDATE ON public.conversations
 FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 COMMIT;
