@@ -5,7 +5,7 @@ CREATE TABLE public.users (
     user_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     email TEXT NOT NULL CHECK (email = btrim(email) AND email <> ''),
     password_hash TEXT NOT NULL CHECK (password_hash <> ''),
-    display_name TEXT NOT NULL CHECK (btrim(display_name) <> ''),
+    nickname TEXT NOT NULL CHECK (btrim(nickname) <> ''),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
