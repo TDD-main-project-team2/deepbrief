@@ -27,6 +27,14 @@ CREATE TABLE public.messages (
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE public.refresh_tokens (
+    refresh_token_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES public.users (user_id),
+    token_hash TEXT NOT NULL CHECK (token_hash <> ''),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expired_at TIMESTAMPTZ NOT NULL
+);
+
 
 -- ARTICLES
 CREATE TABLE public.articles (
