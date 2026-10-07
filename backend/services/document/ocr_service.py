@@ -28,6 +28,8 @@ IMAGE = {"image", "figure", "chart", "seal"}
 SENTENCE_END = ".!?…\"”’)"
 GROUP_GAP = 15                               # 순서 없는 영역(표 제목·표·각주)을 한 묶음으로 보는 세로 간격 (pt)
 CAPTION_GAP = 20                             # 사진 바로 밑 설명글로 보는 세로 간격 (pt)
+IMAGE_TEXT = {"table", "text", "paragraph_title", "figure_title", "vision_footnote"}     # 이미지 속에서 글로 읽을 영역
+IMAGE_PAD = 3                                # 이미지 속 글을 잘라낼 때 이웃 영역과 띄우는 간격 (pt)
 
 
 class OcrServiceError(Exception):
@@ -230,6 +232,33 @@ def _continued(line, boxes):
     return None
 
 
+def _read_image_text(page, boxes, result, tmp):
+    """글자 정보 없이 이미지로만 들어 있는 표와 글을 OCR로 읽는다. 읽은 영역들은 그 자리의 영역 하나로 바꾼다.
+    이미지 안에 표가 있거나 글 영역이 둘 이상일 때만 읽는다. (하나뿐인 글 영역은 아이콘·배너인 경우가 많다.)"""
+    images = sorted((pymupdf.Rect(info["bbox"]) for info in page.get_image_info()), key=lambda rect: rect.get_area())
+    for number, image in enumerate(images):
+        inside = [b for b in boxes if not b["lines"] and b["label"] in IMAGE_TEXT
+                  and (b["rect"] & image).get_area() > b["rect"].get_area() * 0.8]
+        labels = [b["label"] for b in inside]
+        if "table" not in labels and labels.count("text") + labels.count("paragraph_title") < 2:
+            continue
+        area = pymupdf.Rect(inside[0]["rect"])
+        for box in inside:
+            area |= box["rect"]
+        others = [b["rect"] for b in boxes if not any(b is box for box in inside) and _x_overlap(b["rect"], area)]
+        top = max([image.y0] + [r.y1 for r in others if r.y1 <= area.y0 + IMAGE_PAD])       # 영역으로 잡히지 않은 제목·머리글까지
+        bottom = min([image.y1] + [r.y0 for r in others if r.y0 >= area.y1 - IMAGE_PAD])    # 넓히되, 사진 같은 이웃 영역은 넘지 않는다
+        clip = pymupdf.Rect(min(image.x0, area.x0), min(top + IMAGE_PAD, area.y0),
+                            max(image.x1, area.x1), max(bottom - IMAGE_PAD, area.y1)) & page.rect
+        path = Path(tmp) / f"region{number}.png"
+        page.get_pixmap(matrix=pymupdf.Matrix(SCALE, SCALE), clip=clip, alpha=False).save(path)
+        result.ocr_used = True
+        orders = [b["order"] for b in inside if b["order"] is not None]
+        boxes[:] = [b for b in boxes if not any(b is box for box in inside)]
+        boxes.append({"label": "image_text", "order": min(orders, default=None), "rect": area, "lines": [],
+                      "blocks": _ocr(path)})
+
+
 def _extract_page(page, result, tmp):
     """한 쪽의 본문 문단 목록 [{text, full}]을 돌려준다. 제목과 뺀 글은 result에 넣는다."""
     lines = _read_lines(page)
@@ -260,11 +289,15 @@ def _extract_page(page, result, tmp):
             owner["lines"].append(line)
         else:
             result.excluded_text.append(line[0].strip())
+    _read_image_text(page, boxes, result, tmp)
     images = [b["rect"] for b in boxes if b["label"] in IMAGE]
 
     body = []
     for box in _reading_order(boxes):
         label, own = box["label"], box["lines"]
+        if label == "image_text":                             # 이미지에서 OCR로 읽은 표와 글
+            body += [{"text": text, "full": False} for _, text in box["blocks"]]
+            continue
         if not own:
             continue
         caption = label == "vision_footnote" and any(                         # 사진 바로 밑 설명글
