@@ -2,6 +2,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models.article_chunk import ArticleChunk
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class VectorDB:
     def __init__(self):
