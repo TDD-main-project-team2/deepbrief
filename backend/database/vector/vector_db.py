@@ -5,7 +5,7 @@ import os
 
 class VectorDB:
     def __init__(self):
-        db_url = os.getenv("DB_URL")
+        db_url = os.getenv("DATABASE_URL")
         self.engine = create_engine(db_url)
         self.SessionLocal = sessionmaker(bind=self.engine)
 
