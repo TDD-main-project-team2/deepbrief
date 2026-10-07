@@ -1,0 +1,62 @@
+## DB 구조 변경 방법
+
+프로젝트 루트에서 가상환경을 활성화하고,
+`DATABASE_URL`이 적용할 DB를 가리키는지 확인합니다.
+
+### 1. 모델 수정
+
+`backend/models/`의 해당 모델을 수정합니다.
+
+예: `Article`에 NULL을 허용하는 요약 컬럼 추가
+
+```python
+summary: Mapped[str | None] = mapped_column(Text)
+```
+
+### 2. 마이그레이션 생성
+
+```bash
+python -m alembic revision --autogenerate -m "수행한 작업에 대한 메시지"
+```
+
+### 3. 생성된 파일 검토
+
+`backend/alembic/versions/`에 생성된 파일의
+`upgrade()`와 `downgrade()`를 확인합니다.
+
+- 의도하지 않은 테이블·컬럼 삭제가 없는지 확인
+- 이름 변경이 삭제·추가로 생성되지 않았는지 확인
+- CHECK·인덱스 등 필요한 제약조건 확인
+- 함수·트리거 변경은 직접 작성
+
+### 4. DB에 적용
+
+```bash
+python -m alembic upgrade head
+python -m alembic current
+```
+
+### 5. Git에 공유
+
+모델과 새 마이그레이션 파일을 함께 커밋합니다.
+이미 적용한 마이그레이션은 수정하지 않고 새 파일로 변경을 추가합니다.
+
+## 팀원이 작성한 변경 적용
+
+코드를 가져온 뒤 기존 마이그레이션을 적용합니다.
+새 마이그레이션을 생성할 필요는 없습니다.
+
+```bash
+git pull
+python -m alembic upgrade head
+```
+
+공용 DB는 담당자 한 명이 적용합니다.
+
+## 파일 설명
+
+- **`alembic.ini`**: Alembic 실행 환경을 설정하는 파일(마이그레이션 경로와 로깅 등)
+- **`backend/alembic/env.py`**: DB에 연결하고 모델 메타데이터를 불러와 마이그레이션 실행을 준비하는 코드
+- **`backend/alembic/script.py.mako`**: 새 마이그레이션 파일을 생성할 때 사용하는 템플릿 파일
+- **`backend/alembic/README`**: Alembic 구성과 마이그레이션 생성·적용 절차를 안내하는 파일
+- **`backend/alembic/versions/*.py`**: `upgrade()`와 `downgrade()`로 DB 구조 변경과 되돌리기를 정의하는 마이그레이션 파일
