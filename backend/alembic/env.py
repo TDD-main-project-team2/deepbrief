@@ -21,7 +21,6 @@ from sqlalchemy import pool
 from alembic import context
 
 config = context.config
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv()
 
 config.set_main_option(
