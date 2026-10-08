@@ -39,6 +39,6 @@ lerna-debug.log*
 uploads/
 
 **/data/raw
-
+**/checkpoints/
 # Jupyter notebooks
 *.ipynb
