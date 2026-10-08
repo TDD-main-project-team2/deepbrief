@@ -3,6 +3,7 @@ import torch
 from pathlib import Path
 import yaml
 import json
+import time
 from tqdm import tqdm
 from datasets import Dataset
 from transformers import (
@@ -19,11 +20,27 @@ DTYPE_MAP = {
 
 BASE_DIR = Path(__file__).resolve().parent
 
+class StepTimer:
+    def __init__(self):
+        self.last_time = time.time()
+
+    def print_step(self, current_step, total_steps):
+        now = time.time()
+        elapsed = now - self.last_time
+        self.last_time = now
+
+        progress = (current_step / total_steps) * 100
+
+        print(
+            f"Step {current_step}/{total_steps} "
+            f"({progress:.1f}%) - {elapsed:.2f}s"
+        )
+
 def load_config():
     with (BASE_DIR / "config.yaml").open(encoding="utf-8") as file:
         return yaml.safe_load(file)
 
-def load_golden_dataset(config, sample_limit=None):
+def load_golden_dataset(config, sample_limit=100):
     data_path = BASE_DIR / config["dataset"]["golden_path"]
     with data_path.open(encoding="utf-8") as file:
         data = json.load(file)
@@ -137,7 +154,12 @@ def evaluate_sample(model, tokenizer, sample):
 def evaluate_dataset(model, tokenizer, golden_dataset):
     model.eval()
     results = []
-    for sample in tqdm(golden_dataset, desc="Evaluating"):
+    timer = StepTimer()
+    total_steps = len(golden_dataset)
+    for current_step, sample in enumerate(
+        tqdm(golden_dataset, desc="Evaluating"),
+        start=1,
+    ):        
         result = evaluate_sample(
             model,
             tokenizer,
