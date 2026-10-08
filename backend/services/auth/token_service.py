@@ -19,7 +19,24 @@ class TokenExpiredError(TokenValidationError):
 
 
 def create_token_pair(user_id: int, db: Session) -> dict[str, str]:
-    """인증된 사용자의 토큰을 발급한다. 호출자가 트랜잭션을 커밋해야 한다."""
+    """리프레시/액세스 토큰을 발급하고 리프레시 토큰 해시를 DB에 저장한다.
+
+    Args:
+        user_id (int): 로그인 인증에 성공한 사용자의 DB 기본키.
+        db (Session): 리프레시 토큰 기록을 저장할 DB 세션.
+
+    Returns:
+        dict[str, str]: access_token은 액세스 토큰 JWT 문자열, 
+        refresh_token은 리프레시 토큰 원본 문자열인 딕셔너리.
+
+    Raises:
+        RuntimeError: JWT_SECRET_KEY 환경변수가 설정되지 않은 경우.
+        SQLAlchemyError: 리프레시 토큰 기록 저장에 실패한 경우.
+
+    Notes:
+        리프레시 토큰의 DB 만료 시각은 발급 시각으로부터 7일이다.
+        호출자가 성공 시 commit(), 실패 시 rollback()을 수행해야 한다.
+    """
 
     access_token = _create_access_token(user_id)
     refresh_token = _create_refresh_token()
@@ -40,7 +57,17 @@ def create_token_pair(user_id: int, db: Session) -> dict[str, str]:
 
 
 def _create_access_token(user_id: int) -> str:
-    """사용자 ID를 문자열 sub로 담은 액세스 토큰을 생성한다."""
+    """DB 사용자 ID를 담은 액세스 토큰을 생성한다.
+
+    Args:
+        user_id (int): 액세스 토큰의 sub에 문자열로 저장할 DB 사용자 ID.
+
+    Returns:
+        str: HS256으로 서명한 유효기간 15분의 액세스 토큰 JWT 문자열.
+
+    Raises:
+        RuntimeError: JWT_SECRET_KEY 환경변수가 설정되지 않은 경우.
+    """
 
     secret_key = os.getenv("JWT_SECRET_KEY")
     if not secret_key:
@@ -56,8 +83,37 @@ def _create_access_token(user_id: int) -> str:
     return jwt.encode(payload, secret_key, algorithm="HS256")
 
 
+def _create_refresh_token() -> str:
+    """암호학적 난수로 리프레시 토큰 원본을 생성한다.
+
+    Returns:
+        str: 32바이트 난수를 URL-safe 형식으로 인코딩한 리프레시 토큰 원본.
+
+    Notes:
+        리프레시 토큰 해시와 만료 시각은 발급 함수에서 DB에 저장한다.
+    """
+
+    return secrets.token_urlsafe(32)
+
+
 def verify_access_token(token: str) -> int:
-    """액세스 토큰을 검증하고 사용자 ID를 반환한다."""
+    """액세스 토큰의 서명, 만료 시각, 종류 및 사용자 ID를 검증한다.
+
+    Args:
+        token (str): 클라이언트가 전달한 액세스 토큰 JWT 문자열.
+
+    Returns:
+        int: 액세스 토큰의 sub에서 추출한 DB 사용자 ID.
+
+    Raises:
+        RuntimeError: JWT_SECRET_KEY 환경변수가 설정되지 않은 경우.
+        TokenExpiredError: 액세스 토큰이 만료된 경우.
+        TokenValidationError: 액세스 토큰이 없거나 서명, 형식, 필수 정보,
+            종류 또는 사용자 ID가 유효하지 않은 경우.
+
+    Notes:
+        반환된 DB 사용자 ID의 실제 존재 여부는 별도로 확인해야 한다.
+    """
 
     secret_key = os.getenv("JWT_SECRET_KEY")
     if not secret_key:
@@ -92,16 +148,29 @@ def verify_access_token(token: str) -> int:
     return user_id
 
 
-def _create_refresh_token() -> str:
-    """암호학적 난수로 리프레시 토큰 원본을 생성한다."""
-
-    return secrets.token_urlsafe(32)
-
-
 def _verify_refresh_token(
     refresh_token: str, db: Session, *, for_update: bool = False
 ) -> int:
-    """토큰 해시로 DB 기록을 조회하고 만료·폐기 여부를 검증한 뒤 사용자 ID를 반환한다."""
+    """리프레시 토큰 해시와 DB 기록의 존재 및 만료 여부를 검증한다.
+
+    Args:
+        refresh_token (str): 클라이언트가 전달한 리프레시 토큰 원본 문자열.
+        db (Session): 리프레시 토큰 기록을 조회할 DB 세션.
+        for_update (bool): True이면 조회할 DB 기록에 행 잠금을 적용한다.
+            기본값은 False이며, 키워드 인자로만 전달한다.
+
+    Returns:
+        int: 리프레시 토큰 DB 기록에 저장된 사용자 ID.
+
+    Raises:
+        TokenExpiredError: 리프레시 토큰의 DB 만료 시각이 지난 경우.
+        TokenValidationError: 리프레시 토큰이 없거나 일치하는 DB 기록이 없는 경우.
+        SQLAlchemyError: DB 조회에 실패하거나 일치하는 기록이 여러 개인 경우.
+
+    Notes:
+        리프레시 토큰 폐기는 DB 기록 삭제로 처리한다.
+        행 잠금은 호출자의 트랜잭션이 끝날 때까지 유지된다.
+    """
 
     if not isinstance(refresh_token, str) or not refresh_token:
         raise TokenValidationError("리프레시 토큰이 없습니다.")
@@ -121,7 +190,26 @@ def _verify_refresh_token(
 
 
 def renew_token_pair(refresh_token: str, db: Session) -> dict[str, str]:
-    """기존 토큰을 잠그고 검증한 뒤 교체한다. 호출자가 커밋/롤백해야 한다."""
+    """리프레시 토큰을 검증하고 새로운 리프레시/액세스 토큰으로 교체한다.
+
+    Args:
+        refresh_token (str): 갱신에 사용할 리프레시 토큰 원본 문자열.
+        db (Session): 기존 리프레시 토큰 삭제와 새 기록 저장에 사용할 DB 세션.
+
+    Returns:
+        dict[str, str]: 새로운 access_token JWT 문자열과 refresh_token 원본 문자열을 담은 딕셔너리.
+
+    Raises:
+        TokenExpiredError: 기존 리프레시 토큰이 만료된 경우.
+        TokenValidationError: 기존 리프레시 토큰이 없거나 유효하지 않은 경우.
+        RuntimeError: JWT_SECRET_KEY 환경변수가 설정되지 않은 경우.
+        SQLAlchemyError: 리프레시 토큰 조회, 삭제 또는 저장에 실패한 경우.
+
+    Notes:
+        기존 리프레시 토큰 기록을 잠근 뒤 삭제하고 새 기록을 저장한다.
+        호출자가 성공 시 commit(), 실패 시 rollback()을 수행해야 한다.
+        새로운 리프레시/액세스 토큰은 커밋 성공 후 클라이언트에 전달한다.
+    """
 
     user_id = _verify_refresh_token(refresh_token, db, for_update=True)
     delete_refresh_token(refresh_token, db)
@@ -130,7 +218,23 @@ def renew_token_pair(refresh_token: str, db: Session) -> dict[str, str]:
 
 
 def delete_refresh_token(refresh_token: str, db: Session) -> None:
-    """특정 토큰을 삭제한다. 호출자가 커밋해야 한다."""
+    """만료 여부와 관계없이 특정 리프레시 토큰의 DB 기록을 삭제한다.
+
+    Args:
+        refresh_token (str): 삭제할 리프레시 토큰 원본 문자열.
+        db (Session): 리프레시 토큰 기록을 삭제할 DB 세션.
+
+    Returns:
+        None: 반환값 없음.
+
+    Raises:
+        TokenValidationError: 리프레시 토큰이 없거나 문자열이 아닌 경우.
+        SQLAlchemyError: 리프레시 토큰 기록 삭제에 실패한 경우.
+
+    Notes:
+        일치하는 기록이 없어도 정상 종료한다.
+        호출자가 성공 시 commit(), 실패 시 rollback()을 수행해야 한다.
+    """
 
     if not isinstance(refresh_token, str) or not refresh_token:
         raise TokenValidationError("리프레시 토큰이 없습니다.")
@@ -140,7 +244,20 @@ def delete_refresh_token(refresh_token: str, db: Session) -> None:
 
 
 def delete_expired_refresh_tokens(db: Session) -> int:
-    """만료 기록을 삭제하고 삭제 건수를 반환한다. 호출자가 커밋해야 한다."""
+    """현재 UTC 시각에 만료된 리프레시 토큰의 DB 기록을 모두 삭제한다.
+
+    Args:
+        db (Session): 만료된 리프레시 토큰 기록을 삭제할 DB 세션.
+
+    Returns:
+        int: 삭제된 리프레시 토큰 기록 수. 삭제 대상이 없으면 0.
+
+    Raises:
+        SQLAlchemyError: 만료된 리프레시 토큰 기록 삭제에 실패한 경우.
+
+    Notes:
+        호출자가 성공 시 commit(), 실패 시 rollback()을 수행해야 한다.
+    """
 
     result = db.execute(
         delete(RefreshToken).where(
