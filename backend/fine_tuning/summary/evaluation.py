@@ -77,7 +77,7 @@ def load_model_and_tokenizer(model_config):
     return model, tokenizer
 
 def load_adapter(model, config):
-    adapter_path = BASE_DIR / config["checkpoint"]["output_dir"]
+    adapter_path = BASE_DIR / config["checkpoint"]["target_adapter_dir"]
     return PeftModel.from_pretrained(
         model,
         adapter_path

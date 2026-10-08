@@ -55,7 +55,8 @@ training:
   fp16: false
 
 checkpoint:
-  output_dir: checkpoints/checkpoint-250
+  output_dir: checkpoints
+  target_adapter_dir: checkpoints/target_adapter
   save_strategy: steps
   save_steps: 250
   save_total_limit: 5
