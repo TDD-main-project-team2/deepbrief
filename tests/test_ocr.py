@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from backend.services.document import ocr_service
 from pathlib import Path
@@ -54,6 +55,41 @@ def test_extract_scan_png():
     output_path.write_text(result.text, encoding="utf-8")
 
     assert result.ocr_used is True
+
+def test_extract_pdf_with_images():
+    path = TEST_FILES / "성남·과천·동탄은 흥행, 외곽은 미달…경기 청약 양극화.pdf"
+    result = ocr_service.extract_document(
+        path.read_bytes(),
+        path.name
+    )
+    output_path = get_next_result_path("result_pdf_with_images")
+    output_path.write_text(result.text, encoding="utf-8")
+
+    assert result.ocr_used is True
+
+def test_extract_unsupported():
+    path = TEST_FILES / "OOO_경력소개서.docx"
+    with pytest.raises(ocr_service.UnsupportedFormatError):
+        ocr_service.extract_document(
+            path.read_bytes(),
+            path.name
+        )
+
+def test_ocr_engine_failure():
+    with patch(
+        "backend.services.document.ocr_service._paddleocr",
+        side_effect=RuntimeError("OCR engine failed")
+    ):
+        with pytest.raises(ocr_service.OcrError):
+            ocr_service._ocr(Path("fake.png"))
+
+def test_extract_corrupt_pdf():
+    path = TEST_FILES / "sample-corrupted.pdf"
+    with pytest.raises(ocr_service.InvalidFileError):
+        ocr_service.extract_document(
+            path.read_bytes(),
+            path.name
+        )
 
 def test_clean_ocr():
     input_text = "Hello world\n\n\nTest"
