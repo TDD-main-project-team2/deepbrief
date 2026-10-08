@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 
 import jwt
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from backend.models.refresh_token import RefreshToken
@@ -98,16 +98,19 @@ def _create_refresh_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-def _verify_refresh_token(refresh_token: str, db: Session) -> int:
+def _verify_refresh_token(
+    refresh_token: str, db: Session, *, for_update: bool = False
+) -> int:
     """토큰 해시로 DB 기록을 조회하고 만료·폐기 여부를 검증한 뒤 사용자 ID를 반환한다."""
 
     if not isinstance(refresh_token, str) or not refresh_token:
         raise TokenValidationError("리프레시 토큰이 없습니다.")
 
     token_hash = sha256(refresh_token.encode("utf-8")).hexdigest()
-    record = db.execute(
-        select(RefreshToken).where(RefreshToken.token_hash == token_hash)
-    ).scalar_one_or_none()
+    query = select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+    if for_update:
+        query = query.with_for_update()
+    record = db.execute(query).scalar_one_or_none()
 
     if record is None:
         raise TokenValidationError("유효하지 않거나 폐기된 리프레시 토큰입니다.")
@@ -118,15 +121,31 @@ def _verify_refresh_token(refresh_token: str, db: Session) -> int:
 
 
 def renew_token_pair(refresh_token: str, db: Session) -> dict[str, str]:
-    """리프레시 토큰을 검증하고 기존 토큰 폐기와 새 토큰 저장을 원자적으로 처리한다."""
-    pass
+    """기존 토큰을 잠그고 검증한 뒤 교체한다. 호출자가 커밋/롤백해야 한다."""
+
+    user_id = _verify_refresh_token(refresh_token, db, for_update=True)
+    delete_refresh_token(refresh_token, db)
+
+    return create_token_pair(user_id, db)
 
 
-def revoke_refresh_token(refresh_token: str, db: Session) -> None:
-    """로그아웃 시 해당 리프레시 토큰을 폐기한다."""
-    pass
+def delete_refresh_token(refresh_token: str, db: Session) -> None:
+    """특정 토큰을 삭제한다. 호출자가 커밋해야 한다."""
+
+    if not isinstance(refresh_token, str) or not refresh_token:
+        raise TokenValidationError("리프레시 토큰이 없습니다.")
+
+    token_hash = sha256(refresh_token.encode("utf-8")).hexdigest()
+    db.execute(delete(RefreshToken).where(RefreshToken.token_hash == token_hash))
 
 
 def delete_expired_refresh_tokens(db: Session) -> int:
-    """만료된 리프레시 토큰 기록을 삭제하고 삭제 건수를 반환한다."""
-    pass
+    """만료 기록을 삭제하고 삭제 건수를 반환한다. 호출자가 커밋해야 한다."""
+
+    result = db.execute(
+        delete(RefreshToken).where(
+            RefreshToken.expired_at <= datetime.now(timezone.utc)
+        )
+    )
+
+    return result.rowcount
