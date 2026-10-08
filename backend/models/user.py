@@ -21,6 +21,6 @@ class User(Base):
         {"schema": "public"},
     )
 
-    email: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     nickname: Mapped[str] = mapped_column(String(255), nullable=False)
