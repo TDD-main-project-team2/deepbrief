@@ -6,6 +6,7 @@ __pycache__/
 # 환경 변수
 .env
 .env.*
+!.env.example
 
 # Frontend
 node_modules/
