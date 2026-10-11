@@ -57,7 +57,7 @@ def create_token_pair(user_id: int, db: Session) -> dict[str, str]:
 
 
 def _create_access_token(user_id: int) -> str:
-    """DB 사용자 ID를 담은 액세스 토큰을 생성한다.
+    """액세스 토큰을 생성한다.
 
     Args:
         user_id (int): 액세스 토큰의 sub에 문자열로 저장할 DB 사용자 ID.
@@ -84,10 +84,16 @@ def _create_access_token(user_id: int) -> str:
 
 
 def _create_refresh_token() -> str:
-    """암호학적 난수로 리프레시 토큰 원본을 생성한다.
+    """리프레시 토큰(원본)을 생성한다.
+
+    Args:
+        None
 
     Returns:
         str: 32바이트 난수를 URL-safe 형식으로 인코딩한 리프레시 토큰 원본.
+
+    Raises:
+        None
 
     Notes:
         리프레시 토큰 해시와 만료 시각은 발급 함수에서 DB에 저장한다.
@@ -97,7 +103,7 @@ def _create_refresh_token() -> str:
 
 
 def verify_access_token(token: str) -> int:
-    """액세스 토큰의 서명, 만료 시각, 종류 및 사용자 ID를 검증한다.
+    """액세스 토큰을 검증한다.
 
     Args:
         token (str): 클라이언트가 전달한 액세스 토큰 JWT 문자열.
@@ -151,7 +157,7 @@ def verify_access_token(token: str) -> int:
 def _verify_refresh_token(
     refresh_token: str, db: Session, *, for_update: bool = False
 ) -> int:
-    """리프레시 토큰 해시와 DB 기록의 존재 및 만료 여부를 검증한다.
+    """리프레시 토큰을 검증한다.
 
     Args:
         refresh_token (str): 클라이언트가 전달한 리프레시 토큰 원본 문자열.
@@ -218,14 +224,14 @@ def renew_token_pair(refresh_token: str, db: Session) -> dict[str, str]:
 
 
 def delete_refresh_token(refresh_token: str, db: Session) -> None:
-    """만료 여부와 관계없이 특정 리프레시 토큰의 DB 기록을 삭제한다.
+    """특정 리프레시 토큰의 DB 기록을 삭제한다.
 
     Args:
         refresh_token (str): 삭제할 리프레시 토큰 원본 문자열.
         db (Session): 리프레시 토큰 기록을 삭제할 DB 세션.
 
     Returns:
-        None: 반환값 없음.
+        None
 
     Raises:
         TokenValidationError: 리프레시 토큰이 없거나 문자열이 아닌 경우.
@@ -244,7 +250,8 @@ def delete_refresh_token(refresh_token: str, db: Session) -> None:
 
 
 def delete_expired_refresh_tokens(db: Session) -> int:
-    """현재 UTC 시각에 만료된 리프레시 토큰의 DB 기록을 모두 삭제한다.
+    """현재 시각에 만료된 리프레시 토큰의 DB 기록을 모두 삭제한다.
+    -> 서버의 주기적인 정리 작업에 사용
 
     Args:
         db (Session): 만료된 리프레시 토큰 기록을 삭제할 DB 세션.
