@@ -42,3 +42,6 @@ tests/test_files/
 tests/test_results/
 
 **/data/raw
+**/checkpoints/
+# Jupyter notebooks
+*.ipynb
