@@ -6,6 +6,7 @@ __pycache__/
 # 환경 변수
 .env
 .env.*
+!.env.example
 
 # Frontend
 node_modules/
@@ -37,6 +38,8 @@ lerna-debug.log*
 
 # 업로드 및 생성 파일
 uploads/
+tests/test_files/
+tests/test_results/
 
 **/data/raw
 **/checkpoints/
