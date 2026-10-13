@@ -2,7 +2,7 @@ from functools import lru_cache
 
 from sentence_transformers import SentenceTransformer
 
-MODEL_NAME = "dragonkue/snowflake-arctic-embed-l-v2.0-ko"
+MODEL_NAME = "BAAI/bge-m3"
 
 @lru_cache(maxsize=1)
 def _get_embedding_model() -> SentenceTransformer:
