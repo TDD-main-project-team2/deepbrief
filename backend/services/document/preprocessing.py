@@ -67,12 +67,32 @@ def _normalize_ocr_spacing(text: str) -> str:
     원문 정보 손상을 막기 위해 확실한 패턴만 처리한다.
     """
 
+    
+    # 날짜 뒤 시간 표기를 먼저 보호한다.
+    time_placeholders = {}
+    
+    def _protect_datetime(match):
+        key = f"__DATETIME_{len(time_placeholders)}__"
+        time_placeholders[key] = match.group(0)
+        return key
+
+    text = re.sub(
+        r"\d{4}[-./]\d{1,2}[-./]\d{1,2}[ \t]+\d{1,2}:\d{2}(?::\d{2})?",
+        _protect_datetime,
+        text,
+    )
+    
     # 숫자 내부에 OCR이 삽입한 공백 제거
     text = re.sub(
         r"(?<=\d)[ \t]+(?=\d)",
         "",
         text,
     )
+    
+    # 보호했던 날짜·시간 표기를 복원한다.
+    for key, value in time_placeholders.items():
+        text = text.replace(key, value)
+
 
     # 숫자와 일반적인 단위 사이의 OCR 공백 제거
     text = re.sub(
