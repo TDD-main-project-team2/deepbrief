@@ -53,11 +53,12 @@ def embed_query(text: str) -> list[float]:
         list[float]: 질문에 대응하는 1,024차원 벡터.
 
     Notes:
-        query 접두어를 붙인 프롬프트를 적용한다.
+        BGE-m3 모델은 질문용 접두어 없이 원문 질문을 임베딩한다.
+        snowflake 모델로 변경 시 'prompt_name='로 질문용 접두어를 붙여야 한다.
+        (예: prompt_name="query" -> "query: {text}")
     """
     vector = _get_embedding_model().encode(
         text,
-        prompt_name="query",
         normalize_embeddings=True,
         show_progress_bar=True,
     ).tolist()
