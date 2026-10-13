@@ -186,3 +186,4 @@ zope.interface==8.6
 zstandard==0.25.0
 alembic==1.20.0
 python-dotenv==1.2.4
+sentence-transformers==6.1.0
