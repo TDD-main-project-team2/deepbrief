@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, File, UploadFile
-from backend.services.features import qa_service, edit_service, recommend_service, review_service
 from backend.services.user import conversation_service
 from backend.app.dependencies import get_current_user
 from backend.schemas.message import MessageRequest
@@ -9,7 +8,7 @@ router = APIRouter(prefix="/conversations", tags=["Conversations"])
 
 @router.get("/")
 def get_all_conversations(user=Depends(get_current_user)):
-    return conversation_service.get_user_conversations(user.id)
+    return conversation_service.get_all_conversations(user.id)
 
 
 @router.post("/")
