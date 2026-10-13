@@ -1,3 +1,4 @@
+from backend.repositories import article_repository
 
 def get_articles_by_user(current_user_id):
     return article_repository.find_all_by_user(current_user_id)
@@ -22,6 +23,9 @@ def delete_article(article_id, current_user_id):
     if my_article_check(article_id, current_user_id):
         article_repository.delete_article(article_id)
 
+# Optional
+def favorite_article_toggle():
+    pass
 
 def my_article_check(article_id, current_user_id) -> bool:
     article = article_repository.find_article_by_id(article_id)

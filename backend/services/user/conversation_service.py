@@ -2,7 +2,7 @@ from backend.schemas.message import MessageRequest
 
 
 # 사용자 대화 목록 조회
-def get_conversations(user_id):
+def get_all_conversations(user_id):
     pass
 
 # 사용자 특정 대화 조회
