@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from backend.database.rdb.rdb import get_db
 from backend.models.user import User
+from backend.models.user_article import UserArticle
 from backend.services.auth.token_service import (
     TokenExpiredError,
     TokenValidationError,
@@ -46,10 +47,24 @@ def get_current_user(
     return user
 
 
+def _not_found() -> HTTPException:
+    """404 오류를 만든다."""
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="찾을 수 없습니다.",
+    )
+
+
 def ensure_owner(owner_id: int, user: User) -> None:
     """자원의 주인이 지금 사용자가 아니면 404. 남의 자원이 있다는 사실도 숨긴다."""
     if owner_id != user.id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="찾을 수 없습니다.",
-        )
+        raise _not_found()
+
+
+def ensure_article_access(article_id: int, user: User, db: Session) -> None:
+    """
+    기사가 지금 사용자의 목록(user_articles)에 없으면 404.
+    기사는 여러 사용자가 공유하므로 주인 대신 (사용자 ID, 기사 ID) 연결이 있는지 본다.
+    """
+    if db.get(UserArticle, (user.id, article_id)) is None:
+        raise _not_found()
