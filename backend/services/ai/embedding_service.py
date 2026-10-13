@@ -41,3 +41,25 @@ def embed_documents(texts: list[str]) -> list[list[float]]:
     ).tolist()
 
     return vectors
+
+
+def embed_query(text: str) -> list[float]:
+    """검색 질문을 정규화된 임베딩 벡터로 변환한다.
+
+    Args:
+        text (str): 관련 문서 청크를 검색할 질문 문자열.
+
+    Returns:
+        list[float]: 질문에 대응하는 1,024차원 벡터.
+
+    Notes:
+        query 접두어를 붙인 프롬프트를 적용한다.
+    """
+    vector = _get_embedding_model().encode(
+        text,
+        prompt_name="query",
+        normalize_embeddings=True,
+        show_progress_bar=True,
+    ).tolist()
+
+    return vector
