@@ -7,8 +7,8 @@ from backend.schemas.message import MessageRequest
 router = APIRouter(prefix="/conversations", tags=["Conversations"])
 
 @router.get("/")
-def get_all_conversations(user=Depends(get_current_user)):
-    return conversation_service.get_all_conversations(user.id)
+def get_conversations_by_user(user=Depends(get_current_user)):
+    return conversation_service.get_conversations_by_user(user.id)
 
 
 @router.post("/")
@@ -23,7 +23,7 @@ def get_conversation(conversation_id: int, user=Depends(get_current_user)):
 
 @router.delete("/{conversation_id}", status_code=204)
 def delete_conversation(conversation_id: int, user=Depends(get_current_user)):
-    conversation_service.delete_conversation_by_id(conversation_id, user.id)
+    conversation_service.delete_conversation(conversation_id, user.id)
 
 
 @router.patch("/{conversation_id}/favorite")
@@ -38,4 +38,4 @@ def send_message(conversation_id: int, request: MessageRequest, user=Depends(get
 
 @router.delete("/message/{message_id}", status_code=204)
 def delete_message(message_id: int, user=Depends(get_current_user)):
-    conversation_service.delete_message_by_id(message_id, user.id)
+    conversation_service.delete_message(message_id, user.id)
