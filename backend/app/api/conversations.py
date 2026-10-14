@@ -38,16 +38,6 @@ def delete_conversation(
 ):
     conversation_service.delete_conversation(conversation_id, current_user.id)
 
-@router.post("/message", response_model=MessageResponse)
-def send_message(
-    conversation_id: int,
-    request: MessageRequest,
-    current_user=Depends(get_current_user),
-):
-    return conversation_service.send_message(
-        conversation_id, request, current_user.id
-    )
-
 @router.delete("/message/{message_id}", status_code=204)
 def delete_message(
     message_id: int,
