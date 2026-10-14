@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 
 import "./AuthLayout.css";
-import brandIcon from "../assets/svg/icon-gradient.svg";
+import brandIcon from "../../assets/svg/icon-gradient.svg";
 
 export default function AuthLayout({
   title,
