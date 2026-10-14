@@ -1,7 +1,6 @@
 .login-form {
   margin-top: 30px;
 }
-
 .login-submit {
   width: 100%;
   max-width: 100%;
@@ -10,7 +9,6 @@
   justify-content: center;
   gap: 18px;
 }
-
 .login-feedback {
   font-size: 10px;
   color: var(--wine);

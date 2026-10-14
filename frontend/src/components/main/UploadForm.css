@@ -1,9 +1,9 @@
-.welcome{
+.welcome {
   max-width: 520px;
   margin: auto;
   text-align: center;
 }
-.upload-area{
+.upload-area {
   margin-top: 33px;
   border: 1px dashed #d7bdc8;
   border-radius: 12px;
@@ -14,30 +14,30 @@
   flex-direction: column;
   min-height: 226px;
 }
-.upload-area.dragging{
+.upload-area.dragging {
   background: #f2e3e9;
   border-color: var(--wine);
 }
-.upload-icon{
+.upload-icon {
   color: #ae7a8e;
   margin-bottom: 16px;
 }
-.upload-icon svg{
+.upload-icon svg {
   height: 27px;
   width: 27px;
 }
-.upload-area strong{
+.upload-area strong {
   font-size: 13px;
   font-weight: 500;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
-.upload-area p{
+.upload-area p {
   font-size: 10px;
   color: #b09da7;
   margin-top: 8px;
 }
-.file-picker{
+.file-picker {
   background: white;
   border: 1px solid #e3d1d9;
   border-radius: 6px;
@@ -46,70 +46,70 @@
   font-size: 11px;
   margin-top: 18px;
 }
-.upload-area small{
+.upload-area small {
   font-size: 9px;
   color: #b5a2ad;
   margin-top: 13px;
 }
-.hidden-input{
+.hidden-input {
   position: absolute;
   width: 1px;
   height: 1px;
   opacity: 0;
   overflow: hidden;
 }
-.start{
+.start {
   padding: 14px;
   width: 100%;
   margin-top: 15px;
 }
-.start svg{
+.start svg {
   height: 16px;
   width: 16px;
   transform: rotate(90deg);
 }
-.upload-note{
+.upload-note {
   font-size: 9px;
   color: #b1a0aa;
   margin-top: 13px;
 }
-.has-file{
+.has-file {
   justify-content: center;
   gap: 10px;
 }
-.has-file small{
+.has-file small {
   margin-top: 0;
 }
-.change-file{
+.change-file {
   color: var(--wine);
   font-size: 11px;
   border-bottom: 1px solid #c7a3b2;
   padding: 3px 0;
   margin-top: 5px;
 }
-.error{
+.error {
   color: #a33549;
   font-size: 11px;
   margin: 12px 0;
 }
 
-@media (min-width: 1400px){.welcome{
+@media (min-width: 1400px) {
+  .welcome {
     max-width: 545px;
   }
-.upload-area{
+  .upload-area {
     margin-top: 38px;
   }
-
 }
 
-@media (max-width: 580px){.upload-area{
+@media (max-width: 580px) {
+  .upload-area {
     margin-top: 25px;
     padding: 25px 16px;
     min-height: 210px;
   }
-
 }
-.visibility-options{
+.visibility-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
@@ -118,13 +118,13 @@
   margin: 22px 0 0;
   text-align: left;
 }
-.visibility-options legend{
+.visibility-options legend {
   font-size: 11px;
   color: #7e6371;
   font-weight: 500;
   margin-bottom: 10px;
 }
-.visibility-choice{
+.visibility-choice {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -134,39 +134,38 @@
   cursor: pointer;
   background: #fff;
 }
-.visibility-choice.selected{
+.visibility-choice.selected {
   border-color: #bb8099;
   background: #fcf6f9;
 }
-.visibility-choice input{
+.visibility-choice input {
   margin: 0;
   accent-color: var(--wine);
   width: 14px;
   height: 14px;
   flex-shrink: 0;
 }
-.visibility-choice strong{
+.visibility-choice strong {
   font-size: 11px;
   font-weight: 500;
   color: #6d5260;
 }
-.visibility-choice small{
+.visibility-choice small {
   font-size: 9px;
   color: #ae97a4;
   margin-top: 5px;
   line-height: 1.6;
 }
 
-@media (max-width: 580px){.visibility-options{
+@media (max-width: 580px) {
+  .visibility-options {
     gap: 7px;
   }
-.visibility-choice{
+  .visibility-choice {
     padding: 12px 9px;
     gap: 8px;
   }
-.visibility-choice small{
+  .visibility-choice small {
     font-size: 8px;
   }
-
 }
-
