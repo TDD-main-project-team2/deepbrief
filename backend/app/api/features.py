@@ -1,13 +1,24 @@
 from fastapi import APIRouter, Depends
 from backend.services.features import (
+    qa_service,
     edit_service,
     recommend_service,
     review_service,
 )
+from backend.schemas.message import MessageRequest, MessageResponse
 from backend.app.dependencies import get_current_user
 
 router = APIRouter(prefix="/features", tags=["Features"])
 
+@router.post("/conversations/{conversation_id}/qa", response_model=MessageResponse)
+def ask_question(
+    conversation_id: int,
+    request: MessageRequest,
+    current_user=Depends(get_current_user),
+):
+    return qa_service.ask_question(
+        conversation_id, request, current_user.id
+    )
 
 @router.post("/conversations/{conversation_id}/review/full")
 def request_full_review(

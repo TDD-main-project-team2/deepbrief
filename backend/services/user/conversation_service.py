@@ -45,12 +45,13 @@ def get_conversation_context(conversation_id, current_user_id, limit=10):
         limit=limit,
     )
 
-def send_message(conversation_id, request: MessageRequest, current_user_id):
+def save_message(conversation_id, message: str, current_user_id, role:str):
     conversation = conversation_repository.find_conversation_by_id(conversation_id)
     ensure_owner(conversation.user_id, current_user_id)
     return message_repository.create_message(
         conversation_id=conversation_id,
-        request=request,
+        content=message,
+        role=role
     )
 
 def delete_message(message_id, current_user_id):
