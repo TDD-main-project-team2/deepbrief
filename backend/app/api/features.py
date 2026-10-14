@@ -20,24 +20,9 @@ def ask_question(
         conversation_id, request, current_user.id
     )
 
-@router.post("/conversations/{conversation_id}/review/full")
-def request_full_review(
-    conversation_id: int,
-    user=Depends(get_current_user),
-):
-    pass
-
 
 @router.post("/conversations/{conversation_id}/review/duplicate")
 def request_duplicate_check(
-    conversation_id: int,
-    user=Depends(get_current_user),
-):
-    pass
-
-
-@router.post("/conversations/{conversation_id}/review/fact")
-def request_fact_check(
     conversation_id: int,
     user=Depends(get_current_user),
 ):
@@ -83,3 +68,13 @@ def request_article_formatting(
     user=Depends(get_current_user),
 ):
     pass
+
+'''
+@router.post("/conversations/{conversation_id}/review/fact")
+def request_fact_check(
+    conversation_id: int,
+    user=Depends(get_current_user),
+):
+    pass
+
+'''

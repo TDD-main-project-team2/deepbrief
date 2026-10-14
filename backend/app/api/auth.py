@@ -24,3 +24,19 @@ def refresh(request: RefreshRequest, db: Session = Depends(get_db)):
 @router.post("/logout", status_code=204)
 def logout(request: LogoutRequest, db: Session = Depends(get_db),):
     return auth_service.logout_user(request.refresh_token, db)
+
+
+'''
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class RefreshResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str
+'''
