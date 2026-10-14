@@ -1,3 +1,5 @@
+import { Link } from "react-router";
+
 import "./AuthLayout.css";
 import brandIcon from "../assets/svg/icon-gradient.svg";
 
@@ -8,7 +10,6 @@ export default function AuthLayout({
   authLinkText,
   authLinkLabel,
   authLinkPath,
-  navigate,
 }) {
   return (
     <div className="auth-page">
@@ -28,15 +29,9 @@ export default function AuthLayout({
 
           <p className="auth-switch">
             {authLinkText}
-            <a
-              href={authLinkPath}
-              onClick={(e) => {
-                e.preventDefault();
-                navigate(authLinkPath);
-              }}
-            >
+            <Link to={authLinkPath} className="auth-switch-link">
               {authLinkLabel}
-            </a>
+            </Link>
           </p>
         </section>
       </main>

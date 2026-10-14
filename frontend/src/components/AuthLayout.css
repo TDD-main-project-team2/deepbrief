@@ -122,13 +122,6 @@
     top: 17px;
     right: 28px;
   }}
-.auth-preview-login {
-  display: block;
-  margin: 22px auto 0;
-  padding: 5px;
-  font-size: 9px;
-  color: #aa8698;
-}
 .auth-page {
   display: flex;
   flex-direction: column;
