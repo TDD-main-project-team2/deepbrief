@@ -1,6 +1,18 @@
+from backend.services.document import document_service, ocr_service, chunking, preprocessing
 from backend.schemas.message import MessageRequest
-from backend.repositories import user_repository, conversation_repository, message_repository
+from backend.repositories import conversation_repository, message_repository, article_repository
 from backend.app.dependencies import ensure_owner, _not_found
+
+# 사용자 대화 생성
+def create_conversation(file, title, initial_message: MessageRequest, current_user_id):
+    # 파일의 텍스트 추출부터 전처리, 청킹, 기사 등록, 임베딩, 벡터 DB 저장까지 전과정을 수행한다.
+    # article_processing_service.process_article(article)
+
+
+    # save_conversation
+    # save initial message
+    
+    pass
 
 
 def find_conversation_by_id(conversation_id):
@@ -30,10 +42,6 @@ def delete_conversation(conversation_id, current_user_id):
     conversation = find_conversation_by_id(conversation_id)
     ensure_owner(conversation.user_id, current_user_id)
     conversation_repository.delete_conversation(conversation_id)
-
-# 사용자 대화 생성
-def create_conversation(file, title, initial_message: MessageRequest, current_user_id):
-    pass
 
 # 대화 기록 조회
 def get_conversation_context(conversation_id, current_user_id, limit=10):
