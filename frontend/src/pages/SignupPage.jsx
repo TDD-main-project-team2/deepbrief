@@ -1,3 +1,5 @@
+import "./SignupPage.css";
+
 import AuthLayout from "../components/auth/AuthLayout.jsx";
 import AuthInput from "../components/auth/AuthInput.jsx";
 import PasswordInput from "../components/auth/PasswordInput.jsx";
@@ -38,7 +40,7 @@ export default function SignupPage() {
       authLinkLabel="로그인"
       authLinkPath="/login"
     >
-      <form onSubmit={submit} noValidate>
+      <form className="signup-form" onSubmit={submit} noValidate>
         <AuthInput
           label="닉네임"
           {...field("nickname")}
@@ -75,7 +77,7 @@ export default function SignupPage() {
         />
 
         <button
-          className="primary auth-submit"
+          className="primary signup-submit"
           type="submit"
           disabled={!canSubmit}
         >

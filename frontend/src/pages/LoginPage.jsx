@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import "./LoginPage.css";
+
 import AuthLayout from "../components/auth/AuthLayout.jsx";
 import AuthInput from "../components/auth/AuthInput.jsx";
 import PasswordInput from "../components/auth/PasswordInput.jsx";
@@ -32,7 +34,12 @@ export default function LoginPage() {
       authLinkLabel="회원가입"
       authLinkPath="/signup"
     >
-      <form onSubmit={submit} onChange={() => setFeedback("")} noValidate>
+      <form
+        className="login-form"
+        onSubmit={submit}
+        onChange={() => setFeedback("")}
+        noValidate
+      >
         <AuthInput
           label="이메일"
           {...field("email")}
@@ -49,13 +56,13 @@ export default function LoginPage() {
           required
         />
         {feedback && (
-          <p className="auth-feedback" role="status">
+          <p className="login-feedback" role="status">
             {feedback}
           </p>
         )}
 
         <button
-          className="primary auth-submit"
+          className="primary login-submit"
           type="submit"
           disabled={!canSubmit}
         >
