@@ -50,7 +50,7 @@ def _embed_and_save_document_chunks(
     vector_db.replace_article_chunks(article_id, article_chunks)
 
 
-def process_article_file(
+def article_processing(
     file_bytes: bytes,
     filename: str,
     db: Session,
