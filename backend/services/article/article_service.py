@@ -1,35 +1,45 @@
 from backend.repositories import article_repository
+from backend.app.dependencies import ensure_article_access, ensure_owner, _not_found
+
 
 def get_articles_by_user(current_user_id):
     return article_repository.find_all_by_user(current_user_id)
 
-def get_article_by_id(article_id, current_user_id):
-    # user_id check
-    article = article_repository.find_article_by_id(article_id)
+def get_article_by_id(article_id, current_user_id, db):
+    article = find_article_by_id(article_id)
+
     if article.visibility == "Public":
         return article
-    else:
-        # if article.user.id is current_user_id:
-        if my_article_check(article_id, current_user_id):
-            return article
-        else:
-            raise PermissionError("접근 권한이 없습니다.")
 
-# db 저장
+    ensure_article_access(article_id, current_user_id, db)
+    return article
+
 def save_article(article_id, current_user_id):
     article_repository.save_article(article_id, current_user_id)
+
+def delete_article(article_id, current_user):
+    article = find_article_by_id(article_id)
+    ensure_owner(article.user_id, current_user)
+    article_repository.delete_article(article_id)
+
+def find_article_by_id(article_id):
+    article = article_repository.find_article_by_id(article_id)
+    if article is None:
+        raise _not_found()
+
+
+'''
+def favorite_article_toggle():
+    pass
 
 def delete_article(article_id, current_user_id):
     if my_article_check(article_id, current_user_id):
         article_repository.delete_article(article_id)
 
-# Optional
-def favorite_article_toggle():
-    pass
-
 def my_article_check(article_id, current_user_id) -> bool:
     article = article_repository.find_article_by_id(article_id)
     return article.user_id == current_user_id
+'''
 
 
 '''
