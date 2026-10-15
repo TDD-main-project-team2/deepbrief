@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import "./ChatPanel.css";
 import Icons from "../Icons.jsx";
@@ -9,14 +9,16 @@ const actions = {
   Recommend: ["키워드·태그 추천", "제목·부제목 추천", "후속 기사 아이디어"],
 };
 
-export default function ChatPanel({
-  messages,
-  tool,
-  setTool,
-  text,
-  setText,
-  send,
-}) {
+export default function ChatPanel({ messages, onSendMessage }) {
+  const [text, setText] = useState("");
+  const [tool, setTool] = useState("Edit");
+
+  function send(messageText = text) {
+    if (!messageText.trim()) return;
+    onSendMessage(messageText);
+    setText("");
+  }
+
   const messageArea = useRef(null);
   const toolNames = Object.keys(actions);
   const suggestions = actions[tool] || actions.Edit;

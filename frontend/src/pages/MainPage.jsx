@@ -27,9 +27,7 @@ export default function MainPage({ user, onLogout }) {
     [previewError, setPreviewError] = useState("");
 
   const [file, setFile] = useState(null),
-    [started, setStarted] = useState(false),
-    [text, setText] = useState(""),
-    [tool, setTool] = useState("Edit");
+    [started, setStarted] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -79,11 +77,11 @@ export default function MainPage({ user, onLogout }) {
   );
   const messages = activeConversation?.messages || [];
 
-  function send(value = text) {
-    if (!value.trim() || !activeConversation) return;
+  function send(messageText) {
+    if (!messageText.trim() || !activeConversation) return;
     const message = {
-      question: value,
-      answer: `“${value}” 요청을 받았습니다.\n\n@@@@ 여기에 결과 넣기 @@@@`,
+      question: messageText,
+      answer: `“${messageText}” 요청을 받았습니다.\n\n@@@@ 여기에 결과 넣기 @@@@`,
     };
     setConversations((conversations) =>
       conversations.map((conversation) =>
@@ -92,7 +90,6 @@ export default function MainPage({ user, onLogout }) {
           : conversation,
       ),
     );
-    setText("");
   }
 
   function openArticle(item) {
@@ -112,7 +109,6 @@ export default function MainPage({ user, onLogout }) {
     setVisibility(article.visibility);
     setStarted(true);
     setView("chat");
-    setText("");
   }
 
   function startChat({ file: uploadedFile, visibility: uploadedVisibility }) {
@@ -141,7 +137,6 @@ export default function MainPage({ user, onLogout }) {
     setVisibility(uploadedVisibility);
     setStarted(true);
     setView("chat");
-    setText("");
   }
 
   function reset() {
@@ -151,7 +146,6 @@ export default function MainPage({ user, onLogout }) {
     setVisibility("private");
     changeFile(null);
     setStarted(false);
-    setText("");
     setUploadSession((session) => session + 1);
   }
 
@@ -210,12 +204,9 @@ export default function MainPage({ user, onLogout }) {
             <>
               <ArticlePanel {...previewProps} />
               <ChatPanel
+                key={activeConversationId}
                 messages={messages}
-                tool={tool}
-                setTool={setTool}
-                text={text}
-                setText={setText}
-                send={send}
+                onSendMessage={send}
               />
             </>
           )}
