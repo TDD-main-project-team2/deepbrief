@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, File, UploadFile, Form
-from backend.services.user import conversation_service
+from backend.services.resources import conversation_service
 from backend.app.dependencies import get_current_user
-from backend.schemas.message import MessageRequest, MessageResponse
 from backend.schemas.conversation import ConversationResponse
+from sqlalchemy.orm import Session
+from backend.database.rdb.rdb import get_db
 
 
 
@@ -16,11 +17,10 @@ def get_conversations_by_user(current_user=Depends(get_current_user)):
 def create_conversation(
     file: UploadFile = File(...),
     title: str = Form(...),
-    message: str = Form(...),
     current_user=Depends(get_current_user),
+    rdb: Session = Depends(get_db)
 ):
-    initial_message = MessageRequest(role="user", content=message)
-    return conversation_service.create_conversation(file, title, initial_message, current_user.id)
+    return conversation_service.create_conversation(file, title, current_user.id, rdb)
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)
 def get_conversation(

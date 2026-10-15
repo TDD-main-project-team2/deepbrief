@@ -3,7 +3,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from backend.database.vector.vector_db import VectorDB
+from backend.database.vector.vector_db import vector_db
 from backend.models.article import Article
 from backend.models.article_chunk import ArticleChunk
 from backend.services.ai.embedding_service import embed_documents
@@ -13,14 +13,12 @@ from backend.services.document.document_service import DocumentResult, process_f
 def _embed_and_save_document_chunks(
     document: DocumentResult,
     article_id: int,
-    vector_db: VectorDB,
 ) -> None:
     """문서 청크를 임베딩하고 DB에 저장한다.
 
     Args:
         document (DocumentResult): 전처리와 청킹을 완료한 문서.
         article_id (int): DB에 저장 및 커밋된 기사의 기본키.
-        vector_db (VectorDB): 청크와 벡터를 저장할 DB 서비스.
 
     Raises:
         ValueError: 청크가 없거나 청크 수와 벡터 수가 다른 경우.
@@ -50,11 +48,10 @@ def _embed_and_save_document_chunks(
     vector_db.replace_article_chunks(article_id, article_chunks)
 
 
-def article_processing(
+def process_article(
     file_bytes: bytes,
     filename: str,
     db: Session,
-    vector_db: VectorDB,
     reprocess: bool = False,
 ) -> Article:
     """파일의 텍스트 추출부터 전처리, 청킹, 기사 등록, 임베딩, 벡터 DB 저장까지 전과정을 수행한다.
@@ -67,7 +64,6 @@ def article_processing(
         file_bytes (bytes): 처리할 파일의 바이너리 내용.
         filename (str): 파일 형식 판별에 사용할 확장자를 포함한 이름.
         db (Session): 기사 조회·생성에 사용할 DB 세션.
-        vector_db (VectorDB): db와 같은 데이터베이스의 청크 조회·저장 서비스.
         reprocess (bool): True이면 기존 청크가 같아도 다시 임베딩하고 교체한다.
             기본값은 False이다.
 
