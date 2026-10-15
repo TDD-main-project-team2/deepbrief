@@ -2,6 +2,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from backend.models.article import Article
 from backend.models.article_chunk import ArticleChunk
+from backend.models.user_article import UserArticle
+from backend.models.user import User
 import os
 
 from dotenv import load_dotenv
@@ -24,16 +26,35 @@ class VectorDB:
                 session.add(chunk)
             session.commit()
 
-    def search_similar_chunks(self, embedding: list[float], top_k: int = 5, article_id: int | None = None) -> list[ArticleChunk]:
+    def search_similar_chunks(self, query, embedding: list[float], top_k: int = 5) -> list[ArticleChunk]:
+        return query.order_by(ArticleChunk.embedding.cosine_distance(embedding)).limit(top_k).all()
+
+    def search_article_chunks(self, embedding: list[float], article_id: int, top_k: int = 5):
         with self.SessionLocal() as session:
-            query = session.query(ArticleChunk)
+            query = session.query(ArticleChunk).filter(ArticleChunk.article_id == article_id)
+            return self.search_similar_chunks(query, embedding, top_k)
 
-            if article_id is not None:
-                query = query.filter(ArticleChunk.article_id == article_id)
+    def search_organization_chunks(self, embedding: list[float], article_id: int, top_k: int = 5):
+        with self.SessionLocal() as session:
+            organization_id = (
+                session.query(User.organization_id)
+                .join(UserArticle, UserArticle.user_id == User.id)
+                .filter(UserArticle.article_id == article_id)
+                .distinct()
+                .scalar()
+            )
 
-            return query.order_by(
-                ArticleChunk.embedding.cosine_distance(embedding)
-            ).limit(top_k).all()
+            if organization_id is None:
+                raise ValueError("기사에 연결된 조직을 찾을 수 없습니다.")
+        
+            query = (
+                session.query(ArticleChunk)
+                .join(ArticleChunk.article)
+                .join(UserArticle, UserArticle.article_id == Article.id)
+                .join(User, User.id == UserArticle.user_id)
+                .filter(User.organization_id == organization_id)
+            )
+            return self.search_similar_chunks(query, embedding, top_k)
 
     def delete_article_chunks(self, article_id: int):
         with self.SessionLocal() as session:

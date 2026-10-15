@@ -6,18 +6,17 @@ from . import nodes
 
 def build_graph():
     graph = StateGraph(AgentState)
-    intent = state["intent"]
 
-    graph.add_node("classify_request", nodes.classify_request)
+    graph.add_node("retrieve_article_context", nodes.retrieve_article_context)
+    graph.add_node("decide_retrieval_scope", nodes.decide_retrieval_scope)
+    graph.add_node("retrieve_additional_context", nodes.retrieve_additional_context)
+    graph.add_node("answer_question", nodes.answer_question)
 
-    #qa 
-    if intent : "summarize":
-    graph.add_node("summarize_article", nodes.summarize_article)
-    graph.add_node("search_news", nodes.search_news)
-    graph.add_node("generate_answer", nodes.generate_answer)
-
-    graph.add_edge(START, "classify_request")
-    graph.add_edge("generate_answer", END)
+    graph.add_edge(START, "retrieve_article_context")
+    graph.add_edge("retrieve_article_context", "decide_retrieval_scope")
+    graph.add_edge("decide_retrieval_scope", "retrieve_additional_context")
+    graph.add_edge("retrieve_additional_context", "answer_question")
+    graph.add_edge("answer_question", END)
 
     return graph.compile()
 
@@ -25,21 +24,17 @@ agent = build_graph()
 
 async def run_agent(
     question: str,
-    intent: str,
-    article_id: str | None = None,
+    article_id: int,
     conversation_history: list | None = None,
 ):
     conversation_history = (conversation_history or [])[-10:]
 
     initial_state = {
         "question": question,
-        "intent": intent,
         "article_id": article_id,
         "conversation_history": conversation_history or [],
-        "category": "",
-        "summary": "",
-        "retrieved_articles": [],
-        "search_results": [],
+        "context": "",
+        "retrieval_scope": "",
         "answer": "",
     }
 

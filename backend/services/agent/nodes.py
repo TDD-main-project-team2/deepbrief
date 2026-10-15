@@ -1,36 +1,31 @@
 from agent.state import AgentState
 from . import tools
 from services.ai import model_service
+from services.rag import rag_service
+from services.resources import article_service
 
-def process_question(state: AgentState):
-    question = state["question"].strip()
-    return {
-        "question": question
-    }
+def retrieve_article_context(state: AgentState):
+    chunks = rag_service.retrieve_article_chunks(state["question"], state["article_id"])
+    context = rag_service.build_context(chunks)
+    return {"context": context}
 
-def classify_article(state: AgentState):
-    category = model_service.classify_article(state["category"])
-    return {
-        "category": category
-    }
+def decide_retrieval_scope(state: AgentState):
+    scope = model_service.classify_retrieval_scope(state["question"], state["context"])
+    return {"retrieval_scope": scope}
 
-def generate_answer(state: AgentState):
-    answer = model_service.answer_question(state["question"], state["conversation_history"], state["article_id"])
+def retrieve_additional_context(state: AgentState):
+    if state["retrieval_scope"] == "current_article":
+        return {}
+
+    if state["retrieval_scope"] == "organization":
+        chunks = rag_service.retrieve_org_chunks(state["question"], state["article_id"])
+        context = rag_service.build_context(chunks)
+        return {"context": context}
+
+    raise ValueError(f"Unknown retrieval scope: {state['retrieval_scope']}")
+
+def answer_question(state: AgentState):
+    answer = model_service.generate_answer(state["question"], state["context"], state["conversation_history"])
     return {
         "answer": answer
     }
-
-def summarize_article(state: AgentState):
-    summary = model_service.summarize_article(state["article_id"])
-    return {
-        "summary": summary
-    }
-
-def search_news(state: AgentState):
-    ...
-
-def analyze_trend(state: AgentState):
-    ...
-
-def recommend_articles(state: AgentState):
-    ...
