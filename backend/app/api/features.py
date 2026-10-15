@@ -22,7 +22,7 @@ def ask_question(
     db: Session = Depends(get_db)
 ):
     return qa_service.ask_question(
-        conversation_id, request, current_user.id
+        conversation_id, request, current_user.id, db
     )
 
 
