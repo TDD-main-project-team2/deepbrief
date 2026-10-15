@@ -1,4 +1,4 @@
-@import "./AuthInputCommon.css";
+@import "./AuthCommonInput.css";
 
 .auth-field > input {
   display: block;

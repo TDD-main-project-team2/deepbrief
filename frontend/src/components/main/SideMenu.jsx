@@ -1,9 +1,9 @@
 import { Link } from "react-router";
-import "./MainMenu.css";
+import "./SideMenu.css";
 import Icons from "../Icons.jsx";
 import brandIcon from "../../assets/svg/icon-gradient.svg";
 
-export default function MainMenu({
+export default function SideMenu({
   menuOpen,
   setMenuOpen,
   reset,
