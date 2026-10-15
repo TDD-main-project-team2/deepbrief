@@ -1,0 +1,138 @@
+.preview-canvas {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+  padding: 27px 25px;
+}
+.text-paper {
+  padding: 35px 30px 45px;
+  min-height: 100%;
+  background: #fff;
+  border: 1px solid #ece7e9;
+  box-shadow: 0 3px 13px #39242e06;
+}
+.paper-label {
+  font-size: 7px;
+  letter-spacing: 1.6px;
+  color: #b4a5ad;
+  margin-bottom: 18px;
+}
+.text-paper h2 {
+  font-size: 18px;
+  line-height: 1.7;
+  letter-spacing: -0.5px;
+  overflow-wrap: anywhere;
+}
+.text-paper pre {
+  font:
+    12px/2.2 "Noto Sans KR",
+    sans-serif;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #75636f;
+  margin-top: 23px;
+}
+.pdf-preview {
+  width: 100%;
+  height: 100%;
+  min-height: 350px;
+  border: 0;
+}
+.file-panel:has(.pdf-preview) .preview-canvas {
+  padding: 0;
+}
+.preview-fallback {
+  height: 100%;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #9d8190;
+  padding: 25px;
+  gap: 16px;
+}
+.preview-fallback > svg {
+  height: 35px;
+  width: 35px;
+}
+.preview-fallback h2 {
+  font-size: 14px;
+  font-weight: 500;
+}
+.preview-fallback p {
+  font-size: 11px;
+  line-height: 1.9;
+  color: #af98a5;
+}
+.preview-fallback a {
+  font-size: 11px;
+  color: var(--wine);
+  border: 1px solid #ddc5d1;
+  border-radius: 5px;
+  padding: 9px 13px;
+  background: #fff;
+}
+
+@media (max-width: 1100px) {
+  .preview-canvas {
+    padding: 20px 15px;
+  }
+  .text-paper {
+    padding: 25px 21px;
+  }
+}
+
+@media (max-width: 800px) {
+  .text-paper {
+    padding: 22px 17px;
+  }
+  .text-paper h2 {
+    font-size: 15px;
+  }
+  .text-paper pre {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 680px) {
+  .text-paper {
+    max-width: 500px;
+    margin: auto;
+    min-height: 250px;
+  }
+  .pdf-preview {
+    min-height: 240px;
+  }
+}
+.file-panel:has(.pdf-preview) .preview-canvas {
+  padding: 20px 23px 0;
+}
+
+@media (max-width: 800px) {
+  .file-panel:has(.pdf-preview) .preview-canvas {
+    padding: 18px 15px 0;
+  }
+}
+.image-preview {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 100%;
+  flex-direction: column;
+}
+.image-preview img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  box-shadow: 0 3px 13px #39242e0a;
+}
+.image-preview p {
+  font-size: 12px;
+  color: #9d8190;
+  margin: auto;
+  text-align: center;
+}
+.preview-canvas{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain}

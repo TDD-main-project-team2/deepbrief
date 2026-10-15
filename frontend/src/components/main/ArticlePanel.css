@@ -1,0 +1,59 @@
+.file-panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: #f5f3f4;
+  overflow: hidden;
+}
+
+@media (max-width: 680px) {
+  .file-panel {
+    height: 390px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+}
+.file-panel > .panel-heading {
+  background: #ece9ed;
+  color: #5c5561;
+}
+.file-panel > .panel-heading > span > svg {
+  background: #fff9;
+  color: #726779;
+  border: 1px solid #ded7e2;
+}
+.file-panel > .panel-heading small {
+  background: #ffffff8c;
+  color: #83768c;
+  border: 1px solid #dcd4e1;
+}
+.document-panel-heading > span {
+  min-width: 0;
+  flex: 1;
+}
+.header-document-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.header-document-info strong {
+  font-size: 12px;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.header-document-info > span {
+  font-size: 8px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: #9c90a3;
+}
+.document-panel-heading > small {
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+.file-panel{min-height:0}
+.file-panel>.panel-heading{flex-shrink:0}
