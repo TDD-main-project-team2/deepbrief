@@ -1,19 +1,18 @@
-from backend.services.document import document_service, ocr_service, chunking, preprocessing
+from backend.services.document import article_processing_service
 from backend.schemas.message import MessageRequest
 from backend.repositories import conversation_repository, message_repository, article_repository
 from backend.app.dependencies import ensure_owner, _not_found
 
 # 사용자 대화 생성
-def create_conversation(file, title, initial_message: MessageRequest, current_user_id):
-    # 파일의 텍스트 추출부터 전처리, 청킹, 기사 등록, 임베딩, 벡터 DB 저장까지 전과정을 수행한다.
-    # article_processing_service.process_article(article)
-
-
-    # save_conversation
-    # save initial message
-    
-    pass
-
+async def create_conversation(file, title, current_user_id, rdb):
+    file_bytes = await file.read()
+    filename = file.filename
+    article = article_processing_service.process_article(file_bytes, filename, rdb, reprocess=False)
+    return conversation_repository.create_conversation(
+        title,
+        current_user_id,
+        article.id
+    )
 
 def find_conversation_by_id(conversation_id):
     conversation = conversation_repository.find_conversation_by_id(conversation_id)
