@@ -474,6 +474,7 @@ _META_LINE = {
     "published_at": re.compile(r"작성일\s*:\s*(.+)"),
 }
 _EMAIL = re.compile(r"\S+@\S+")
+_DOMAIN = re.compile(r"[A-Za-z0-9-]+\.(?:co\.kr|or\.kr|com|net|kr|org)\b", re.IGNORECASE)
 _MAX_COLUMN_LENGTH = 255   # articles.media, author 컬럼 길이 (String(255))
 _AUTHOR_TITLE = re.compile(r"\s*(선임기자|수석기자|객원기자|인턴기자|기자|특파원)$")
 _DATE = re.compile(
@@ -529,6 +530,14 @@ def _date_in_article(value: datetime, article: str) -> bool:
     return (value.year, value.month, value.day) in found
 
 
+def _valid_media(media: str, author: str | None) -> bool:
+    """언론사 칸에 기자 이름·직함, 이메일·도메인이 들어온 경우를 거른다 (실제 기사 테스트에서 확인한 오류)."""
+    if _AUTHOR_TITLE.search(media) or "@" in media or _DOMAIN.search(media):
+        return False
+    names = author.split(", ") if author else []
+    return re.sub(r"\s+", "", media) not in {re.sub(r"\s+", "", n) for n in names}
+
+
 def _parse_article_metadata(text: str, article: str) -> dict:
     """언론사·기자·작성일. 없거나 원문에 없는 이름·날짜면 None."""
     values = {}
@@ -541,7 +550,8 @@ def _parse_article_metadata(text: str, article: str) -> dict:
     author = _parse_author(values["author"]) if values["author"] else None
     published_at = _parse_published_at(values["published_at"]) if values["published_at"] else None
     return {
-        "media": media[:_MAX_COLUMN_LENGTH] if media and _in_article(media, article) else None,
+        "media": (media[:_MAX_COLUMN_LENGTH]
+                  if media and _in_article(media, article) and _valid_media(media, author) else None),
         "author": (author[:_MAX_COLUMN_LENGTH]
                    if author and all(_in_article(n, article) for n in author.split(", ")) else None),
         "published_at": published_at if published_at and _date_in_article(published_at, article) else None,
