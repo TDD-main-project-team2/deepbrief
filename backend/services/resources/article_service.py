@@ -1,3 +1,4 @@
+from sqlalchemy.orm import Session
 from backend.repositories import article_repository
 from backend.app.dependencies import ensure_article_access, ensure_owner, _not_found
 
@@ -16,6 +17,16 @@ def get_article_by_id(article_id, current_user_id, db):
     if article.visibility == "Public":
         return article
     ensure_article_access(article_id, current_user_id, db)
+    return article
+
+def get_article_by_conversation_id(conversation_id, current_user_id, db: Session):
+    article = article_repository.find_article_by_conversation_id(conversation_id)
+    if article is None:
+        raise _not_found()
+    
+    if article.visibility == "Public":
+        return article
+    ensure_article_access(article.id, current_user_id, db)
     return article
 
 def delete_article(article_id, current_user_id):
