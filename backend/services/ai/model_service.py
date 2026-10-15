@@ -2,6 +2,7 @@ import os
 import re
 import threading
 from contextlib import nullcontext
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -21,6 +22,8 @@ MAX_NEW_TOKENS = {
     "keyword_tags": 100,
     "titles": 200,
     "article_ideas": 300,
+    "category": 20,
+    "article_metadata": 80,
 }
 
 # 생성 설정: "greedy"는 같은 입력이면 같은 출력, "sampling"은 Qwen3 공식 권장값(생각 모드 끔)
@@ -39,9 +42,18 @@ GENERATION_MODE = {
     "keyword_tags": "greedy",
     "titles": "greedy",
     "article_ideas": "greedy",
+    "category": "greedy",
+    "article_metadata": "greedy",
 }
 
 EVALUATION_VERDICTS = ("충족", "미흡", "해당 없음")
+
+# 기사 분야. 생활 기사(건강, 여행, 음식 등)도 문화로 분류한다
+ARTICLE_CATEGORIES = ("정치", "경제", "사회", "문화", "IT", "과학", "세계", "엔터테인먼트", "스포츠")
+_CATEGORY_LABELS = {"문화": "문화(생활 포함)"}   # 프롬프트에만 보이는 이름. 저장 값은 ARTICLE_CATEGORIES
+
+# 작성일 시간대. 한국은 서머타임이 없어 +09:00 고정이 정확하다 (ZoneInfo는 윈도우에서 tzdata 패키지가 필요)
+KST = timezone(timedelta(hours=9))
 
 
 class ModelOutputError(Exception):
@@ -248,6 +260,30 @@ ARTICLE_IDEAS_TEMPLATE = (
     "3. (취재 주제)"
 )
 
+CATEGORY_TEMPLATE = (
+    "기사:\n{article}\n\n"
+    "위 기사의 분야를 아래 목록에서 하나만 고르세요.\n"
+    "목록: {categories}\n"
+    "- IT: 인터넷, 소프트웨어, 통신, 게임, AI 서비스처럼 정보기술 제품과 서비스\n"
+    "- 과학: 연구, 실험, 학술 성과, 우주, 기초과학\n"
+    "- 연구 성과가 중심이면 과학, 제품이나 서비스가 중심이면 IT를 고르세요.\n"
+    "- 기업의 실적, 매출, 주가, 투자가 중심이면 IT 기업이라도 경제를 고르세요.\n"
+    "반드시 목록에 있는 이름 하나만 답하세요."
+)
+
+ARTICLE_METADATA_TEMPLATE = (
+    "기사:\n{article}\n\n"
+    "위 기사를 쓴 언론사, 기자, 기사 입력 일시를 찾아 기사에 적힌 그대로 옮기세요.\n"
+    "- 언론사와 기자는 이 기사를 쓴 곳과 사람만 쓰세요. 보통 기사 맨 앞이나 맨 끝에 있습니다.\n"
+    "- 언론사는 기사를 낸 신문사, 방송사, 통신사 이름입니다.\n"
+    "- 작성일은 본문 속 날짜가 아닌 기사 입력 일시를 쓰세요. 입력일과 수정일이 함께 있으면 입력일을 쓰세요.\n"
+    "- 찾을 수 없는 항목에는 (기사에 없음)이라고만 쓰세요.\n"
+    "반드시 아래 형식으로만 답하세요.\n"
+    "언론사: (언론사 이름)\n"
+    "기자: (기자 이름)\n"
+    "작성일: (기사에 적힌 입력 일시)"
+)
+
 
 # 예시 답변 (few-shot): 테스트 기사와 겹치지 않는 가상 기사. 모델이 "어떻게 답하는지" 보고 따라 하게 한다
 _EXAMPLE_ARTICLE = (
@@ -284,6 +320,12 @@ EVALUATION_EXAMPLES = [
         "answer": "판정: 해당 없음\n이유: 표나 그래프를 함께 제공했는지는 기사 본문만으로 알 수 없다.",
     },
 ]
+
+# 머리말이 붙은 예시 기사. 기자는 일부러 빼서 "(기사에 없음)"과, 본문 인물(관장)을 기자로 쓰지 않는 경우를 보여 준다
+ARTICLE_METADATA_EXAMPLE = {
+    "article": "새봄신문\n입력 2026.09.20. 오전 10:05  수정 2026.09.20. 오후 3:40\n" + _EXAMPLE_ARTICLE,
+    "answer": "언론사: 새봄신문\n기자: (기사에 없음)\n작성일: 2026.09.20. 오전 10:05",
+}
 
 
 def _with_examples(messages: list[dict], examples: list[tuple[str, str]]) -> list[dict]:
@@ -343,6 +385,19 @@ def _titles_messages(article: str) -> list[dict]:
 
 def _article_ideas_messages(article: str) -> list[dict]:
     return _system_messages(ARTICLE_IDEAS_TEMPLATE.format(article=article))
+
+
+def _category_messages(article: str) -> list[dict]:
+    categories = ", ".join(_CATEGORY_LABELS.get(c, c) for c in ARTICLE_CATEGORIES)
+    return _system_messages(CATEGORY_TEMPLATE.format(article=article, categories=categories))
+
+
+def _article_metadata_messages(article: str) -> list[dict]:
+    example = ARTICLE_METADATA_EXAMPLE
+    return _with_examples(
+        _system_messages(ARTICLE_METADATA_TEMPLATE.format(article=article)),
+        [(ARTICLE_METADATA_TEMPLATE.format(article=example["article"]), example["answer"])],
+    )
 
 
 # ── 결과 정리 ─────────────────────────────────────────
@@ -405,6 +460,85 @@ def _parse_verdict(text: str) -> dict:
     }
 
 
+_NOT_FOUND = re.compile(r"\(?\s*기사에\s*없음\s*\)?")
+_META_LINE = {
+    "media": re.compile(r"언론사\s*:\s*(.+)"),
+    "author": re.compile(r"기자\s*:\s*(.+)"),
+    "published_at": re.compile(r"작성일\s*:\s*(.+)"),
+}
+_EMAIL = re.compile(r"\S+@\S+")
+_AUTHOR_TITLE = re.compile(r"\s*(선임기자|수석기자|객원기자|인턴기자|기자|특파원)$")
+_DATE = re.compile(
+    r"(\d{4})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})\s*일?\.?"
+    r"(?:\s*(?:\([월화수목금토일]\))?\s*(오전|오후)?\s*(\d{1,2})\s*[:시]\s*(\d{2})?)?"
+)
+
+
+def _parse_category(text: str) -> str | None:
+    """목록에 있는 분야 하나를 돌려준다. 읽을 수 없으면 None (업로드를 막지 않음)."""
+    answer = re.sub(r"^\s*분야\s*:\s*", "", text).strip().strip(".").strip()
+    for category in ARTICLE_CATEGORIES:
+        if answer in (category, _CATEGORY_LABELS.get(category, category)):
+            return category
+    found = [c for c in ARTICLE_CATEGORIES if c in answer]
+    return found[0] if len(found) == 1 else None
+
+
+def _in_article(value: str, article: str) -> bool:
+    """OCR이 띄어쓰기를 바꿀 수 있어 공백을 지우고 비교한다."""
+    return re.sub(r"\s+", "", value) in re.sub(r"\s+", "", article)
+
+
+def _parse_author(text: str) -> str | None:
+    names = []
+    for part in re.split(r"[·,/]", _EMAIL.sub("", text)):
+        name = _AUTHOR_TITLE.sub("", part.strip()).strip()
+        if name and name not in names:
+            names.append(name)
+    return ", ".join(names) or None
+
+
+def _parse_published_at(text: str) -> datetime | None:
+    """처음 나오는 날짜를 한국 시간으로 바꾼다. 시간이 없으면 00:00, 연도가 없거나 없는 날짜면 None."""
+    match = _DATE.search(text)
+    if match is None:
+        return None
+    year, month, day, ampm, hour, minute = match.groups()
+    hour = int(hour) if hour else 0
+    if ampm == "오후" and hour < 12:
+        hour += 12
+    elif ampm == "오전" and hour == 12:
+        hour = 0
+    try:
+        return datetime(int(year), int(month), int(day), hour, int(minute or 0), tzinfo=KST)
+    except ValueError:
+        return None
+
+
+def _date_in_article(value: datetime, article: str) -> bool:
+    """모델이 옮긴 날짜(연·월·일)가 원문에 있는지. 표기 방식이 달라도 같은 날짜면 인정한다."""
+    found = {tuple(int(x) for x in m.groups()[:3]) for m in _DATE.finditer(article)}
+    return (value.year, value.month, value.day) in found
+
+
+def _parse_article_metadata(text: str, article: str) -> dict:
+    """언론사·기자·작성일. 없거나 원문에 없는 이름·날짜면 None."""
+    values = {}
+    for key, pattern in _META_LINE.items():
+        match = pattern.search(text)
+        value = match.group(1).strip() if match else ""
+        values[key] = None if not value or _NOT_FOUND.fullmatch(value) else value
+
+    media = values["media"]
+    author = _parse_author(values["author"]) if values["author"] else None
+    published_at = _parse_published_at(values["published_at"]) if values["published_at"] else None
+    return {
+        "media": media if media and _in_article(media, article) else None,
+        "author": author if author and all(_in_article(n, article) for n in author.split(", ")) else None,
+        "published_at": published_at if published_at and _date_in_article(published_at, article) else None,
+    }
+
+
 # ── 기능 함수 ─────────────────────────────────────────
 
 def generate_summary(article: str) -> str:
@@ -459,3 +593,18 @@ def generate_article_ideas(article: str) -> list[str]:
     """후속 기사 아이디어 추천."""
     raw = _generate(_article_ideas_messages(article), None, "article_ideas")
     return _parse_numbered(raw)
+
+
+def generate_category(article: str) -> str | None:
+    """기사 분야 분류. ARTICLE_CATEGORIES 중 하나, 읽을 수 없으면 None."""
+    raw = _generate(_category_messages(article), None, "category")
+    return _parse_category(raw)
+
+
+def generate_article_metadata(article: str) -> dict:
+    """
+    기사에 적힌 언론사·기자·작성일 추출.
+    {"media": str | None, "author": str | None, "published_at": datetime(한국 시간) | None}
+    """
+    raw = _generate(_article_metadata_messages(article), None, "article_metadata")
+    return _parse_article_metadata(raw, article)
