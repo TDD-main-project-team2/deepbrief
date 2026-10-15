@@ -31,6 +31,13 @@ export const validateConfirmation = (value, values) =>
       ? "비밀번호가 일치하지 않습니다."
       : "";
 
+export const validateOrganizationCode = (value) =>
+  !value.trim()
+    ? "조직 코드를 입력해주세요."
+    : value.length > 50
+      ? "조직 코드는 50자 이하로 입력해주세요."
+      : "";
+
 export default function useAuthValidation(validators, initialValues) {
   const [values, setValues] = useState(initialValues);
   const [touched, setTouched] = useState({});

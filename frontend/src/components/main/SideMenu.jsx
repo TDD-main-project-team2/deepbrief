@@ -145,7 +145,7 @@ export default function SideMenu({
             aria-label={user ? "로그인 사용자" : "비로그인 사용자"}
           >
             <div className="user-details">
-              <strong>{user ? user.nickname : "게스트"}</strong>
+              <strong>{user ? user.nickname : "Guest"}</strong>
               <small title={user?.email}>
                 {user ? user.email : "로그인 후 이용해 주세요"}
               </small>

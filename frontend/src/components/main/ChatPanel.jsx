@@ -94,7 +94,10 @@ export default function ChatPanel({ messages, onSendMessage }) {
 
             <div className="quick-actions">
               {suggestions.map((suggestion) => (
-                <button key={suggestion} onClick={() => sendMessage(suggestion)}>
+                <button
+                  key={suggestion}
+                  onClick={() => sendMessage(suggestion)}
+                >
                   {suggestion}
                   <span>↗</span>
                 </button>

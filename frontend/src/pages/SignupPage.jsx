@@ -6,12 +6,14 @@ import PasswordInput from "../components/auth/PasswordInput.jsx";
 
 import useAuthValidation, {
   validateEmail,
+  validateOrganizationCode,
   validateNickname,
   validateSignupPassword,
   validateConfirmation,
 } from "../hooks/useAuthValidation.js";
 
 const validators = {
+  organizationCode: validateOrganizationCode,
   nickname: validateNickname,
   email: validateEmail,
   password: validateSignupPassword,
@@ -20,6 +22,7 @@ const validators = {
 
 export default function SignupPage() {
   const { field, canSubmit } = useAuthValidation(validators, {
+    organizationCode: "",
     nickname: "",
     email: "",
     password: "",
@@ -41,6 +44,17 @@ export default function SignupPage() {
       authLinkPath="/login"
     >
       <form className="signup-form" onSubmit={submit} noValidate>
+        <AuthInput
+          label="조직 코드"
+          {...field("organizationCode")}
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="소속 조직에서 받은 코드를 입력하세요"
+          required
+          maxLength={50}
+        />
+
         <AuthInput
           label="닉네임"
           {...field("nickname")}
