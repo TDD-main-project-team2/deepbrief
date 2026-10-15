@@ -68,3 +68,6 @@ def ensure_article_access(article_id: int, user_id: int, db: Session) -> None:
     """
     if db.get(UserArticle, (user_id, article_id)) is None:
         raise _not_found()
+
+def ensure_organization_member():
+    pass

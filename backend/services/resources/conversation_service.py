@@ -1,6 +1,5 @@
 from backend.services.document import article_processing_service
-from backend.schemas.message import MessageRequest
-from backend.repositories import conversation_repository, message_repository, article_repository
+from backend.repositories import conversation_repository, message_repository
 from backend.app.dependencies import ensure_owner, _not_found
 
 # 사용자 대화 생성

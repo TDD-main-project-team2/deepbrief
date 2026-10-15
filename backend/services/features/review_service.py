@@ -1,6 +1,4 @@
-from backend.repositories import article_repository
-from backend.services.article import article_service
-from backend.services.user import conversation_service
+from backend.services.resources import article_service, conversation_service, organization_service
 from backend.services.ai import model_service
 from backend.schemas.message import MessageRequest
 from sqlalchemy.orm import Session
@@ -23,7 +21,7 @@ def check_duplicates(conversation_id, request: MessageRequest, current_user_id, 
 def evaluate_article(conversation_id, request: MessageRequest, current_user_id, db: Session):
     article = article_service.get_article_by_conversation_id(conversation_id, current_user_id, db)
     conversation_service.save_message(conversation_id, request.content, current_user_id, "user")
-    eval_guideline = article_repository.get_company_evaluation_guideline()
+    eval_guideline = organization_service.get_organization_evaluation_guideline_for_user(current_user_id, 1)
 
     response = model_service.generate_article_evaluation(article, eval_guideline)
 

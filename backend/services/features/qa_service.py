@@ -1,4 +1,4 @@
-from backend.services.user import conversation_service
+from backend.services.resources import conversation_service
 from backend.services.ai import model_service
 from backend.schemas.message import MessageRequest
 
