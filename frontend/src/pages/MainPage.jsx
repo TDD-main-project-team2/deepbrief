@@ -27,7 +27,7 @@ export default function MainPage({ user, onLogout }) {
     [previewError, setPreviewError] = useState("");
 
   const [file, setFile] = useState(null),
-    [started, setStarted] = useState(false);
+    [hasActiveConversation, setHasActiveConversation] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -107,7 +107,7 @@ export default function MainPage({ user, onLogout }) {
     setActiveConversationId(conversation.id);
     changeFile(article.file);
     setVisibility(article.visibility);
-    setStarted(true);
+    setHasActiveConversation(true);
     setView("chat");
   }
 
@@ -135,7 +135,7 @@ export default function MainPage({ user, onLogout }) {
     setActiveConversationId(conversationId);
     changeFile(uploadedFile);
     setVisibility(uploadedVisibility);
-    setStarted(true);
+    setHasActiveConversation(true);
     setView("chat");
   }
 
@@ -145,7 +145,7 @@ export default function MainPage({ user, onLogout }) {
     setView("chat");
     setVisibility("private");
     changeFile(null);
-    setStarted(false);
+    setHasActiveConversation(false);
     setUploadSession((session) => session + 1);
   }
 
@@ -157,15 +157,6 @@ export default function MainPage({ user, onLogout }) {
     previewError,
     setPreviewError,
   };
-
-  const mainClass =
-    view === "article"
-      ? "article-detail-main split-main"
-      : view !== "chat"
-        ? "archive-main"
-        : started
-          ? "split-main"
-          : "welcome-main";
 
   return (
     <div className={`shell ${menuOpen ? "menu-open" : "menu-closed"}`}>
@@ -184,33 +175,28 @@ export default function MainPage({ user, onLogout }) {
       />
 
       <div className="main">
-        <main className={mainClass}>
-          {view === "article" ? (
-            <ArchivePreview
-              {...previewProps}
-              articles={articles}
-              articleId={articleId}
-              setView={setView}
-            />
-          ) : view !== "chat" ? (
-            <ArticleArchive
-              view={view}
-              articles={articles}
-              openArticle={openArticle}
-            />
-          ) : !started ? (
-            <UploadForm key={uploadSession} onStartChat={startChat} />
-          ) : (
-            <>
+        {view === "article" && (
+          <main className="article-detail-main split-main">
+            <ArchivePreview {...previewProps} articles={articles} articleId={articleId} setView={setView} />
+          </main>
+        )}
+        {(view === "private" || view === "public") && (
+          <main className="archive-main">
+            <ArticleArchive view={view} articles={articles} openArticle={openArticle} />
+          </main>
+        )}
+        {view === "chat" && (
+          hasActiveConversation ? (
+            <main className="split-main">
               <ArticlePanel {...previewProps} />
-              <ChatPanel
-                key={activeConversationId}
-                messages={messages}
-                onSendMessage={send}
-              />
-            </>
-          )}
-        </main>
+              <ChatPanel key={activeConversationId} messages={messages} onSendMessage={send} />
+            </main>
+          ) : (
+            <main className="welcome-main">
+              <UploadForm key={uploadSession} onStartChat={startChat} />
+            </main>
+          )
+        )}
       </div>
     </div>
   );
