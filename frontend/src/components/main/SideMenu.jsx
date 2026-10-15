@@ -94,7 +94,7 @@ export default function SideMenu({
               onClick={() => setArticlesOpen((isOpen) => !isOpen)}
             >
               <Icons />
-              기사<span>{articlesOpen ? "⌄" : "›"}</span>
+              보관함<span>{articlesOpen ? "⌄" : "›"}</span>
             </button>
 
             {articlesOpen && (
@@ -107,7 +107,11 @@ export default function SideMenu({
                 >
                   내 기사 <small>개인</small>
                   <span>
-                    {articles.filter((article) => article.visibility === "private").length}
+                    {
+                      articles.filter(
+                        (article) => article.visibility === "private",
+                      ).length
+                    }
                   </span>
                 </button>
 
@@ -119,7 +123,11 @@ export default function SideMenu({
                 >
                   사내 기사 <small>공용</small>
                   <span>
-                    {articles.filter((article) => article.visibility === "public").length}
+                    {
+                      articles.filter(
+                        (article) => article.visibility === "public",
+                      ).length
+                    }
                   </span>
                 </button>
               </div>

@@ -124,13 +124,7 @@
   width: 17px;
   height: 17px;
 }
-.demo-note {
-  font-size: 9px;
-  text-align: center;
-  color: #b6a5b2;
-  margin-top: 11px;
-  line-height: 1.8;
-}
+
 .message-pair {
   margin-top: 28px;
 }
@@ -190,9 +184,7 @@
   .composer textarea {
     font-size: 11px;
   }
-  .demo-note {
-    font-size: 8px;
-  }
+
 }
 .split-main .chat-main {
   max-width: none;
@@ -237,9 +229,7 @@
   padding: 7px 8px;
   gap: 7px;
 }
-.demo-note {
-  font-size: 8px;
-}
+
 .composer textarea {
   font-size: 11px;
 }
@@ -350,3 +340,4 @@
     position: static;
   }
 }
+
