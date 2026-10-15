@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link } from "react-router";
 
 import "./SideMenu.css";
+import brandIcon from "../../assets/svg/icon-gradient.svg";
+
 import ArchiveMenuItem from "./ArchiveMenuItem.jsx";
 import Icons from "../Icons.jsx";
-import brandIcon from "../../assets/svg/icon-gradient.svg";
+import formatDateTime from "../../utils/formatDateTime.js";
 
 export default function SideMenu({
   menuOpen,
@@ -70,8 +72,10 @@ export default function SideMenu({
             {chatsOpen && (
               <div className="chat-history">
                 {conversations.length ? (
-                  conversations.map(conversation => {
-                    const article = articles.find(article => article.id === conversation.articleId);
+                  conversations.map((conversation) => {
+                    const article = articles.find(
+                      (article) => article.id === conversation.articleId,
+                    );
                     return (
                       <button
                         key={conversation.id}
@@ -80,8 +84,11 @@ export default function SideMenu({
                         title={article?.file.name || "기사를 찾을 수 없습니다"}
                         disabled={!article}
                       >
-                        <span>{article?.file.name || "기사를 찾을 수 없습니다"}
-                          <small>{new Date(conversation.createdAt).toLocaleString("ko-KR")}</small>
+                        <span>
+                          {article?.file.name || "기사를 찾을 수 없습니다"}
+                          <small>
+                            {formatDateTime(conversation.createdAt)}
+                          </small>
                         </span>
                       </button>
                     );

@@ -1,5 +1,6 @@
 import "./ArchivePreview.css";
 import FilePreview from "./FilePreview.jsx";
+import formatDateTime from "../../utils/formatDateTime.js";
 
 export default function ArchivePreview({
   file,
@@ -34,7 +35,10 @@ export default function ArchivePreview({
             <div>
               <dt>등록일</dt>
               <dd>
-                {new Date(articles.find((article) => article.id === articleId)?.createdAt).toLocaleString("ko-KR")}
+                {formatDateTime(
+                  articles.find((article) => article.id === articleId)
+                    ?.createdAt,
+                )}
               </dd>
             </div>
             <div>
@@ -47,10 +51,6 @@ export default function ArchivePreview({
                 {articles.find((article) => article.id === articleId)
                   ?.category || "미분류"}
               </dd>
-            </div>
-            <div>
-              <dt>등록 사용자</dt>
-              <dd>김민서 · minseo@example.com</dd>
             </div>
           </dl>
         </div>
