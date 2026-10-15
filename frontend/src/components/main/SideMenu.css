@@ -262,36 +262,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.archive-link {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 11px 10px;
-  width: 100%;
-  border-radius: 6px;
-  text-align: left;
-  font-size: 11px;
-  color: #957c89;
-}
-.archive-link.active {
-  background: #efe3e9;
-  color: var(--wine);
-  font-weight: 600;
-}
-.archive-link svg {
-  width: 17px;
-  height: 17px;
-}
-.archive-link small {
-  font-size: 8px;
-  font-weight: 400;
-  color: #ad96a3;
-}
-.archive-link > span {
-  margin-left: auto;
-  font-size: 9px;
-  color: #aa8899;
-}
+
+
+
+
+
 .menu-groups {
   margin-top: 24px;
   overflow: auto;
@@ -357,9 +332,7 @@
   padding-left: 20px;
   margin-top: 4px;
 }
-.article-submenus .archive-link {
-  font-size: 11px;
-}
+
 .chat-history {
   padding-left: 20px;
   margin: 4px 0 18px;

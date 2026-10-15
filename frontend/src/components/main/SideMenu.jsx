@@ -1,5 +1,7 @@
 import { Link } from "react-router";
+
 import "./SideMenu.css";
+import ArchiveMenuItem from "./ArchiveMenuItem.jsx";
 import Icons from "../Icons.jsx";
 import brandIcon from "../../assets/svg/icon-gradient.svg";
 
@@ -99,37 +101,28 @@ export default function SideMenu({
 
             {articlesOpen && (
               <div className="article-submenus">
-                <button
-                  className={
-                    view === "private" ? "archive-link active" : "archive-link"
+                <ArchiveMenuItem
+                  label="내 기사"
+                  scopeLabel="개인"
+                  count={
+                    articles.filter(
+                      (article) => article.visibility === "private",
+                    ).length
                   }
+                  selected={view === "private"}
                   onClick={() => setView("private")}
-                >
-                  내 기사 <small>개인</small>
-                  <span>
-                    {
-                      articles.filter(
-                        (article) => article.visibility === "private",
-                      ).length
-                    }
-                  </span>
-                </button>
-
-                <button
-                  className={
-                    view === "public" ? "archive-link active" : "archive-link"
+                />
+                <ArchiveMenuItem
+                  label="사내 기사"
+                  scopeLabel="공용"
+                  count={
+                    articles.filter(
+                      (article) => article.visibility === "public",
+                    ).length
                   }
+                  selected={view === "public"}
                   onClick={() => setView("public")}
-                >
-                  사내 기사 <small>공용</small>
-                  <span>
-                    {
-                      articles.filter(
-                        (article) => article.visibility === "public",
-                      ).length
-                    }
-                  </span>
-                </button>
+                />
               </div>
             )}
           </section>
@@ -143,10 +136,11 @@ export default function SideMenu({
             <div className="user-details">
               <strong>{user ? user.nickname : "게스트"}</strong>
               <small title={user?.email}>
-                {user ? user.email : "로그인하지 않은 상태"}
+                {user ? user.email : "로그인 후 이용해 주세요"}
               </small>
             </div>
           </div>
+
           {user ? (
             <button className="account-logout" onClick={onLogout}>
               로그아웃

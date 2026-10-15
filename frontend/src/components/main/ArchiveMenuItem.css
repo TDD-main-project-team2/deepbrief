@@ -1,0 +1,38 @@
+.archive-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 10px;
+  width: 100%;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 11px;
+  color: #957c89;
+}
+
+.archive-link.active {
+  background: #efe3e9;
+  color: var(--wine);
+  font-weight: 600;
+}
+
+.archive-link svg {
+  width: 17px;
+  height: 17px;
+}
+
+.archive-link small {
+  font-size: 8px;
+  font-weight: 400;
+  color: #ad96a3;
+}
+
+.archive-link > span {
+  margin-left: auto;
+  font-size: 9px;
+  color: #aa8899;
+}
+
+.article-submenus .archive-link {
+  font-size: 11px;
+}
