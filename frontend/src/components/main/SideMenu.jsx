@@ -9,7 +9,7 @@ import brandIcon from "../../assets/svg/icon-gradient.svg";
 export default function SideMenu({
   menuOpen,
   setMenuOpen,
-  reset,
+  onOpenUploadForm,
   articles,
   view,
   activeConversationId,
@@ -45,12 +45,12 @@ export default function SideMenu({
       </button>
 
       <aside id="main-menu" className="sidebar">
-        <Link className="brand" to="/" onClick={reset}>
+        <Link className="brand" to="/" onClick={onOpenUploadForm}>
           <img className="brand-icon" src={brandIcon} alt="" />
           DeepBrief<span className="brand-dot">.</span>
         </Link>
 
-        <button className="new-chat" onClick={reset}>
+        <button className="new-chat" onClick={onOpenUploadForm}>
           <Icons type="plus" />새 대화
         </button>
 

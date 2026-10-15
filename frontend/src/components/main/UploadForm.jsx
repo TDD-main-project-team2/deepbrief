@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import "./UploadForm.css";
 import Icons from "../Icons.jsx";
 
-export default function UploadForm({ onStartChat }) {
+export default function UploadForm({ onCreateConversation }) {
   const input = useRef(null);
 
   const [file, setFile] = useState(null);
@@ -25,9 +25,9 @@ export default function UploadForm({ onStartChat }) {
     setFile(selectedFile);
   }
 
-  function startChat() {
+  function createConversation() {
     if (!file) return;
-    onStartChat({ file, visibility });
+    onCreateConversation({ file, visibility });
   }
 
   return (
@@ -144,7 +144,7 @@ export default function UploadForm({ onStartChat }) {
           </label>
         </fieldset>
 
-        <button className="primary start" disabled={!file} onClick={startChat}>
+        <button className="primary start" disabled={!file} onClick={createConversation}>
           이 파일로 대화 시작
           <Icons type="arrow" />
         </button>

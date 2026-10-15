@@ -77,7 +77,7 @@ export default function MainPage({ user, onLogout }) {
   const hasActiveConversation = Boolean(activeConversation);
   const messages = activeConversation?.messages || [];
 
-  function send(messageText) {
+  function sendMessage(messageText) {
     if (!messageText.trim() || !activeConversation) return;
     const message = {
       question: messageText,
@@ -92,25 +92,27 @@ export default function MainPage({ user, onLogout }) {
     );
   }
 
-  function openArticle(item) {
-    setArticleId(item.id);
-    changeFile(item.file);
-    setVisibility(item.visibility);
-    setView("article");
-  }
-
   function openChat(conversation) {
     const article = articles.find(
       (article) => article.id === conversation.articleId,
     );
+
     if (!article) return;
+
     setActiveConversationId(conversation.id);
     changeFile(article.file);
     setVisibility(article.visibility);
     setView("chat");
   }
 
-  function startChat({ file: uploadedFile, visibility: uploadedVisibility }) {
+  function openArticle(article) {
+    setArticleId(article.id);
+    changeFile(article.file);
+    setVisibility(article.visibility);
+    setView("article");
+  }
+
+  function createConversation({ file: uploadedFile, visibility: uploadedVisibility }) {
     const articleId = crypto.randomUUID();
     const conversationId = crypto.randomUUID();
     const createdAt = new Date().toISOString();
@@ -137,7 +139,7 @@ export default function MainPage({ user, onLogout }) {
     setView("chat");
   }
 
-  function reset() {
+  function openUploadForm() {
     setActiveConversationId(null);
     setArticleId(null);
     setView("chat");
@@ -160,7 +162,7 @@ export default function MainPage({ user, onLogout }) {
       <SideMenu
         menuOpen={menuOpen}
         setMenuOpen={setMenuOpen}
-        reset={reset}
+        onOpenUploadForm={openUploadForm}
         articles={articles}
         view={view}
         activeConversationId={activeConversationId}
@@ -198,12 +200,12 @@ export default function MainPage({ user, onLogout }) {
               <ChatPanel
                 key={activeConversationId}
                 messages={messages}
-                onSendMessage={send}
+                onSendMessage={sendMessage}
               />
             </main>
           ) : (
             <main className="welcome-main">
-              <UploadForm key={uploadSession} onStartChat={startChat} />
+              <UploadForm key={uploadSession} onCreateConversation={createConversation} />
             </main>
           ))}
       </div>

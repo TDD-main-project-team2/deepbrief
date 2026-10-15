@@ -13,7 +13,7 @@ export default function ChatPanel({ messages, onSendMessage }) {
   const [text, setText] = useState("");
   const [tool, setTool] = useState("Edit");
 
-  function send(messageText = text) {
+  function sendMessage(messageText = text) {
     if (!messageText.trim()) return;
     onSendMessage(messageText);
     setText("");
@@ -94,7 +94,7 @@ export default function ChatPanel({ messages, onSendMessage }) {
 
             <div className="quick-actions">
               {suggestions.map((suggestion) => (
-                <button key={suggestion} onClick={() => send(suggestion)}>
+                <button key={suggestion} onClick={() => sendMessage(suggestion)}>
                   {suggestion}
                   <span>↗</span>
                 </button>
@@ -104,7 +104,7 @@ export default function ChatPanel({ messages, onSendMessage }) {
             <form
               onSubmit={(event) => {
                 event.preventDefault();
-                send();
+                sendMessage();
               }}
             >
               <textarea
@@ -119,7 +119,7 @@ export default function ChatPanel({ messages, onSendMessage }) {
                     !event.nativeEvent.isComposing
                   ) {
                     event.preventDefault();
-                    send();
+                    sendMessage();
                   }
                 }}
               />
