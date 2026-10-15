@@ -15,7 +15,8 @@ export default function SideMenu({
   setArticlesOpen,
   articles,
   view,
-  activeId,
+  activeConversationId,
+  conversations,
   openChat,
   setView,
   user,
@@ -68,20 +69,23 @@ export default function SideMenu({
 
             {chatsOpen && (
               <div className="chat-history">
-                {articles.length ? (
-                  articles.map((article) => (
-                    <button
-                      key={article.id}
-                      className={`history-item ${view === "chat" && activeId === article.id ? "active" : ""}`}
-                      onClick={() => openChat(article)}
-                      title={article.file.name}
-                    >
-                      <span>
-                        {article.file.name}
-                        <small>{article.date}</small>
-                      </span>
-                    </button>
-                  ))
+                {conversations.length ? (
+                  conversations.map(conversation => {
+                    const article = articles.find(article => article.id === conversation.articleId);
+                    return (
+                      <button
+                        key={conversation.id}
+                        className={`history-item ${view === "chat" && activeConversationId === conversation.id ? "active" : ""}`}
+                        onClick={() => openChat(conversation)}
+                        title={article?.file.name || "기사를 찾을 수 없습니다"}
+                        disabled={!article}
+                      >
+                        <span>{article?.file.name || "기사를 찾을 수 없습니다"}
+                          <small>{new Date(conversation.createdAt).toLocaleString("ko-KR")}</small>
+                        </span>
+                      </button>
+                    );
+                  })
                 ) : (
                   <p className="no-chats">아직 대화 기록이 없어요.</p>
                 )}

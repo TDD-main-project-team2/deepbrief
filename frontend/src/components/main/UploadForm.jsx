@@ -1,17 +1,34 @@
+import { useRef, useState } from "react";
 import "./UploadForm.css";
 import Icons from "../Icons.jsx";
 
-export default function UploadForm({
-  file,
-  drag,
-  setDrag,
-  select,
-  input,
-  error,
-  visibility,
-  setVisibility,
-  startChat,
-}) {
+export default function UploadForm({ onStartChat }) {
+  const input = useRef(null);
+
+  const [file, setFile] = useState(null);
+  const [drag, setDrag] = useState(false);
+  const [error, setError] = useState("");
+  const [visibility, setVisibility] = useState("private");
+
+  function select(selectedFile) {
+    if (!selectedFile) return;
+    if (!/\.(pdf|png|jpg|jpeg|txt|md)$/i.test(selectedFile.name)) {
+      setError("PDF, PNG, JPG, JPEG, TXT 또는 MD 파일을 선택해주세요.");
+      return;
+    }
+    if (selectedFile.size > 20 * 1024 * 1024) {
+      setError("20MB 이하의 파일을 선택해주세요.");
+      return;
+    }
+    setError("");
+    setFile(selectedFile);
+  }
+
+  function startChat() {
+    if (!file) return;
+    onStartChat({ file, visibility });
+  }
+
   return (
     <>
       <section className="welcome">

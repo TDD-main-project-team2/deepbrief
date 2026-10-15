@@ -12,7 +12,7 @@ export default function ArticleArchiveItem({ article, onOpen }) {
         <strong>{article.file.name}</strong>
         <small>
           {article.file.name.split(".").pop().toUpperCase()} ·{" "}
-          {(article.file.size / 1024).toFixed(1)} KB · {article.date}
+          {(article.file.size / 1024).toFixed(1)} KB · {new Date(article.createdAt).toLocaleString("ko-KR")}
         </small>
       </span>
       <span className="archive-open">열기 ↗</span>

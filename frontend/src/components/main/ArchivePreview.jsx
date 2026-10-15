@@ -34,7 +34,7 @@ export default function ArchivePreview({
             <div>
               <dt>등록일</dt>
               <dd>
-                {articles.find((article) => article.id === articleId)?.date}
+                {new Date(articles.find((article) => article.id === articleId)?.createdAt).toLocaleString("ko-KR")}
               </dd>
             </div>
             <div>
