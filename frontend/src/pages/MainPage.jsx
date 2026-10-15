@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import "./MainPage.css";
 import "../components/main/MainCommon.css";
@@ -10,10 +10,9 @@ import ChatPanel from "../components/main/ChatPanel.jsx";
 import ArticleArchive from "../components/main/ArticleArchive.jsx";
 import ArchivePreview from "../components/main/ArchivePreview.jsx";
 
-export default function MainPage({ user, onLogout }) {
-  const previewUrlRef = useRef("");
-  const previewRequestRef = useRef(0);
+import useFilePreview from "../hooks/useFilePreview.js";
 
+export default function MainPage({ user, onLogout }) {
   const [uploadSession, setUploadSession] = useState(0);
   const [activeConversationId, setActiveConversationId] = useState(null),
     [articleId, setArticleId] = useState(null),
@@ -22,54 +21,15 @@ export default function MainPage({ user, onLogout }) {
     [conversations, setConversations] = useState([]),
     [visibility, setVisibility] = useState("private"),
     [menuOpen, setMenuOpen] = useState(true);
-  const [previewUrl, setPreviewUrl] = useState(""),
-    [previewText, setPreviewText] = useState(""),
-    [previewError, setPreviewError] = useState("");
 
-  const [file, setFile] = useState(null);
-
-  useEffect(() => {
-    return () => {
-      previewRequestRef.current += 1;
-
-      if (previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current);
-        previewUrlRef.current = "";
-      }
-    };
-  }, []);
-
-  async function changeFile(nextFile) {
-    // 이전 URL 해제, 새 미리보기 생성 및 텍스트 읽기를 처리합니다.
-
-    const requestId = ++previewRequestRef.current;
-    const url = nextFile ? URL.createObjectURL(nextFile) : "";
-
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
-    }
-    previewUrlRef.current = url;
-
-    setFile(nextFile);
-    setPreviewUrl(url);
-    setPreviewText("");
-    setPreviewError("");
-
-    if (!nextFile || !/\.(txt|md)$/i.test(nextFile.name)) return;
-
-    try {
-      const documentText = await nextFile.text();
-      if (previewRequestRef.current === requestId) {
-        setPreviewText(documentText);
-      }
-    } catch {
-      if (previewRequestRef.current === requestId) {
-        setPreviewError(
-          "파일을 읽지 못했습니다. 다른 파일로 다시 시작해주세요.",
-        );
-      }
-    }
-  }
+  const {
+    file,
+    previewUrl,
+    previewText,
+    previewError,
+    setPreviewError,
+    changeFile,
+  } = useFilePreview();
 
   const activeConversation = conversations.find(
     (conversation) => conversation.id === activeConversationId,
@@ -112,7 +72,10 @@ export default function MainPage({ user, onLogout }) {
     setView("article");
   }
 
-  function createConversation({ file: uploadedFile, visibility: uploadedVisibility }) {
+  function createConversation({
+    file: uploadedFile,
+    visibility: uploadedVisibility,
+  }) {
     const articleId = crypto.randomUUID();
     const conversationId = crypto.randomUUID();
     const createdAt = new Date().toISOString();
@@ -205,7 +168,10 @@ export default function MainPage({ user, onLogout }) {
             </main>
           ) : (
             <main className="welcome-main">
-              <UploadForm key={uploadSession} onCreateConversation={createConversation} />
+              <UploadForm
+                key={uploadSession}
+                onCreateConversation={createConversation}
+              />
             </main>
           ))}
       </div>
