@@ -52,6 +52,13 @@ EVALUATION_VERDICTS = ("충족", "미흡", "해당 없음")
 ARTICLE_CATEGORIES = ("정치", "경제", "사회", "문화", "IT", "과학", "세계", "엔터테인먼트", "스포츠")
 _CATEGORY_LABELS = {"문화": "문화(생활 포함)"}   # 프롬프트에만 보이는 이름. 저장 값은 ARTICLE_CATEGORIES
 
+# QA 답변 출처. 현재 기사로 답할 수 있으면 current_article, 아니면 organization(회사 기사)
+ANSWER_SOURCES = ("current_article", "organization")
+# QA 어댑터가 답이 없을 때 쓰도록 학습한 문장 (qa/config.yaml의 answers.unanswerable과 같아야 함)
+QA_NO_ANSWER = "주어진 기사에서 답을 찾을 수 없습니다."
+# 회사 기사에서도 답을 찾지 못했을 때 사용자에게 보여 줄 문구
+NOT_FOUND_MESSAGE = "관련 내용을 찾지 못했습니다."
+
 # 작성일 시간대. 한국은 서머타임이 없어 +09:00 고정이 정확하다 (ZoneInfo는 윈도우에서 tzdata 패키지가 필요)
 KST = timezone(timedelta(hours=9))
 
@@ -576,6 +583,31 @@ def _evaluation_text(result: dict) -> str:
     return "\n".join(lines)
 
 
+def _is_no_answer(text: str) -> bool:
+    """QA 어댑터의 "답 없음" 문장인지. 띄어쓰기·마침표 차이는 무시한다."""
+    normalized = re.sub(r"[\s.]", "", text)
+    return not normalized or "답을찾을수없" in normalized
+
+
+_YES_NO_ANSWERS = ("예", "아니오")
+
+
+def _answer_in_context(answer: str, context: str) -> bool:
+    """
+    답이 근거 본문에 실제로 있는지. QA 어댑터가 근거에 없는 답을 지어내는 경우를 거른다.
+    공백과 끝 마침표는 무시한다. 예/아니오형 정답("예", "아니오")은 본문에 없어도 인정한다.
+    """
+    normalized = re.sub(r"\s+", "", answer).rstrip(".")
+    if normalized in _YES_NO_ANSWERS:
+        return True
+    return bool(normalized) and normalized in re.sub(r"\s+", "", context)
+
+
+def _usable_answer(answer: str, context: str) -> bool:
+    """쓸 수 있는 답인지: "답 없음"이 아니고 근거 본문에 있는 답."""
+    return not _is_no_answer(answer) and _answer_in_context(answer, context)
+
+
 # ── 기능 함수 ─────────────────────────────────────────
 # 메시지로 저장하는 기능은 문자열을 돌려준다 (conversation_service.save_message에 그대로 넣으면 됨).
 # 목록·딕셔너리 원본이 필요하면 *_data 함수를 쓴다.
@@ -688,3 +720,24 @@ def generate_article_metadata(article) -> dict:
         "category": generate_category(text),
         "published_at": found["published_at"],
     }
+
+
+def decide_answer_source(context, question: str) -> dict:
+    """
+    QA 1단계. 현재 기사에서 찾은 본문 조각으로 답할 수 있는지 판단하고, 되면 답까지 만든다 (QA 어댑터 1번).
+    "답 없음"이거나 답이 본문에 없으면(지어낸 답) 답할 수 없는 것으로 본다.
+    {"source": "current_article", "answer": 답}  또는  {"source": "organization", "answer": None}
+    organization이면 회사 기사 조각을 찾아 generate_organization_answer로 넘긴다.
+    """
+    text = _article_text(context)
+    answer = generate_answer(text, question)
+    if not _usable_answer(answer, text):
+        return {"source": "organization", "answer": None}
+    return {"source": "current_article", "answer": answer}
+
+
+def generate_organization_answer(context, question: str) -> str:
+    """QA 2단계. 회사 기사에서 찾은 본문 조각으로 답한다. "답 없음"이거나 본문에 없는 답이면 NOT_FOUND_MESSAGE."""
+    text = _article_text(context)
+    answer = generate_answer(text, question)
+    return answer if _usable_answer(answer, text) else NOT_FOUND_MESSAGE
