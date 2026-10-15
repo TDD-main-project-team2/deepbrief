@@ -67,3 +67,5 @@ class VectorDB:
                 ArticleChunk.article_id == article_id
             ).delete(synchronize_session=False)
             session.add_all(chunks)
+
+vector_db = VectorDB()
