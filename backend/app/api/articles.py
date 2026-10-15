@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from backend.services.article import article_service
+from backend.services.resources import article_service
 from backend.app.dependencies import get_current_user
 from backend.database.rdb.rdb import get_db
 from backend.schemas.article import ArticleResponse, ArticleListResponse

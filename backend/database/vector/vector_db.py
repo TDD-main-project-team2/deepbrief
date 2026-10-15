@@ -24,14 +24,16 @@ class VectorDB:
                 session.add(chunk)
             session.commit()
 
-    def search_similar_chunks(self, embedding: list[float], top_k: int = 5):
+    def search_similar_chunks(self, embedding: list[float], top_k: int = 5, article_id: int | None = None) -> list[ArticleChunk]:
         with self.SessionLocal() as session:
-            query = (
-                session.query(ArticleChunk)
-                .order_by(ArticleChunk.embedding.cosine_distance(embedding))
-                .limit(top_k)
-            )
-            return query.all()
+            query = session.query(ArticleChunk)
+
+            if article_id is not None:
+                query = query.filter(ArticleChunk.article_id == article_id)
+
+            return query.order_by(
+                ArticleChunk.embedding.cosine_distance(embedding)
+            ).limit(top_k).all()
 
     def delete_article_chunks(self, article_id: int):
         with self.SessionLocal() as session:
@@ -67,3 +69,5 @@ class VectorDB:
                 ArticleChunk.article_id == article_id
             ).delete(synchronize_session=False)
             session.add_all(chunks)
+
+vector_db = VectorDB()
