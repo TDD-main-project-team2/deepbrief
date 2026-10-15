@@ -17,8 +17,6 @@ export default function MainPage({ user, onLogout }) {
   const [uploadSession, setUploadSession] = useState(0);
   const [activeConversationId, setActiveConversationId] = useState(null),
     [articleId, setArticleId] = useState(null),
-    [chatsOpen, setChatsOpen] = useState(true),
-    [articlesOpen, setArticlesOpen] = useState(true),
     [view, setView] = useState("chat"),
     [articles, setArticles] = useState([]),
     [conversations, setConversations] = useState([]),
@@ -181,10 +179,6 @@ export default function MainPage({ user, onLogout }) {
         menuOpen={menuOpen}
         setMenuOpen={setMenuOpen}
         reset={reset}
-        chatsOpen={chatsOpen}
-        setChatsOpen={setChatsOpen}
-        articlesOpen={articlesOpen}
-        setArticlesOpen={setArticlesOpen}
         articles={articles}
         view={view}
         activeConversationId={activeConversationId}

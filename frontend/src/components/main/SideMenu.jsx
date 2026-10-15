@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router";
 
 import "./SideMenu.css";
@@ -9,10 +10,6 @@ export default function SideMenu({
   menuOpen,
   setMenuOpen,
   reset,
-  chatsOpen,
-  setChatsOpen,
-  articlesOpen,
-  setArticlesOpen,
   articles,
   view,
   activeConversationId,
@@ -22,6 +19,9 @@ export default function SideMenu({
   user,
   onLogout,
 }) {
+  const [chatsOpen, setChatsOpen] = useState(true);
+  const [articlesOpen, setArticlesOpen] = useState(true);
+
   return (
     <>
       <button
