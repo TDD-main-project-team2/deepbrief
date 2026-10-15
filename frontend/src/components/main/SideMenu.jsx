@@ -11,7 +11,7 @@ export default function SideMenu({
   setChatsOpen,
   articlesOpen,
   setArticlesOpen,
-  archive,
+  articles,
   view,
   activeId,
   openChat,
@@ -26,7 +26,7 @@ export default function SideMenu({
         aria-label={menuOpen ? "메뉴 닫기" : "메뉴 열기"}
         aria-expanded={menuOpen}
         aria-controls="main-menu"
-        onClick={() => setMenuOpen((v) => !v)}
+        onClick={() => setMenuOpen((isOpen) => !isOpen)}
       >
         <svg
           width="20"
@@ -58,7 +58,7 @@ export default function SideMenu({
             <button
               className="menu-group-title"
               aria-expanded={chatsOpen}
-              onClick={() => setChatsOpen((v) => !v)}
+              onClick={() => setChatsOpen((isOpen) => !isOpen)}
             >
               <Icons type="chat" />
               대화<span>{chatsOpen ? "⌄" : "›"}</span>
@@ -66,17 +66,17 @@ export default function SideMenu({
 
             {chatsOpen && (
               <div className="chat-history">
-                {archive.length ? (
-                  archive.map((a) => (
+                {articles.length ? (
+                  articles.map((article) => (
                     <button
-                      key={a.id}
-                      className={`history-item ${view === "chat" && activeId === a.id ? "active" : ""}`}
-                      onClick={() => openChat(a)}
-                      title={a.file.name}
+                      key={article.id}
+                      className={`history-item ${view === "chat" && activeId === article.id ? "active" : ""}`}
+                      onClick={() => openChat(article)}
+                      title={article.file.name}
                     >
                       <span>
-                        {a.file.name}
-                        <small>{a.date}</small>
+                        {article.file.name}
+                        <small>{article.date}</small>
                       </span>
                     </button>
                   ))
@@ -91,7 +91,7 @@ export default function SideMenu({
             <button
               className="menu-group-title"
               aria-expanded={articlesOpen}
-              onClick={() => setArticlesOpen((v) => !v)}
+              onClick={() => setArticlesOpen((isOpen) => !isOpen)}
             >
               <Icons />
               기사<span>{articlesOpen ? "⌄" : "›"}</span>
@@ -107,7 +107,7 @@ export default function SideMenu({
                 >
                   내 기사 <small>개인</small>
                   <span>
-                    {archive.filter((a) => a.visibility === "private").length}
+                    {articles.filter((article) => article.visibility === "private").length}
                   </span>
                 </button>
 
@@ -119,7 +119,7 @@ export default function SideMenu({
                 >
                   사내 기사 <small>공용</small>
                   <span>
-                    {archive.filter((a) => a.visibility === "public").length}
+                    {articles.filter((article) => article.visibility === "public").length}
                   </span>
                 </button>
               </div>

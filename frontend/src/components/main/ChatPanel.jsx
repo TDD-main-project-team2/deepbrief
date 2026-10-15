@@ -18,6 +18,8 @@ export default function ChatPanel({
   send,
 }) {
   const messageArea = useRef(null);
+  const toolNames = Object.keys(actions);
+  const suggestions = actions[tool] || actions.Edit;
 
   useEffect(() => {
     const area = messageArea.current;
@@ -56,9 +58,9 @@ export default function ChatPanel({
               </div>
             </div>
 
-            {messages.map((m, i) => (
-              <div className="message-pair" key={i}>
-                <div className="user-message">{m.question}</div>
+            {messages.map((message, messageIndex) => (
+              <div className="message-pair" key={messageIndex}>
+                <div className="user-message">{message.question}</div>
 
                 <div className="assistant-message">
                   <span className="assistant-avatar">
@@ -66,7 +68,7 @@ export default function ChatPanel({
                   </span>
                   <div>
                     <strong>DeepBrief</strong>
-                    <p>{m.answer}</p>
+                    <p>{message.answer}</p>
                   </div>
                 </div>
               </div>
@@ -75,31 +77,31 @@ export default function ChatPanel({
 
           <div className="composer">
             <div className="tools" role="tablist" aria-label="작업 선택">
-              {Object.keys(actions).map((t) => (
+              {toolNames.map((toolName) => (
                 <button
-                  key={t}
+                  key={toolName}
                   role="tab"
-                  aria-selected={tool === t}
-                  className={tool === t ? "selected" : ""}
-                  onClick={() => setTool(t)}
+                  aria-selected={tool === toolName}
+                  className={tool === toolName ? "selected" : ""}
+                  onClick={() => setTool(toolName)}
                 >
-                  {t}
+                  {toolName}
                 </button>
               ))}
             </div>
 
             <div className="quick-actions">
-              {(actions[tool] || actions.Edit).map((a) => (
-                <button key={a} onClick={() => send(a)}>
-                  {a}
+              {suggestions.map((suggestion) => (
+                <button key={suggestion} onClick={() => send(suggestion)}>
+                  {suggestion}
                   <span>↗</span>
                 </button>
               ))}
             </div>
 
             <form
-              onSubmit={(e) => {
-                e.preventDefault();
+              onSubmit={(event) => {
+                event.preventDefault();
                 send();
               }}
             >
@@ -107,14 +109,14 @@ export default function ChatPanel({
                 aria-label="대화 메시지"
                 placeholder="기사에 대한 요청이나 질문을 입력하세요"
                 value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => {
+                onChange={(event) => setText(event.target.value)}
+                onKeyDown={(event) => {
                   if (
-                    e.key === "Enter" &&
-                    !e.shiftKey &&
-                    !e.nativeEvent.isComposing
+                    event.key === "Enter" &&
+                    !event.shiftKey &&
+                    !event.nativeEvent.isComposing
                   ) {
-                    e.preventDefault();
+                    event.preventDefault();
                     send();
                   }
                 }}

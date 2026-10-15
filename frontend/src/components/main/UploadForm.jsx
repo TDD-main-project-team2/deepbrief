@@ -24,15 +24,15 @@ export default function UploadForm({
 
         <div
           className={`upload-area ${drag ? "dragging" : ""} ${file ? "has-file" : ""}`}
-          onDragOver={(e) => {
-            e.preventDefault();
+          onDragOver={(event) => {
+            event.preventDefault();
             setDrag(true);
           }}
           onDragLeave={() => setDrag(false)}
-          onDrop={(e) => {
-            e.preventDefault();
+          onDrop={(event) => {
+            event.preventDefault();
             setDrag(false);
-            select(e.dataTransfer.files[0]);
+            select(event.dataTransfer.files[0]);
           }}
         >
           {file ? (
@@ -73,7 +73,7 @@ export default function UploadForm({
           accept=".pdf,.png,.jpg,.jpeg,.txt,.md"
           aria-label="기사 파일 업로드"
           className="hidden-input"
-          onChange={(e) => select(e.target.files[0])}
+          onChange={(event) => select(event.target.files[0])}
         />
 
         {error && (
