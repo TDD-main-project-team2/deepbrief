@@ -36,11 +36,10 @@ def delete_article(article_id, current_user_id):
     article_repository.delete_article(article_id)
 
 #이것도 RAG으로? 할까
-def categorize_article(article_id) -> str:
+def categorize_article(article_id):
     article = find_article_by_id(article_id)
     category = model_service.generate_category(article.body)
     article_repository.update_category(article_id, category)
-    return category
 '''
 def save_article(article_id, current_user_id):
     article_repository.save_article(article_id, current_user_id)
