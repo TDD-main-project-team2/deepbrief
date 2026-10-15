@@ -50,28 +50,31 @@ function ImageContent({ file, previewUrl, previewError, setPreviewError }) {
 
 export default function FilePreview(props) {
   const extension = props.file.name.split(".").pop().toLowerCase();
+  let content;
 
   if (extension === "pdf") {
-    return <PdfContent previewUrl={props.previewUrl} />;
-  }
-
-  if (extension === "txt" || extension === "md") {
-    return (
+    content = <PdfContent previewUrl={props.previewUrl} />;
+  } else if (extension === "txt" || extension === "md") {
+    content = (
       <TextContent
         file={props.file}
         previewText={props.previewText}
         previewError={props.previewError}
       />
     );
-  }
-
-  if (["png", "jpg", "jpeg"].includes(extension)) {
-    return <ImageContent {...props} />;
+  } else if (["png", "jpg", "jpeg"].includes(extension)) {
+    content = <ImageContent {...props} />;
+  } else {
+    content = (
+      <div className="preview-fallback">
+        <p>지원하지 않는 파일 형식입니다.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="preview-fallback">
-      <p>지원하지 않는 파일 형식입니다.</p>
+    <div className="preview-canvas" key={props.previewUrl}>
+      {content}
     </div>
   );
 }
