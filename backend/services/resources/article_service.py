@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from backend.repositories import article_repository
 from backend.app.dependencies import ensure_article_access, ensure_owner, _not_found
+from backend.services.ai import model_service
 
 
 def find_article_by_id(article_id):
@@ -34,7 +35,12 @@ def delete_article(article_id, current_user_id):
     ensure_owner(article.user_id, current_user_id)
     article_repository.delete_article(article_id)
 
-
+#이것도 RAG으로? 할까
+def categorize_article(article_id) -> str:
+    article = find_article_by_id(article_id)
+    category = model_service.generate_category(article.body)
+    article_repository.update_category(article_id, category)
+    return category
 '''
 def save_article(article_id, current_user_id):
     article_repository.save_article(article_id, current_user_id)
