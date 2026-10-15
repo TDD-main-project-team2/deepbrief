@@ -42,7 +42,7 @@ def delete_conversation(conversation_id, current_user_id):
     conversation_repository.delete_conversation(conversation_id)
 
 # 대화 기록 조회
-def get_conversation_context(conversation_id, current_user_id, limit=10):
+def get_conversation_history(conversation_id, current_user_id, limit=5):
     conversation = find_conversation_by_id(conversation_id)
     ensure_owner(conversation.user_id, current_user_id)
 
