@@ -469,12 +469,12 @@ def _parse_verdict(text: str) -> dict:
 
 _NOT_FOUND = re.compile(r"\(?\s*기사에\s*없음\s*\)?")
 _META_LINE = {
-    "publisher": re.compile(r"언론사\s*:\s*(.+)"),
+    "media": re.compile(r"언론사\s*:\s*(.+)"),
     "author": re.compile(r"기자\s*:\s*(.+)"),
     "published_at": re.compile(r"작성일\s*:\s*(.+)"),
 }
 _EMAIL = re.compile(r"\S+@\S+")
-_MAX_COLUMN_LENGTH = 255   # articles.publisher, author 컬럼 길이 (String(255))
+_MAX_COLUMN_LENGTH = 255   # articles.media, author 컬럼 길이 (String(255))
 _AUTHOR_TITLE = re.compile(r"\s*(선임기자|수석기자|객원기자|인턴기자|기자|특파원)$")
 _DATE = re.compile(
     r"(\d{4})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})\s*일?\.?"
@@ -537,11 +537,11 @@ def _parse_article_metadata(text: str, article: str) -> dict:
         value = match.group(1).strip() if match else ""
         values[key] = None if not value or _NOT_FOUND.fullmatch(value) else value
 
-    publisher = values["publisher"]
+    media = values["media"]
     author = _parse_author(values["author"]) if values["author"] else None
     published_at = _parse_published_at(values["published_at"]) if values["published_at"] else None
     return {
-        "publisher": publisher[:_MAX_COLUMN_LENGTH] if publisher and _in_article(publisher, article) else None,
+        "media": media[:_MAX_COLUMN_LENGTH] if media and _in_article(media, article) else None,
         "author": (author[:_MAX_COLUMN_LENGTH]
                    if author and all(_in_article(n, article) for n in author.split(", ")) else None),
         "published_at": published_at if published_at and _date_in_article(published_at, article) else None,
@@ -558,6 +558,66 @@ def _article_text(article) -> str:
     if isinstance(body, str):
         return body
     raise TypeError(f"기사 본문 문자열이나 body가 있는 Article 객체가 필요합니다: {type(article).__name__}")
+
+
+def _template_text(template) -> str:
+    """템플릿 문자열 또는 DB의 Template 객체(.content)를 받아 템플릿 문자열을 돌려준다."""
+    if isinstance(template, str):
+        return template
+    content = getattr(template, "content", None)
+    if isinstance(content, str):
+        return content
+    raise TypeError(f"템플릿 문자열이나 content가 있는 Template 객체가 필요합니다: {type(template).__name__}")
+
+
+_LIST_MARK = re.compile(r"^\s*(?:\d+\s*[.)]|\(\d+\)|[-•·*▪◦]|[①-⑳])\s*")
+
+
+def _guideline_lines(title: str, content: str) -> list[dict]:
+    """
+    지침 하나(title, content)를 평가 항목 목록으로 바꾼다.
+    content가 여러 줄이면 한 줄을 항목 하나로 보고, "항목: 설명"이면 콜론 앞을 항목 이름으로 쓴다.
+    한 줄뿐이면 지침 전체를 항목 하나로 본다 (title = 항목, content = 설명).
+    """
+    lines = [_LIST_MARK.sub("", line).strip() for line in content.splitlines()]
+    lines = [line for line in lines if line]
+    if len(lines) <= 1:
+        return [{"title": title.strip(), "description": content.strip()}]
+    items = []
+    for line in lines:
+        name, sep, description = line.partition(":")
+        items.append({"title": name.strip(), "description": description.strip()} if sep and name.strip()
+                     else {"title": line, "description": ""})
+    return items
+
+
+def _guideline_items(guideline) -> list[dict]:
+    """
+    지침을 평가 항목 목록 [{"title", "description"}]으로 바꾼다. 받는 모양:
+    - DB의 Guideline 객체 하나 (.title, .content)
+    - Guideline 객체 여러 개의 리스트
+    - [{"title", "description"}] 리스트 (그대로)
+    """
+    if isinstance(guideline, dict) or hasattr(guideline, "content"):
+        guideline = [guideline]
+    items = []
+    for entry in guideline:
+        if isinstance(entry, dict):
+            items.append({"title": entry["title"], "description": entry.get("description", "")})
+        elif isinstance(getattr(entry, "content", None), str):
+            items += _guideline_lines(getattr(entry, "title", "") or "", entry.content)
+        else:
+            raise TypeError(f"지침 항목 dict나 title·content가 있는 Guideline 객체가 필요합니다: {type(entry).__name__}")
+    return items
+
+
+EMPTY_OUTPUT_MESSAGE = "결과를 생성하지 못했습니다. 다시 시도해 주세요."
+
+
+def _message_text(text: str) -> str:
+    """메시지로 저장할 문자열. messages.content는 빈 문자열·앞뒤 공백을 허용하지 않으므로 정리한다."""
+    text = text.strip()
+    return text or EMPTY_OUTPUT_MESSAGE
 
 
 def _title_text(titles: list[dict]) -> str:
@@ -615,30 +675,31 @@ def _usable_answer(answer: str, context: str) -> bool:
 
 def generate_summary(article) -> str:
     """요약 (요약 어댑터)."""
-    return _generate(_summary_messages(_article_text(article)), "summary", "summary")
+    return _message_text(_generate(_summary_messages(_article_text(article)), "summary", "summary"))
 
 
 def generate_answer(context, question: str) -> str:
     """질의응답 (QA 어댑터). context는 RAG로 찾은 본문 조각을 이은 문자열 (Article 객체도 가능)."""
-    return _generate(_answer_messages(_article_text(context), question), "qa", "answer")
+    return _message_text(_generate(_answer_messages(_article_text(context), question), "qa", "answer"))
 
 
 def generate_formatted_article(article, template: str) -> str:
-    """템플릿 형식에 맞춰 기사 수정."""
-    return _generate(
-        _formatted_article_messages(_article_text(article), template), None, "formatted_article"
-    )
+    """템플릿 형식에 맞춰 기사 수정. template은 템플릿 문자열 또는 DB의 Template 객체(.content)."""
+    return _message_text(_generate(
+        _formatted_article_messages(_article_text(article), _template_text(template)), None, "formatted_article"
+    ))
 
 
 def generate_article_evaluation_data(article, guideline: list[dict]) -> dict:
     """
     회사 지침 기반 기사 평가 (원본). 지침 항목마다 따로 판단한다.
-    guideline: [{"title": "항목 제목", "description": "항목 설명"}, ...]
+    guideline: DB의 Guideline 객체(하나 또는 리스트, content가 여러 줄이면 한 줄 = 항목 하나)
+               또는 [{"title": "항목 제목", "description": "항목 설명"}, ...]
     반환: {"items": [{"title", "verdict", "reason"}, ...], "summary": {"충족": n, "미흡": n, "해당 없음": n, "판정 실패": n}}
     """
     text = _article_text(article)
     items = []
-    for item in guideline:
+    for item in _guideline_items(guideline):
         raw = _generate(_evaluation_item_messages(text, item), None, "evaluation_item")
         items.append({"title": item["title"], **_parse_verdict(raw)})
 
@@ -650,7 +711,7 @@ def generate_article_evaluation_data(article, guideline: list[dict]) -> dict:
 
 def generate_article_evaluation(article, guideline: list[dict]) -> str:
     """회사 지침 기반 기사 평가 (메시지용 문자열). 집계 한 줄 + 항목별 판정과 이유."""
-    return _evaluation_text(generate_article_evaluation_data(article, guideline))
+    return _message_text(_evaluation_text(generate_article_evaluation_data(article, guideline)))
 
 
 def generate_keyword_tags_data(article) -> list[str]:
@@ -663,9 +724,9 @@ def generate_keyword_tags(article) -> str:
     """키워드/태그 추천 (메시지용 문자열). 예: "가람시, 소상공인, 전기요금" """
     raw = _generate(_keyword_tags_messages(_article_text(article)), None, "keyword_tags")
     try:
-        return ", ".join(_parse_keyword_tags(raw))
+        return _message_text(", ".join(_parse_keyword_tags(raw)))
     except ModelOutputError:
-        return raw
+        return _message_text(raw)
 
 
 def generate_title_data(article) -> list[dict]:
@@ -678,9 +739,9 @@ def generate_title(article) -> str:
     """제목·부제목 추천 (메시지용 문자열). "1. 제목\n   부제목: ..." 3개"""
     raw = _generate(_titles_messages(_article_text(article)), None, "titles")
     try:
-        return _title_text(_parse_titles(raw))
+        return _message_text(_title_text(_parse_titles(raw)))
     except ModelOutputError:
-        return raw
+        return _message_text(raw)
 
 
 def generate_article_ideas_data(article) -> list[str]:
@@ -693,9 +754,9 @@ def generate_article_ideas(article) -> str:
     """후속 기사 아이디어 추천 (메시지용 문자열). "1. ...\n2. ...\n3. ..." """
     raw = _generate(_article_ideas_messages(_article_text(article)), None, "article_ideas")
     try:
-        return _numbered_text(_parse_numbered(raw))
+        return _message_text(_numbered_text(_parse_numbered(raw)))
     except ModelOutputError:
-        return raw
+        return _message_text(raw)
 
 
 def generate_category(article) -> str | None:
@@ -708,14 +769,14 @@ def generate_article_metadata(article) -> dict:
     """
     기사 메타데이터 4개 (Article 컬럼 이름과 같음). 언론사·기자·작성일은 기사에서 추출하고,
     카테고리는 분류한다 (모델 호출 2번). 없으면 None.
-    {"publisher": str | None, "author": str | None, "category": str | None,
+    {"media": str | None, "author": str | None, "category": str | None,
      "published_at": datetime(한국 시간) | None}
     """
     text = _article_text(article)
     raw = _generate(_article_metadata_messages(text), None, "article_metadata")
     found = _parse_article_metadata(raw, text)
     return {
-        "publisher": found["publisher"],
+        "media": found["media"],
         "author": found["author"],
         "category": generate_category(text),
         "published_at": found["published_at"],
