@@ -12,7 +12,7 @@ BASE_MODEL = "Qwen/Qwen3-1.7B"
 
 # 어댑터 위치: 환경 변수(.env) SUMMARY_ADAPTER_PATH, QA_ADAPTER_PATH가 있으면 그걸 쓰고, 없으면 기본 폴더
 _BACKEND_DIR = Path(__file__).resolve().parents[2]
-_DEFAULT_ADAPTER_DIR = _BACKEND_DIR / "fine_tuning" / "adapters"   # 위치는 팀 결정 후 확정
+_FINE_TUNING_DIR = _BACKEND_DIR / "fine_tuning"   # 기본 어댑터 위치: fine_tuning/{summary,qa}/adapter
 
 MAX_NEW_TOKENS = {
     "summary": 150,          # 학습 config와 같음
@@ -101,7 +101,7 @@ def _select_device_and_dtype():
 
 
 def _adapter_path(name: str) -> Path:
-    path = Path(os.getenv(f"{name.upper()}_ADAPTER_PATH", _DEFAULT_ADAPTER_DIR / name))
+    path = Path(os.getenv(f"{name.upper()}_ADAPTER_PATH", _FINE_TUNING_DIR / name / "adapter"))
     if not (path / "adapter_config.json").exists():
         raise FileNotFoundError(
             f"{name} 어댑터를 찾을 수 없습니다: {path} "
