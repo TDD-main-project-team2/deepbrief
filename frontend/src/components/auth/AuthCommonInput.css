@@ -15,11 +15,3 @@
   color: #bca8b3;
   font-size: 11px;
 }
-.auth-field-error {
-  display: block;
-  margin-top: 7px;
-  font-size: 10px;
-  font-weight: 400;
-  line-height: 1.7;
-  color: #a63651;
-}
