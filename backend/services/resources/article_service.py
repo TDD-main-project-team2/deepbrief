@@ -32,8 +32,8 @@ def get_article_by_conversation_id(conversation_id, current_user_id, db: Session
     return article
 
 def delete_article(article_id, current_user_id):
-    find_article_by_id(article_id)
-
+    article = find_article_by_id(article_id)
+    ensure_owner(article.user_id, current_user_id)
     deleted = article_repository.delete_article(
         article_id,
         current_user_id,
