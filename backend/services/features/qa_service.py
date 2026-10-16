@@ -1,13 +1,14 @@
-from backend.services.resources import conversation_service
-from backend.services.ai import model_service
+from backend.services.resources import conversation_service, article_service
+from backend.services.agent import graph
 from backend.schemas.message import MessageRequest
 
-# 질문 답변
-# rag 추가 필요
-def ask_question(conversation_id, request: MessageRequest, current_user_id):
-    conversation_service.save_message(conversation_id, request.content, current_user_id, "user")
+async def ask_question(conversation_id, question: MessageRequest, current_user_id, db):
+    conversation_service.save_message(conversation_id, question.content, current_user_id, "user")
 
-    # agent logic add
-    response = model_service.generate_answer(request.content)
+    conversation_history = conversation_service.get_conversation_history(conversation_id, current_user_id)
+    article = article_service.get_article_by_conversation_id(conversation_id, current_user_id, db)
+
+    result = await graph.run_agent(question.content, article.id, conversation_history)
+    response = result["answer"]
 
     return conversation_service.save_message(conversation_id, response, current_user_id, "assistant")

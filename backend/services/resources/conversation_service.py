@@ -1,12 +1,14 @@
 from backend.services.document import article_processing_service
 from backend.repositories import conversation_repository, message_repository
 from backend.app.dependencies import ensure_owner, _not_found
+from backend.services.resources import article_service
 
 # 사용자 대화 생성
 async def create_conversation(file, title, current_user_id, rdb):
     file_bytes = await file.read()
     filename = file.filename
     article = article_processing_service.process_article(file_bytes, filename, rdb, reprocess=False)
+    article_service.categorize_article(article.id)
     return conversation_repository.create_conversation(
         title,
         current_user_id,
@@ -42,7 +44,7 @@ def delete_conversation(conversation_id, current_user_id):
     conversation_repository.delete_conversation(conversation_id)
 
 # 대화 기록 조회
-def get_conversation_context(conversation_id, current_user_id, limit=10):
+def get_conversation_history(conversation_id, current_user_id, limit=5):
     conversation = find_conversation_by_id(conversation_id)
     ensure_owner(conversation.user_id, current_user_id)
 
