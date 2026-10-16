@@ -55,16 +55,19 @@ def _not_found() -> HTTPException:
     )
 
 
-def ensure_owner(owner_id: int, user: User) -> None:
+def ensure_owner(owner_id: int, user_id: int) -> None:
     """자원의 주인이 지금 사용자가 아니면 404. 남의 자원이 있다는 사실도 숨긴다."""
-    if owner_id != user.id:
+    if owner_id != user_id:
         raise _not_found()
 
 
-def ensure_article_access(article_id: int, user: User, db: Session) -> None:
+def ensure_article_access(article_id: int, user_id: int, db: Session) -> None:
     """
     기사가 지금 사용자의 목록(user_articles)에 없으면 404.
     기사는 여러 사용자가 공유하므로 주인 대신 (사용자 ID, 기사 ID) 연결이 있는지 본다.
     """
-    if db.get(UserArticle, (user.id, article_id)) is None:
+    if db.get(UserArticle, (user_id, article_id)) is None:
         raise _not_found()
+
+def ensure_organization_member():
+    pass

@@ -1,15 +1,16 @@
 import os
-from pathlib import Path
 
 from dotenv import load_dotenv
 
 from backend.models.base import Base
+from backend.models.organization import Organization
+from backend.models.template import Template
+from backend.models.guideline import Guideline
 from backend.models.article import Article
 from backend.models.conversation import Conversation
-from backend.models.file_article import FileArticle
+from backend.models.file import File
 from backend.models.message import Message
 from backend.models.refresh_token import RefreshToken
-from backend.models.url_article import UrlArticle
 from backend.models.user import User
 from backend.models.user_article import UserArticle
 from backend.models.article_chunk import ArticleChunk

@@ -1,4 +1,3 @@
-
 """회원가입과 로그인 등 사용자 인증 서비스를 제공한다."""
 
 from sqlalchemy import select
@@ -6,13 +5,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.models.user import User
-from backend.schemas.auth import LoginRequest
+from backend.schemas.auth import LoginRequest, LoginResponse
 from backend.schemas.user import UserCreate, UserResponse
 from backend.services.auth.password_service import (
     hash_password,
     verify_password,
 )
-from backend.services.auth.token_service import create_token_pair
+from backend.services.auth.token_service import (
+    create_token_pair,
+    delete_refresh_token,
+)
 
 
 class AuthError(ValueError):
@@ -60,10 +62,18 @@ def register_user(db: Session, data: UserCreate) -> UserResponse:
         )
 
         db.add(user)
-        db.commit()
+
+        # INSERT를 실행하고 DB에서 생성된 ID를 확보한다.
+        db.flush()
         db.refresh(user)
 
-        return UserResponse.model_validate(user)
+        # 커밋 전에 응답 객체를 생성한다.
+        response = UserResponse.model_validate(user)
+
+        # 모든 준비가 성공한 경우에만 최종 반영한다.
+        db.commit()
+
+        return response
 
     except IntegrityError as exc:
         db.rollback()
@@ -74,12 +84,13 @@ def register_user(db: Session, data: UserCreate) -> UserResponse:
             ) from exc
 
         raise
+
     except Exception:
         db.rollback()
         raise
 
 
-def login_user(db: Session, data: LoginRequest) -> dict[str, object]:
+def login_user(db: Session, data: LoginRequest) -> LoginResponse:
     """이메일과 비밀번호를 검증하고 토큰을 발급한다."""
 
     try:
@@ -96,13 +107,29 @@ def login_user(db: Session, data: LoginRequest) -> dict[str, object]:
             )
 
         tokens = create_token_pair(user.id, db)
+
+        # DB 커밋 전에 응답 데이터를 준비한다.
+        result = LoginResponse(
+            user=UserResponse.model_validate(user),
+            **tokens,
+        )
+
+        # 응답 데이터 준비까지 성공한 뒤 DB 변경 사항을 확정한다.
         db.commit()
 
-        return {
-            "user": UserResponse.model_validate(user),
-            **tokens,
-        }
+        return result
 
+    except Exception:
+        db.rollback()
+        raise
+
+
+def logout_user(refresh_token: str, db: Session) -> None:
+    """리프레시 토큰을 폐기하여 로그아웃한다."""
+
+    try:
+        delete_refresh_token(refresh_token, db)
+        db.commit()
     except Exception:
         db.rollback()
         raise
