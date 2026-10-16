@@ -1,8 +1,8 @@
-import "./ArticleArchive.css";
-import ArticleArchiveItem from "./ArticleArchiveItem.jsx";
+import "./Archive.css";
+import ArchiveItem from "./ArchiveItem.jsx";
 import Icons from "../Icons.jsx";
 
-export default function ArticleArchive({ view, articles, openArticle }) {
+export default function Archive({ view, articles, openArticle }) {
   const visibleArticles = articles.filter(
     (article) => article.visibility === view,
   );
@@ -29,7 +29,7 @@ export default function ArticleArchive({ view, articles, openArticle }) {
         {visibleArticles.length ? (
           <div className="archive-list">
             {visibleArticles.map((article) => (
-              <ArticleArchiveItem
+              <ArchiveItem
                 key={article.id}
                 article={article}
                 onOpen={openArticle}

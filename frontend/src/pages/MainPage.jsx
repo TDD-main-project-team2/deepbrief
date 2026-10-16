@@ -7,7 +7,7 @@ import SideMenu from "../components/main/SideMenu.jsx";
 import UploadForm from "../components/main/UploadForm.jsx";
 import ArticlePanel from "../components/main/ArticlePanel.jsx";
 import ChatPanel from "../components/main/ChatPanel.jsx";
-import ArticleArchive from "../components/main/ArticleArchive.jsx";
+import Archive from "../components/main/Archive.jsx";
 import ArchivePreview from "../components/main/ArchivePreview.jsx";
 
 import useFilePreview from "../hooks/useFilePreview.js";
@@ -149,7 +149,7 @@ export default function MainPage({ user, onLogout }) {
         )}
         {(view === "private" || view === "public") && (
           <main className="archive-main">
-            <ArticleArchive
+            <Archive
               view={view}
               articles={articles}
               openArticle={openArticle}

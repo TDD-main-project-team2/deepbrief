@@ -1,8 +1,8 @@
-import "./ArticleArchiveItem.css";
+import "./ArchiveItem.css";
 import Icons from "../Icons.jsx";
 import formatDateTime from "../../utils/formatDateTime.js";
 
-export default function ArticleArchiveItem({ article, onOpen }) {
+export default function ArchiveItem({ article, onOpen }) {
   return (
     <button className="archive-article" onClick={() => onOpen(article)}>
       <span className="file-icon">
