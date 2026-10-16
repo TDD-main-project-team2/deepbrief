@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
+from .message import MessageResponse
 
 
 class ConversationResponse(BaseModel):
@@ -12,5 +13,10 @@ class ConversationResponse(BaseModel):
     user_id: int
     article_id: int
     title: str
+    messages: list[MessageResponse]
     created_at: datetime
     updated_at: datetime
+
+class ConversationListResponse(BaseModel):
+    conversations: list[ConversationResponse]
+    total: int

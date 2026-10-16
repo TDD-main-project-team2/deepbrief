@@ -190,3 +190,5 @@ sentence-transformers==6.1.0
 dnspython==2.9.0
 email-validator==2.3.0
 PyJWT==2.15.1
+pytest==9.1.1
+python-multipart==0.0.32

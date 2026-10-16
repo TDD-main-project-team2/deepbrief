@@ -23,3 +23,6 @@ class ArticleResponse(BaseModel):
 
 class ArticleListResponse(RootModel[list[ArticleResponse]]):
     """기사 목록 응답 데이터."""
+    
+    articles: list[ArticleResponse]
+    total: int
