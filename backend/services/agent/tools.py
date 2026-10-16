@@ -1,5 +1,5 @@
 """
-1. decide_task: 질문이 "회사 기사 통계"인지 "기사 내용 질문"인지 코드 규칙으로 가른다 (모델 호출 없음)
+1. decide_task: 질문이 "사내 데이터 조회"인지 "기사 내용 질문"인지 코드 규칙으로 가른다 (모델 호출 없음)
 2. query_company_data: 회사(조직) 기사 수·최근 목록·분야별 개수를 DB에서 읽어 문장으로 돌려준다 (모델 호출 없음)
 3. search_web: Tavily로 웹을 검색한다. 키가 없으면 키 없이(keyless) 요청한다. 질문만 보내고 기사 본문은 보내지 않는다
 4. format_web_context: 웹 결과를 답변용 문맥으로 만든다
@@ -58,7 +58,7 @@ def _compact(text: str) -> str:
 
 def decide_task(question: str) -> str:
     """
-    "company_data": 회사 기사 통계 질문 (회사·우리·조직·전체 + "기사" + 집계어가 모두 있음)
+    "company_data": 사내 데이터 조회 질문 (회사·우리·조직·전체 + "기사" + 집계어가 모두 있음)
     "article": 그 밖의 모든 질문. "이 기사", "현재 기사"가 있으면 무조건 article
     """
     text = _compact(question)
@@ -175,7 +175,7 @@ def _count_articles_by_category(session, organization_id: int, period) -> list[t
     return sorted(counts, key=lambda row: (-row[1], row[0]))
 
 
-# ── 회사 기사 통계 ───────────────────────────────────
+# ── 사내 데이터 조회 ──────────────────────────────────
 
 def _format_date(value) -> str:
     if value is None:
@@ -189,7 +189,7 @@ def _format_date(value) -> str:
 
 def query_company_data(question: str, article_id: int) -> str:
     """
-    회사 기사 통계 질문에 답한다 (모델 호출 없음).
+    사내 데이터 조회 질문에 답한다 (모델 호출 없음).
     "목록·최근 기사" → 최근 목록, "분야별" → 분야별 개수, 그 밖 → 기사 수.
     답변에는 적용한 조건(기간, 분야)을 항상 적는다.
     """
@@ -225,7 +225,7 @@ def query_company_data(question: str, article_id: int) -> str:
             count = _count_articles(session, organization_id, period, category)
             return f"{period_label}, {category_label} 기준 회사 기사는 {count}건입니다."
     except Exception:
-        logger.exception("회사 기사 통계 조회에 실패했습니다.")      # 질문 원문은 로그에 남기지 않는다
+        logger.exception("사내 데이터 조회에 실패했습니다.")      # 질문 원문은 로그에 남기지 않는다
         return COMPANY_DATA_ERROR
 
 
