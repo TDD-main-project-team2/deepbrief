@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from backend.services.auth import auth_service, password_service, token_service
+from backend.services.auth import auth_service, token_service
 from sqlalchemy.orm import Session
 from backend.schemas.user import UserCreate, UserResponse
 from backend.schemas.auth import LoginRequest, LoginResponse, RefreshRequest, RefreshResponse, LogoutRequest
