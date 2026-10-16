@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 
 class AgentState(TypedDict):
@@ -6,6 +6,7 @@ class AgentState(TypedDict):
     article_id: int
 
     conversation_history: list
-    retrieval_scope: str
+    task: Literal["article", "company_data"]
+    retrieval_scope: Literal["current_article", "organization", "web"]
     context: str
     answer: str 
