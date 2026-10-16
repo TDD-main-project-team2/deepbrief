@@ -52,7 +52,10 @@ class VectorDB:
                 .join(ArticleChunk.article)
                 .join(UserArticle, UserArticle.article_id == Article.id)
                 .join(User, User.id == UserArticle.user_id)
-                .filter(User.organization_id == organization_id)
+                .filter(
+                    User.organization_id == organization_id,
+                    ArticleChunk.article_id != article_id,
+                )
             )
             return self.search_similar_chunks(query, embedding, top_k)
 
