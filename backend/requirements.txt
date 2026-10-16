@@ -43,7 +43,7 @@ et_xmlfile==2.0.0
 fastapi==0.141.1
 filelock==4.0.1
 frozenlist==1.8.0
-fsspec==2026.9.0
+fsspec==2026.6.0
 ftfy==6.3.1
 future==1.0.0
 h11==0.16.0
@@ -140,7 +140,7 @@ requests==2.34.2
 requests-file==3.0.1
 requests-toolbelt==1.0.0
 ruamel.yaml==0.19.1
-safetensors==0.7.0
+safetensors>=0.8.0
 scikit-learn==1.9.1
 scipy==1.18.1
 rich==15.0.0
