@@ -561,13 +561,43 @@ def _parse_article_metadata(text: str, article: str) -> dict:
 # ── 입력·결과 변환 (다른 서비스가 그대로 호출할 수 있게) ──────────────
 
 def _article_text(article) -> str:
-    """기사 본문 문자열 또는 DB의 Article 객체(.body)를 받아 본문 문자열을 돌려준다."""
+    """기사 본문 문자열, DB의 Article 객체(.body), 업로드 처리 결과 DocumentResult(.text)를 받아 본문 문자열을 돌려준다."""
     if isinstance(article, str):
         return article
-    body = getattr(article, "body", None)
-    if isinstance(body, str):
-        return body
-    raise TypeError(f"기사 본문 문자열이나 body가 있는 Article 객체가 필요합니다: {type(article).__name__}")
+    for name in ("body", "text"):
+        value = getattr(article, name, None)
+        if isinstance(value, str):
+            return value
+    raise TypeError(f"기사 본문 문자열이나 body·text가 있는 객체가 필요합니다: {type(article).__name__}")
+
+
+_META_KEYWORD = re.compile(r"기자|특파원|ⓒ|copyright", re.IGNORECASE)
+_MASTHEAD_MAX = 20   # 맨 위 언론사 이름으로 볼 줄의 최대 글자 수
+
+
+def _meta_lines(lines) -> list[str]:
+    """
+    OCR이 본문에서 뺀 줄(meta_text) 중 언론사·기자 후보만 고른다. 메뉴·숫자 같은 잡음은 버린다.
+    - 기자·특파원·Copyright(ⓒ)가 들어간 줄
+    - 처음 나오는, 띄어쓰기 없는 짧은 줄 하나 (1쪽 맨 위 언론사 이름. 10/16 실제 기사 진단에서 7/7)
+    """
+    picked, masthead = [], False
+    for line in (str(item).strip() for item in lines):
+        if not line or line in picked:
+            continue
+        if _META_KEYWORD.search(line):
+            picked.append(line)
+        elif not masthead and len(line) <= _MASTHEAD_MAX and not re.search(r"\s", line) and not line.isdigit():
+            picked.append(line)
+            masthead = True
+    return picked
+
+
+def _metadata_text(article) -> str:
+    """메타데이터 추출에 넣을 글. 본문 뒤에 언론사·기자 후보 줄(DocumentResult.meta_text에서 고른 것)을 붙인다."""
+    text = _article_text(article)
+    lines = _meta_lines(getattr(article, "meta_text", None) or [])
+    return text + "\n\n" + "\n".join(lines) if lines else text
 
 
 def _template_text(template) -> str:
@@ -779,16 +809,19 @@ def generate_article_metadata(article) -> dict:
     """
     기사 메타데이터 4개 (Article 컬럼 이름과 같음). 언론사·기자·작성일은 기사에서 추출하고,
     카테고리는 분류한다 (모델 호출 2번). 없으면 None.
+    article: 본문 문자열, Article 객체, 또는 업로드 처리 결과 DocumentResult.
+             DocumentResult면 OCR이 뺀 줄 중 언론사·기자 후보(meta_text)도 같이 본다. 카테고리는 본문만 본다
     {"media": str | None, "author": str | None, "category": str | None,
      "published_at": datetime(한국 시간) | None}
     """
-    text = _article_text(article)
+    body = _article_text(article)
+    text = _metadata_text(article)
     raw = _generate(_article_metadata_messages(text), None, "article_metadata")
     found = _parse_article_metadata(raw, text)
     return {
         "media": found["media"],
         "author": found["author"],
-        "category": generate_category(text),
+        "category": generate_category(body),
         "published_at": found["published_at"],
     }
 
