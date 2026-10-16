@@ -24,6 +24,7 @@ IMAGE_EXT = {".png", ".jpg", ".jpeg"}
 TEXT_EXT = {".txt", ".md"}
 SCALE = 2.0                                  # 쪽을 이미지로 만들 때의 배율 (144dpi)
 EXCLUDED = {"header", "header_image", "footer", "footer_image", "number"}
+META = EXCLUDED - {"number"}                 # 뺀 글 중 메타데이터(언론사·기자) 후보로 넘길 영역. 쪽 번호는 뺀다
 IMAGE = {"image", "figure", "chart", "seal"}
 SENTENCE_END = ".!?…\"”’)"
 GROUP_GAP = 15                               # 순서 없는 영역(표 제목·표·각주)을 한 묶음으로 보는 세로 간격 (pt)
@@ -55,6 +56,7 @@ class OcrResult:
     page_count: int = 1
     ocr_used: bool = False                                    # OCR로 읽은 부분이 있는지
     excluded_text: list[str] = field(default_factory=list)    # 본문에서 뺀 글 (머리말, 꼬리말, 메뉴 등)
+    meta_text: list[str] = field(default_factory=list)        # 뺀 글 중 언론사·기자 줄이 있을 수 있는 것 (영역 밖 줄, 머리말·꼬리말)
 
 
 _models: dict = {}
@@ -289,6 +291,7 @@ def _extract_page(page, result, tmp):
             owner["lines"].append(line)
         else:
             result.excluded_text.append(line[0].strip())
+            result.meta_text.append(line[0].strip())        # 언론사 이름·기자 줄이 영역 없이 남는 경우가 많다
     _read_image_text(page, boxes, result, tmp)
     images = [b["rect"] for b in boxes if b["label"] in IMAGE]
 
@@ -304,6 +307,8 @@ def _extract_page(page, result, tmp):
             -5 < box["rect"].y0 - image.y1 < CAPTION_GAP and _x_overlap(box["rect"], image) for image in images)
         if label in EXCLUDED or label in IMAGE or caption:
             result.excluded_text += [text.strip() for text, _ in own]
+            if label in META:
+                result.meta_text += [text.strip() for text, _ in own]
         elif label == "table":
             body.append({"text": _table(own), "full": False})
         elif label == "doc_title" and not result.title:
@@ -320,6 +325,8 @@ def _split(blocks, result):
     for label, text in blocks:
         if label in EXCLUDED:
             result.excluded_text.append(text)
+            if label in META:
+                result.meta_text.append(text)
         elif label == "doc_title" and not result.title:
             result.title = text
         else:

@@ -22,6 +22,7 @@ class DocumentResult:
     title: str = ""
     text: str = ""
     chunks: list[str] = field(default_factory=list)
+    meta_text: list[str] = field(default_factory=list)   # 언론사·기자 후보 줄 (OCR 뺀 글 중 일부, 메타데이터 추출용)
 
 
 def process_document(result: OcrResult) -> DocumentResult:
@@ -47,6 +48,7 @@ def process_document(result: OcrResult) -> DocumentResult:
         title=title,
         text=cleaned_text,
         chunks=chunks,
+        meta_text=list(result.meta_text),
     )
 
 
