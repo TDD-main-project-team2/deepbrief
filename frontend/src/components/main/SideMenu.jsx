@@ -5,8 +5,8 @@ import "./SideMenu.css";
 import brandIcon from "../../assets/svg/icon-gradient.svg";
 
 import ArchiveMenuItem from "./ArchiveMenuItem.jsx";
+import ConversationMenuItem from "./ConversationMenuItem.jsx";
 import Icons from "../Icons.jsx";
-import formatDateTime from "../../utils/formatDateTime.js";
 
 export default function SideMenu({
   menuOpen,
@@ -76,21 +76,18 @@ export default function SideMenu({
                     const article = articles.find(
                       (article) => article.id === conversation.articleId,
                     );
+
                     return (
-                      <button
+                      <ConversationMenuItem
                         key={conversation.id}
-                        className={`history-item ${view === "chat" && activeConversationId === conversation.id ? "active" : ""}`}
-                        onClick={() => openChat(conversation)}
-                        title={article?.file.name || "기사를 찾을 수 없습니다"}
-                        disabled={!article}
-                      >
-                        <span>
-                          {article?.file.name || "기사를 찾을 수 없습니다"}
-                          <small>
-                            {formatDateTime(conversation.createdAt)}
-                          </small>
-                        </span>
-                      </button>
+                        conversation={conversation}
+                        article={article}
+                        selected={
+                          view === "chat" &&
+                          activeConversationId === conversation.id
+                        }
+                        onOpen={openChat}
+                      />
                     );
                   })
                 ) : (
