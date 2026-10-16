@@ -1,3 +1,4 @@
+import logging
 from hashlib import sha256
 from pathlib import Path
 
@@ -7,7 +8,26 @@ from backend.database.vector.vector_db import vector_db
 from backend.models.article import Article
 from backend.models.article_chunk import ArticleChunk
 from backend.services.ai.embedding_service import embed_documents
+from backend.services.ai.model_service import generate_article_metadata
 from backend.services.document.document_service import DocumentResult, process_file
+
+logger = logging.getLogger(__name__)
+
+
+def _article_metadata(document: DocumentResult) -> dict:
+    """새 기사의 언론사·기자·카테고리·작성일을 모델로 채운다.
+
+    Returns:
+        dict: Article 컬럼 이름과 같은 키(media, author, category, published_at). 없는 값은 None.
+
+    Notes:
+        모델 실행이 실패해도 업로드는 막지 않는다. 실패하면 네 값 모두 None으로 두고 로그만 남긴다.
+    """
+    try:
+        return generate_article_metadata(document)
+    except Exception:
+        logger.exception("기사 메타데이터 추출에 실패했습니다.")
+        return {"media": None, "author": None, "category": None, "published_at": None}
 
 
 def _embed_and_save_document_chunks(
@@ -93,6 +113,7 @@ def process_article(
             title=title[:255],
             body=document.text,
             content_hash=content_hash,
+            **_article_metadata(document),
         )
         db.add(article)
 
