@@ -7,8 +7,7 @@ class Organization(Base):
     __tablename__ = "organizations"
     __table_args__ = (
         CheckConstraint("name = btrim(name) AND name <> ''", name="check_name_not_empty"),
-        CheckConstraint("code = btrim(code) AND code <> ''", name="check_code_not_empty"),
-        {"schema": "public"},
+        CheckConstraint("code = btrim(code) AND code <> ''", name="check_code_not_empty")
     )
 
     name: Mapped[str] = mapped_column(String(255), nullable=False)
