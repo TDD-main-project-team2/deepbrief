@@ -285,13 +285,19 @@ def _extract_page(page, result, tmp):
             loose.append(line)
         else:
             boxes[best]["lines"].append(line)
+    body_top = min((b["rect"].y0 for b in boxes if b["label"] not in EXCLUDED | IMAGE), default=None)
+    carry = None                                              # 앞 쪽 문단의 끝일 수 있는 쪽 맨 위 줄
     for line in sorted(loose, key=lambda item: item[1][1]):
         owner = _continued(line, boxes)
+        text = line[0].strip()
         if owner:
             owner["lines"].append(line)
+        elif (carry is None and body_top is not None and line[1][3] <= body_top + 1
+              and text and text[-1] in SENTENCE_END):
+            carry = text                                      # 버리지 않고 _extract_pdf가 앞 쪽과 이을지 정한다
         else:
-            result.excluded_text.append(line[0].strip())
-            result.meta_text.append(line[0].strip())        # 언론사 이름·기자 줄이 영역 없이 남는 경우가 많다
+            result.excluded_text.append(text)
+            result.meta_text.append(text)                     # 언론사 이름·기자 줄이 영역 없이 남는 경우가 많다
     _read_image_text(page, boxes, result, tmp)
     images = [b["rect"] for b in boxes if b["label"] in IMAGE]
 
@@ -316,6 +322,8 @@ def _extract_page(page, result, tmp):
         else:
             text, full = _paragraph(own)
             body.append({"text": text, "full": full})
+    if carry:
+        body.insert(0, {"text": carry, "full": False, "carry": True})
     return body
 
 
@@ -347,6 +355,14 @@ def _extract_pdf(file_bytes, result, tmp):
         for page in doc:
             body = _extract_page(page, result, tmp)
             prev = merged[-1] if merged else None
+            if body and body[0].get("carry"):                 # 쪽 맨 위의 영역 없는 한 줄 (예: 앞 쪽에서 넘어온 "했다.")
+                carry = body.pop(0)["text"]
+                if prev and prev["text"][-1] not in SENTENCE_END:     # 한 줄짜리 문단은 full을 알 수 없어 문장 끝만 본다
+                    prev["text"] = _join([prev["text"], carry])
+                    prev["full"] = False                      # 문장이 끝났으므로 다음 블록과 다시 잇지 않는다
+                else:
+                    result.excluded_text.append(carry)
+                    result.meta_text.append(carry)
             if prev and body and prev["full"] and prev["text"][-1] not in SENTENCE_END:    # 쪽을 넘어가는 문단
                 first = body.pop(0)
                 prev["text"] = _join([prev["text"], first["text"]])
