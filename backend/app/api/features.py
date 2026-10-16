@@ -76,8 +76,14 @@ def request_article_ideas_recommendations(
     return recommend_service.recommend_article_ideas(conversation_id, request, current_user.id, db)
 
 @router.get("/templates")
-def get_article_format_templates(current_user=Depends(get_current_user), db: Session=Depends(get_db)):
-    return organization_service.get_all_organization_article_templates(current_user.id)
+def get_article_format_templates(
+    current_user=Depends(get_current_user),
+    db: Session=Depends(get_db)
+):
+    return organization_service.get_all_organization_article_templates(
+        current_user.id,
+        db,
+    )
 
 @router.post("/conversations/{conversation_id}/format/{template_id}")
 def request_article_formatting(

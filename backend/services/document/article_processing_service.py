@@ -130,6 +130,6 @@ def process_article(
         if stored_chunks and [chunk.content for chunk in stored_chunks] == document.chunks:
             return article
 
-    _embed_and_save_document_chunks(document, article.id, vector_db)
+    _embed_and_save_document_chunks(document, article.id)
 
     return article
