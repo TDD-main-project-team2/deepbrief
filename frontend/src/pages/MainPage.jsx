@@ -39,10 +39,12 @@ export default function MainPage({ user, onLogout }) {
 
   function sendMessage(messageText) {
     if (!messageText.trim() || !activeConversation) return;
+
     const message = {
       question: messageText,
       answer: `“${messageText}” 요청을 받았습니다.\n\n@@@@ 여기에 결과 넣기 @@@@`,
     };
+
     setConversations((conversations) =>
       conversations.map((conversation) =>
         conversation.id === activeConversationId
@@ -72,37 +74,35 @@ export default function MainPage({ user, onLogout }) {
     setView("article");
   }
 
-  function createConversation({
+  function startConversationWithFile({
     file: uploadedFile,
     visibility: uploadedVisibility,
   }) {
-    const articleId = crypto.randomUUID();
-    const conversationId = crypto.randomUUID();
-    const createdAt = new Date().toISOString();
-
+    // 저장 API 연결 전, 브라우저 시안의 기록 선택에만 쓰는 임시 ID입니다.
+    // API 연결 시 아래 레코드를 서버가 반환한 article/conversation으로 대체합니다.
+    const localArticleId = `local-article-${crypto.randomUUID()}`;
+    const localConversationId = `local-conversation-${crypto.randomUUID()}`;
     const article = {
-      id: articleId,
+      id: localArticleId,
       file: uploadedFile,
       visibility: uploadedVisibility,
       category: null,
-      createdAt,
     };
     const conversation = {
-      id: conversationId,
-      articleId,
-      createdAt,
+      id: localConversationId,
+      articleId: localArticleId,
       messages: [],
     };
 
     setArticles((articles) => [...articles, article]);
     setConversations((conversations) => [...conversations, conversation]);
-    setActiveConversationId(conversationId);
-    changeFile(uploadedFile);
-    setVisibility(uploadedVisibility);
+    setActiveConversationId(conversation.id);
+    changeFile(article.file);
+    setVisibility(article.visibility);
     setView("chat");
   }
 
-  function openUploadForm() {
+  function startNewConversation() {
     setActiveConversationId(null);
     setArticleId(null);
     setView("chat");
@@ -125,7 +125,7 @@ export default function MainPage({ user, onLogout }) {
       <SideMenu
         menuOpen={menuOpen}
         setMenuOpen={setMenuOpen}
-        onOpenUploadForm={openUploadForm}
+        onStartNewConversation={startNewConversation}
         articles={articles}
         view={view}
         activeConversationId={activeConversationId}
@@ -170,7 +170,7 @@ export default function MainPage({ user, onLogout }) {
             <main className="welcome-main">
               <UploadForm
                 key={uploadSession}
-                onCreateConversation={createConversation}
+                onStartConversationWithFile={startConversationWithFile}
               />
             </main>
           ))}
