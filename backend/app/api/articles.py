@@ -19,7 +19,7 @@ def get_article(article_id: int, current_user=Depends(get_current_user), db: Ses
 
 @router.delete("/{article_id}", status_code=204)
 def delete_article(article_id: int, current_user=Depends(get_current_user)):
-    article_service.delete_article(article_id, current_user)
+    article_service.delete_article(article_id, current_user.id)
 
 '''
 @router.post("/{article_id}", status_code=204)

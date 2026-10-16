@@ -1,7 +1,7 @@
-from agent.state import AgentState
+from .state import AgentState
 from . import tools
-from services.ai import model_service
-from services.rag import rag_service
+from backend.services.ai import model_service
+from backend.services.rag import rag_service
 
 def retrieve_article_context(state: AgentState):
     chunks = rag_service.retrieve_similar_article_chunks(state["question"], state["article_id"])
