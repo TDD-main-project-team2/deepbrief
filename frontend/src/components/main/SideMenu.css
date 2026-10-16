@@ -263,10 +263,6 @@
   white-space: nowrap;
 }
 
-
-
-
-
 .menu-groups {
   margin-top: 24px;
   overflow: auto;
@@ -298,10 +294,6 @@
   margin: 4px 0 18px;
 }
 
-
-
-
-
 .article-submenus {
   padding-left: 20px;
   margin-top: 4px;
@@ -312,9 +304,6 @@
   margin: 4px 0 18px;
   gap: 5px;
 }
-
-
-
 
 .guest-actions {
   display: flex;
@@ -417,4 +406,36 @@
 .guest-actions,
 .account-logout {
   margin-left: 0;
+}
+/* Preserve menu item sizes when the viewport is too short for the sidebar. */
+.sidebar {
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+}
+.sidebar > .brand,
+.sidebar > .new-chat,
+.sidebar > .sidebar-bottom {
+  flex-shrink: 0;
+}
+.menu-groups {
+  flex: 1 0 auto;
+}
+.conversation-section.expanded,
+.articles-section {
+  flex-shrink: 0;
+}
+
+@media (max-height: 600px) {
+  .sidebar {
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+  .sidebar > .new-chat {
+    margin-top: 20px;
+  }
+  .menu-groups {
+    margin-top: 18px;
+    gap: 10px;
+  }
 }
