@@ -10,10 +10,9 @@ class ArticleChunk(Base):
         UniqueConstraint("article_id", "chunk_index", name="uq_article_chunks_article_id_chunk_index"),
         CheckConstraint("content = btrim(content) AND content <> ''", name="check_content_not_empty"),
         CheckConstraint("chunk_index >= 0", name="check_chunk_index_nonnegative"),
-        {"schema": "public"},
     )
 
-    article_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("public.articles.id"), nullable=False)
+    article_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("articles.id"), nullable=False)
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     embedding: Mapped[list[float]] = mapped_column(Vector(1024), nullable=False)
