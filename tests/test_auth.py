@@ -1,9 +1,9 @@
 from unittest.mock import MagicMock
-
 import pytest
 
 from backend.schemas.user import UserCreate
 from backend.services.auth import auth_service
+from backend.models.organization import Organization
 
 
 def test_register_user_with_valid_organization_code(monkeypatch):
