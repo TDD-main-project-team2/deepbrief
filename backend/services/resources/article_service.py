@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from backend.repositories import article_repository
-from backend.app.dependencies import ensure_article_access, _not_found
+from backend.app.dependencies import ensure_article_access, _not_found, ensure_owner
 from backend.services.ai import model_service
 from backend.services.rag import rag_service
 
@@ -53,28 +53,3 @@ def categorize_article(article_id):
     article_repository.update_category(article_id, category)
 
     return category
-'''
-def save_article(article_id, current_user_id):
-    article_repository.save_article(article_id, current_user_id)
-
-def favorite_article_toggle():
-    pass
-
-def delete_article(article_id, current_user_id):
-    if my_article_check(article_id, current_user_id):
-        article_repository.delete_article(article_id)
-
-def my_article_check(article_id, current_user_id) -> bool:
-    article = article_repository.find_article_by_id(article_id)
-    return article.user_id == current_user_id
-'''
-
-
-'''
-Spring Data JPA	Python / SQLAlchemy
-findById(id)	db.get(Article, id)
-findAll()	db.scalars(select(Article)).all()
-save(entity)	db.add(entity) + db.commit()
-deleteById(id)	Fetch entity, then db.delete(entity) + db.commit()
-findByUserId(id)	db.scalars(select(Article).where(Article.user_id == id)).all()
-'''

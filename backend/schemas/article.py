@@ -21,7 +21,7 @@ class ArticleResponse(BaseModel):
     updated_at: datetime
 
 
-class ArticleListResponse(RootModel[list[ArticleResponse]]):
+class ArticleListResponse(BaseModel):
     """기사 목록 응답 데이터."""
     
     articles: list[ArticleResponse]

@@ -2,9 +2,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
+from backend.repositories import article_repository, user_repository
 from backend.database.rdb.rdb import get_db
 from backend.models.user import User
-from backend.models.user_article import UserArticle
 from backend.services.auth.token_service import (
     TokenExpiredError,
     TokenValidationError,
@@ -66,7 +66,7 @@ def ensure_article_access(article_id: int, user_id: int, db: Session) -> None:
     기사가 지금 사용자의 목록(user_articles)에 없으면 404.
     기사는 여러 사용자가 공유하므로 주인 대신 (사용자 ID, 기사 ID) 연결이 있는지 본다.
     """
-    if db.get(UserArticle, (user_id, article_id)) is None:
+    if not article_repository.user_has_access(db, user_id, article_id):
         raise _not_found()
 
 
@@ -75,8 +75,7 @@ def ensure_organization_member(
     user_id: int,
     db: Session,
 ) -> None:
-    """사용자가 해당 조직의 소속이 아니면 404 오류를 발생시킨다."""
-    user = db.get(User, user_id)
+    user = user_repository.get_by_id(db, user_id)
 
     if user is None or user.organization_id != organization_id:
         raise _not_found()

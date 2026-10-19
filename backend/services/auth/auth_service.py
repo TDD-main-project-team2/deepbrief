@@ -8,6 +8,7 @@ from backend.models.user import User
 from backend.models.organization import Organization
 from backend.schemas.auth import LoginRequest, LoginResponse
 from backend.schemas.user import UserCreate, UserResponse
+from backend.repositories import user_repository
 from backend.services.auth.password_service import (
     hash_password,
     verify_password,
@@ -51,21 +52,12 @@ def _is_email_unique_violation(exc: IntegrityError) -> bool:
 
 
 def register_user(db: Session, data: UserCreate) -> UserResponse:
-    """신규 사용자를 등록한다."""
-
     try:
-        existing_user = db.scalar(
-            select(User).where(User.email == str(data.email))
-        )
+        existing_user = user_repository.get_by_email(db, data.email)
         if existing_user is not None:
             raise EmailAlreadyExistsError("이미 사용 중인 이메일입니다.")
 
-        organization = db.scalar(
-            select(Organization).where(
-            Organization.code == data.organization_code
-            )
-        )
-
+        organization = user_repository.get_organization_by_code(db, data.organization_code)
         if organization is None:
             raise InvalidOrganizationCodeError("유효하지 않은 조직 코드입니다.")
 
@@ -76,18 +68,9 @@ def register_user(db: Session, data: UserCreate) -> UserResponse:
             organization_id=organization.id,
         )
 
-        db.add(user)
-
-        # INSERT를 실행하고 DB에서 생성된 ID를 확보한다.
-        db.flush()
-        db.refresh(user)
-
-        # 커밋 전에 응답 객체를 생성한다.
+        user_repository.create(db, user)
         response = UserResponse.model_validate(user)
-
-        # 모든 준비가 성공한 경우에만 최종 반영한다.
         db.commit()
-
         return response
 
     except IntegrityError as exc:
@@ -106,12 +89,8 @@ def register_user(db: Session, data: UserCreate) -> UserResponse:
 
 
 def login_user(db: Session, data: LoginRequest) -> LoginResponse:
-    """이메일과 비밀번호를 검증하고 토큰을 발급한다."""
-
     try:
-        user = db.scalar(
-            select(User).where(User.email == str(data.email))
-        )
+        user = user_repository.get_by_email(db, str(data.email))
 
         if user is None or not verify_password(
             data.password,
@@ -123,17 +102,13 @@ def login_user(db: Session, data: LoginRequest) -> LoginResponse:
 
         tokens = create_token_pair(user.id, db)
 
-        # DB 커밋 전에 응답 데이터를 준비한다.
         result = LoginResponse(
             user=UserResponse.model_validate(user),
             **tokens,
         )
-
-        # 응답 데이터 준비까지 성공한 뒤 DB 변경 사항을 확정한다.
         db.commit()
 
         return result
-
     except Exception:
         db.rollback()
         raise

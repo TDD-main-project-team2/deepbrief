@@ -3,7 +3,6 @@ from backend.repositories import (article_repository, conversation_repository, m
 from backend.app.dependencies import ensure_owner, _not_found
 from backend.services.resources import article_service
 
-# 사용자 대화 생성
 async def create_conversation(file, title, current_user_id, rdb):
     file_bytes = await file.read()
     filename = file.filename
@@ -17,7 +16,6 @@ async def create_conversation(file, title, current_user_id, rdb):
 
     article_service.categorize_article(article.id)
 
-    # 현재 사용자와 기사 연결 등록
     article_repository.add_article_to_user(
         current_user_id,
         article.id,
@@ -41,23 +39,19 @@ def find_message_by_id(message_id):
         raise _not_found()
     return message
 
-# 사용자 대화 목록 조회
 def get_conversations_by_user(current_user_id):
     return conversation_repository.find_all_by_user(current_user_id)
 
-# 사용자 특정 대화 조회
 def get_conversation_by_id(conversation_id, current_user_id):
     conversation = find_conversation_by_id(conversation_id)
     ensure_owner(conversation.user_id, current_user_id)
     return conversation
 
-# 사용자 특정 대화 삭제
 def delete_conversation(conversation_id, current_user_id):
     conversation = find_conversation_by_id(conversation_id)
     ensure_owner(conversation.user_id, current_user_id)
     conversation_repository.delete_conversation(conversation_id)
 
-# 대화 기록 조회
 def get_conversation_history(conversation_id, current_user_id, limit=5):
     conversation = find_conversation_by_id(conversation_id)
     ensure_owner(conversation.user_id, current_user_id)
@@ -81,7 +75,3 @@ def delete_message(message_id, current_user_id):
     conversation = find_conversation_by_id(message.conversation_id)
     ensure_owner(conversation.user_id, current_user_id)
     message_repository.delete_message(message_id)
-'''
-def favorite_conversation_toggle(conversation_id, user_id):
-    pass
-'''
