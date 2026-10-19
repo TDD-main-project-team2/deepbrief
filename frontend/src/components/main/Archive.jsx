@@ -13,7 +13,7 @@ export default function Archive({ view, articles, openArticle, onDeleteArticle }
         <p className="archive-description">
           {view === "private"
             ? "개인으로 올린 기사를 모아볼 수 있어요."
-            : "공개로 올린 사내 기사를 함께 찾아볼 수 있어요."}
+            : "공개로 올린 사내 기사를 모아볼 수 있어요."}
         </p>
 
         <div className="archive-summary">

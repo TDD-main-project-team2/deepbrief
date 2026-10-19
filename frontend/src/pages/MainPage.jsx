@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import "./MainPage.css";
 import "../components/main/MainCommon.css";
@@ -11,16 +11,22 @@ import Archive from "../components/main/Archive.jsx";
 import ArchivePreview from "../components/main/ArchivePreview.jsx";
 
 import useFilePreview from "../hooks/useFilePreview.js";
+import { createConversation } from "../api/conversations.js";
+import { getArticle } from "../api/articles.js";
+import { getAccessToken } from "../utils/tokenStorage.js";
 
 export default function MainPage({ user, onLogout }) {
+  const viewVersion = useRef(0); // 업로드를 기다리는 동안 사용자가 다른 화면으로 이동했는지 확인하는 값
+  const pendingUploads = useRef(new WeakMap()); // 보통 같은 파일로 요청이 중복 실행되는 걸 막는 값
+
   const [uploadSession, setUploadSession] = useState(0);
-  const [activeConversationId, setActiveConversationId] = useState(null),
-    [articleId, setArticleId] = useState(null),
-    [view, setView] = useState("chat"),
-    [articles, setArticles] = useState([]),
-    [conversations, setConversations] = useState([]),
-    [visibility, setVisibility] = useState("private"),
-    [menuOpen, setMenuOpen] = useState(true);
+  const [activeConversationId, setActiveConversationId] = useState(null);
+  const [articleId, setArticleId] = useState(null);
+  const [view, setView] = useState("chat");
+  const [articles, setArticles] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [visibility, setVisibility] = useState("private");
+  const [menuOpen, setMenuOpen] = useState(true);
 
   const { file, previewUrl, previewText, previewError, setPreviewError, changeFile } =
     useFilePreview();
@@ -49,6 +55,7 @@ export default function MainPage({ user, onLogout }) {
   }
 
   function openChat(conversation) {
+    viewVersion.current += 1;
     const article = articles.find((article) => article.id === conversation.articleId);
 
     if (!article) return;
@@ -60,38 +67,70 @@ export default function MainPage({ user, onLogout }) {
   }
 
   function openArticle(article) {
+    viewVersion.current += 1;
     setArticleId(article.id);
     changeFile(article.file);
     setVisibility(article.visibility);
     setView("article");
   }
 
-  function startConversationWithFile({ file: uploadedFile, visibility: uploadedVisibility }) {
-    // 저장 API 연결 전, 브라우저 시안의 기록 선택에만 쓰는 임시 ID입니다.
-    // API 연결 시 아래 레코드를 서버가 반환한 article/conversation으로 대체합니다.
-    const localArticleId = `local-article-${crypto.randomUUID()}`;
-    const localConversationId = `local-conversation-${crypto.randomUUID()}`;
-    const article = {
-      id: localArticleId,
-      file: uploadedFile,
-      visibility: uploadedVisibility,
-      category: null,
-    };
-    const conversation = {
-      id: localConversationId,
-      articleId: localArticleId,
-      messages: [],
-    };
+  async function startConversationWithFile({ file: uploadedFile, visibility: uploadedVisibility }) {
+    const token = getAccessToken();
+    const version = viewVersion.current;
 
-    setArticles((articles) => [...articles, article]);
-    setConversations((conversations) => [...conversations, conversation]);
-    setActiveConversationId(conversation.id);
-    changeFile(article.file);
-    setVisibility(article.visibility);
-    setView("chat");
+    try {
+      // 기사 조회만 실패했다면 이미 생성한 대화를 다시 사용합니다.
+      let result = pendingUploads.current.get(uploadedFile);
+
+      if (!result) {
+        result = await createConversation({
+          file: uploadedFile,
+          title: uploadedFile.name.trim().slice(0, 255),
+          visibility: uploadedVisibility,
+        });
+        pendingUploads.current.set(uploadedFile, result);
+      }
+
+      const articleData = await getArticle({ articleId: result.article_id });
+
+      if (getAccessToken() !== token) return;
+      pendingUploads.current.delete(uploadedFile);
+
+      const article = {
+        ...articleData,
+        file: uploadedFile,
+        createdAt: articleData.created_at,
+      };
+
+      const conversation = {
+        ...result,
+        articleId: result.article_id,
+        createdAt: result.created_at,
+      };
+
+      setArticles((items) => [...items.filter((item) => item.id !== article.id), article]);
+      setConversations((items) => [
+        ...items.filter((item) => item.id !== conversation.id),
+        conversation,
+      ]);
+
+      if (viewVersion.current !== version) return;
+
+      setActiveConversationId(conversation.id);
+      changeFile(article.file);
+      setVisibility(article.visibility);
+      setView("chat");
+    } catch (error) {
+      if (error.response?.status === 401 && getAccessToken() === token) {
+        void onLogout();
+        return;
+      }
+      throw error;
+    }
   }
 
   function startNewConversation() {
+    viewVersion.current += 1;
     setActiveConversationId(null);
     setArticleId(null);
     setView("chat");
@@ -135,6 +174,26 @@ export default function MainPage({ user, onLogout }) {
     }
   }
 
+  function changeView(nextView) {
+    viewVersion.current += 1;
+    setView(nextView);
+  }
+
+  const sideMenuProps = {
+    menuOpen,
+    setMenuOpen,
+    onStartNewConversation: startNewConversation,
+    articles,
+    view,
+    activeConversationId,
+    conversations,
+    openChat,
+    onDeleteConversation: deleteConversation,
+    setView: changeView,
+    user,
+    onLogout,
+  };
+
   const previewProps = {
     file,
     visibility,
@@ -146,20 +205,7 @@ export default function MainPage({ user, onLogout }) {
 
   return (
     <div className={`shell ${menuOpen ? "menu-open" : "menu-closed"}`}>
-      <SideMenu
-        menuOpen={menuOpen}
-        setMenuOpen={setMenuOpen}
-        onStartNewConversation={startNewConversation}
-        articles={articles}
-        view={view}
-        activeConversationId={activeConversationId}
-        conversations={conversations}
-        openChat={openChat}
-        onDeleteConversation={deleteConversation}
-        setView={setView}
-        user={user}
-        onLogout={onLogout}
-      />
+      <SideMenu {...sideMenuProps} />
 
       <div className="main">
         {view === "article" && (
@@ -168,10 +214,11 @@ export default function MainPage({ user, onLogout }) {
               {...previewProps}
               articles={articles}
               articleId={articleId}
-              setView={setView}
+              setView={changeView}
             />
           </main>
         )}
+
         {(view === "private" || view === "public") && (
           <main className="archive-main">
             <Archive
@@ -182,6 +229,7 @@ export default function MainPage({ user, onLogout }) {
             />
           </main>
         )}
+
         {view === "chat" &&
           (hasActiveConversation ? (
             <main className="split-main">
