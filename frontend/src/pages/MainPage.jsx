@@ -15,15 +15,7 @@ import LoadingNotice from "../components/LoadingNotice.jsx";
 import useFilePreview from "../hooks/useFilePreview.js";
 import { createConversation, getConversationList, getConversation } from "../api/conversations.js";
 import { getArticle, getArticleList } from "../api/articles.js";
-import {
-  askQuestion,
-  formatArticle,
-  checkDuplicates,
-  evaluateArticle,
-  recommendKeywords,
-  recommendTitle,
-  recommendIdeas,
-} from "../api/features.js";
+import { chatFeatureConfig } from "../config/chatFeatureConfig.js";
 import { getAccessToken } from "../utils/tokenStorage.js";
 import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
 
@@ -99,16 +91,7 @@ export default function MainPage({ user, onLogout }) {
   const messages = activeConversation?.messages || [];
 
   async function sendMessage(messageText, action) {
-    const featureApi =
-      {
-        format: formatArticle,
-        duplicate: checkDuplicates,
-        evaluation: evaluateArticle,
-        keywords: recommendKeywords,
-        title: recommendTitle,
-        ideas: recommendIdeas,
-      }[action] ?? askQuestion;
-    const isRecommendation = ["keywords", "title", "ideas"].includes(action);
+    const { api: featureApi, pendingText } = chatFeatureConfig[action] ?? chatFeatureConfig.qa;
 
     if (pendingFeatures.current.has(activeConversationId)) return;
 
@@ -145,11 +128,7 @@ export default function MainPage({ user, onLogout }) {
                     question: messageText.trim(),
                     answer: "",
                     pending: true,
-                    pendingText: isRecommendation
-                      ? "추천 내용을 생성하고 있습니다..."
-                      : featureApi === askQuestion
-                        ? "답변을 생성하고 있습니다..."
-                        : "기사를 검토하고 있습니다...",
+                    pendingText,
                   },
                 ],
               }
@@ -361,9 +340,7 @@ export default function MainPage({ user, onLogout }) {
 
       <div className="main">
         {loadingHistory && !historyError && (
-          <LoadingNotice className="history-feedback">
-            목록을 불러오는 중...
-          </LoadingNotice>
+          <LoadingNotice className="history-feedback">목록을 불러오는 중...</LoadingNotice>
         )}
 
         <ErrorNotice
