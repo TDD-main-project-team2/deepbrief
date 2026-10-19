@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 
 import "./UploadForm.css";
 import Icons from "../Icons.jsx";
+import ErrorNotice from "../ErrorNotice.jsx";
 
 export default function UploadForm({ onStartConversationWithFile }) {
   const input = useRef(null);
@@ -116,11 +117,7 @@ export default function UploadForm({ onStartConversationWithFile }) {
           onChange={(event) => select(event.target.files[0])}
         />
 
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
+        <ErrorNotice className="upload-error">{error}</ErrorNotice>
 
         <fieldset className="visibility-options" disabled={submitting}>
           <legend>문서 공개 범위</legend>

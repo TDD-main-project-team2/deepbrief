@@ -1,0 +1,51 @@
+.error-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid #ead5df;
+  border-radius: 7px;
+  background: #f8eef3;
+  color: var(--wine);
+  font-size: 11px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.error-notice > svg {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.error-notice-message {
+  flex: 1;
+  min-width: 0;
+}
+.error-notice > button {
+  flex-shrink: 0;
+  align-self: center;
+  padding: 4px 8px;
+  border: 1px solid #d8b7c7;
+  border-radius: 5px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.error-notice > button:hover {
+  background: #f3e6ed;
+}
+.error-notice > button:focus-visible {
+  outline: 2px solid var(--wine);
+  outline-offset: 2px;
+}
+@media (max-width: 580px) {
+  .error-notice {
+    flex-wrap: wrap;
+  }
+  .error-notice > button {
+    margin-left: 23px;
+  }
+}

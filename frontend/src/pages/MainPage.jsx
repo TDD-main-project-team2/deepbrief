@@ -9,6 +9,8 @@ import ArticlePanel from "../components/main/ArticlePanel.jsx";
 import ChatPanel from "../components/main/ChatPanel.jsx";
 import Archive from "../components/main/Archive.jsx";
 import ArchivePreview from "../components/main/ArchivePreview.jsx";
+import ErrorNotice from "../components/ErrorNotice.jsx";
+import LoadingNotice from "../components/LoadingNotice.jsx";
 
 import useFilePreview from "../hooks/useFilePreview.js";
 import { createConversation, getConversationList, getConversation } from "../api/conversations.js";
@@ -358,20 +360,19 @@ export default function MainPage({ user, onLogout }) {
       <SideMenu {...sideMenuProps} />
 
       <div className="main">
-        {loadingHistory && (
-          <p className="history-feedback" role="status">
+        {loadingHistory && !historyError && (
+          <LoadingNotice className="history-feedback">
             목록을 불러오는 중...
-          </p>
+          </LoadingNotice>
         )}
 
-        {historyError && (
-          <div className="history-feedback" role="alert">
-            <span>{historyError}</span>
-            <button type="button" onClick={retryHistory}>
-              목록 다시 불러오기
-            </button>
-          </div>
-        )}
+        <ErrorNotice
+          className="history-feedback"
+          onRetry={retryHistory}
+          retryLabel="목록 다시 불러오기"
+        >
+          {historyError}
+        </ErrorNotice>
 
         {view === "article" && (
           <main className="article-detail-main split-main">
