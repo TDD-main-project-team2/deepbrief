@@ -1,12 +1,21 @@
 """기사 데이터 조회 및 사용자별 기사 연결 Repository."""
 
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from backend.database.rdb.rdb import SessionLocal
 from backend.models.article import Article
 from backend.models.conversation import Conversation
 from backend.models.user_article import UserArticle
 
+def get_by_content_hash(db: Session, content_hash: str) -> Article | None:
+    return db.query(Article).filter(Article.content_hash == content_hash).first()
+
+def create(db: Session, article: Article) -> Article:
+    db.add(article)
+    db.commit()
+    db.refresh(article)
+    return article
 
 def find_article_by_id(article_id: int) -> Article | None:
     """기사 ID로 기사를 조회한다."""
@@ -83,3 +92,6 @@ def add_article_to_user(user_id: int, article_id: int) -> None:
             )
         )
         db.commit()
+
+def user_has_access(db: Session, user_id: int, article_id: int) -> bool:
+    return db.get(UserArticle, (user_id, article_id)) is not None
