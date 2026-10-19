@@ -14,20 +14,15 @@ import LoadingNotice from "../components/LoadingNotice.jsx";
 
 import useFilePreview from "../hooks/useFilePreview.js";
 import useConversationUpload from "../hooks/useConversationUpload.js";
+import useConversationMessages from "../hooks/useConversationMessages.js";
 
 import { getConversationList, getConversation } from "../api/conversations.js";
 import { getArticle, getArticleList } from "../api/articles.js";
-import { chatFeatureConfig } from "../config/chatFeatureConfig.js";
-import {
-  appendConversationMessage,
-  updateConversationMessage,
-} from "../utils/conversationMessages.js";
 import { getAccessToken } from "../utils/tokenStorage.js";
 import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
 
 export default function MainPage({ user, onLogout }) {
   const viewVersion = useRef(0); // 업로드를 기다리는 동안 사용자가 다른 화면으로 이동했는지 확인하는 값
-  const pendingFeatures = useRef(new Set()); // 기능 API 요청이 진행 중인 대화 ID를 저장하는 값
   const uploadConversation = useConversationUpload();
 
   const [uploadSession, setUploadSession] = useState(0);
@@ -96,60 +91,11 @@ export default function MainPage({ user, onLogout }) {
   const hasActiveConversation = Boolean(activeConversation);
   const messages = activeConversation?.messages || [];
 
-  async function sendMessage(messageText, action) {
-    const { api: featureApi, pendingText } = chatFeatureConfig[action] ?? chatFeatureConfig.qa;
-
-    if (pendingFeatures.current.has(activeConversationId)) return;
-
-    if (featureApi && activeConversation && messageText.trim()) {
-      const conversationId = activeConversationId;
-      const token = getAccessToken();
-      const requestId = crypto.randomUUID();
-
-      pendingFeatures.current.add(conversationId);
-
-      const updateMessage = (changes) =>
-        setConversations((items) =>
-          updateConversationMessage(items, conversationId, requestId, changes),
-        );
-
-      setConversations((items) =>
-        appendConversationMessage(items, conversationId, {
-          requestId,
-          question: messageText.trim(),
-          answer: "",
-          pending: true,
-          pendingText,
-        }),
-      );
-
-      try {
-        const response = await featureApi({ conversationId, content: messageText.trim() }, token);
-
-        if (getAccessToken() !== token) return;
-        if (typeof response?.content !== "string" || !response.content.trim()) {
-          throw new Error("Empty feature response");
-        }
-
-        updateMessage({
-          answer: `“${messageText}” 요청을 받았습니다.\n\n${response.content}`,
-          pending: false,
-        });
-      } catch (error) {
-        if (getAccessToken() !== token) return;
-
-        updateMessage({
-          pending: false,
-          error: "요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
-        });
-
-        if (error.response?.status === 401) void onLogout();
-      } finally {
-        pendingFeatures.current.delete(conversationId);
-      }
-      return;
-    }
-  }
+  const { sendMessage, isConversationPending } = useConversationMessages({
+    activeConversation,
+    setConversations,
+    onLogout,
+  });
 
   async function openChat(conversation) {
     const messagesBeforeLoad = conversation.messages;
@@ -172,7 +118,7 @@ export default function MainPage({ user, onLogout }) {
       setConversations((items) =>
         items.map((item) =>
           item.id === restored.id
-            ? pendingFeatures.current.has(item.id) || item.messages !== messagesBeforeLoad
+            ? isConversationPending(item.id) || item.messages !== messagesBeforeLoad
               ? { ...restored, messages: item.messages }
               : restored
             : item,
