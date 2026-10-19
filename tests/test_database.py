@@ -27,9 +27,11 @@ from backend.repositories import (
     refresh_token_repository,
     user_repository,
 )
+from backend.services.agent import tools
 
 load_dotenv()
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
+KST = timezone(timedelta(hours=9))
 
 pytestmark = pytest.mark.skipif(
     not TEST_DATABASE_URL,
@@ -558,3 +560,111 @@ def test_search_organization_chunks_without_organization(db):
 
     with pytest.raises(ValueError):
         vector_db.search_organization_chunks(embedding(1.0, 0.0), article.id)
+
+
+# 사내 데이터 조회 SQL (services/agent/tools.py)
+# 안쪽 조회 함수는 session을 인자로 받으므로 db를 그대로 넘긴다. LLM이 도구를 고르는 부분은 다루지 않는다.
+
+
+def test_find_organization_id(db):
+    """기사를 가진 사용자의 조직을 찾고, 연결이 없거나 조직이 여러 개면 None을 반환한다."""
+    own = make_organization(db)
+    shared = make_article(db)
+    link(db, make_user(db, own), shared)
+    link(db, make_user(db, own), shared)
+    cross = make_article(db)
+    link(db, make_user(db, own), cross)
+    link(db, make_user(db, make_organization(db)), cross)
+
+    assert tools._find_organization_id(db, shared.id) == own.id
+    assert tools._find_organization_id(db, make_article(db).id) is None
+    assert tools._find_organization_id(db, cross.id) is None
+
+
+def test_count_articles_counts_shared_article_once(db):
+    """조직 안 여러 명이 가진 기사는 한 번만 세고, 다른 조직의 기사는 세지 않는다."""
+    own = make_organization(db)
+    first = make_user(db, own)
+    second = make_user(db, own)
+    shared = make_article(db)
+    link(db, first, shared)
+    link(db, second, shared)
+    link(db, second, make_article(db))
+    link(db, make_user(db, make_organization(db)), make_article(db))
+
+    assert tools._count_articles(db, own.id, "all") == 2
+
+
+def test_count_articles_period_and_category(db):
+    """기간은 작성일(없으면 업로드 시각) 기준으로 거르고, 분야로도 거른다."""
+    now = datetime.now(KST)
+    user = make_user(db, make_organization(db))
+    link(db, user, make_article(db, category="경제", published_at=now))
+    link(db, user, make_article(db))
+    link(db, user, make_article(db, category="IT", published_at=now - timedelta(days=800)))
+    organization_id = user.organization_id
+
+    assert tools._count_articles(db, organization_id, "all") == 3
+    assert tools._count_articles(db, organization_id, "today") == 2
+    assert tools._count_articles(db, organization_id, "yesterday") == 0
+    assert tools._count_articles(db, organization_id, "this_year") == 2
+    assert tools._count_articles(db, organization_id, "all", "경제") == 1
+
+
+def test_count_articles_by_category_uncategorized(db):
+    """분야가 없는 기사는 미분류로 세고, 많은 순서로 반환한다."""
+    user = make_user(db, make_organization(db))
+    for category in ["경제", "경제", "IT", None]:
+        link(db, user, make_article(db, category=category))
+
+    result = tools._count_articles_by_category(db, user.organization_id, "all")
+
+    assert result == [("경제", 2), ("IT", 1), ("미분류", 1)]
+
+
+def test_list_recent_articles_order_and_limit(db):
+    """최근 기사를 최신순으로 최대 5개 반환하고, 여러 명이 가진 기사도 한 번만 넣는다."""
+    now = datetime.now(KST)
+    organization = make_organization(db)
+    user = make_user(db, organization)
+    articles = []
+    for days in range(7):
+        article = make_article(db, title=f"{days}일 전 기사", published_at=now - timedelta(days=days))
+        link(db, user, article)
+        articles.append(article)
+    link(db, make_user(db, organization), articles[0])
+
+    rows = tools._list_recent_articles(db, organization.id, "all")
+
+    assert [row.title for row in rows] == [f"{days}일 전 기사" for days in range(5)]
+
+
+def test_count_articles_by_author_and_media_escape(db):
+    """기자·언론사 이름이 들어간 기사를 세고, %와 _는 글자 그대로 찾는다."""
+    user = make_user(db, make_organization(db))
+    for author, media in [("김바다, 이하늘", "새봄신문"), ("이하늘", "한빛일보"),
+                          ("100%기자", "새봄_신문"), ("박구름", "새봄X신문")]:
+        link(db, user, make_article(db, author=author, media=media))
+    organization_id = user.organization_id
+
+    assert tools._count_articles_by_author(db, organization_id, "all", "이하늘") == 2
+    assert tools._count_articles_by_author(db, organization_id, "all", "%") == 1
+    assert tools._count_articles_by_media(db, organization_id, "all", "새봄") == 3
+    assert tools._count_articles_by_media(db, organization_id, "all", "새봄_신문") == 1
+
+
+def test_list_templates_guidelines_and_count_members(db):
+    """템플릿·지침 제목과 구성원 수는 자기 조직 것만 반환한다."""
+    own = make_organization(db)
+    other = make_organization(db)
+    make_user(db, own)
+    make_user(db, own)
+    make_user(db, other)
+    make_template(db, own)
+    make_template(db, other)
+    save(db, Guideline(organization_id=own.id, title="표기 원칙", content="숫자 표기"))
+    save(db, Guideline(organization_id=other.id, title="다른 조직 지침", content="내용"))
+
+    assert tools._list_templates(db, own.id) == ["보도자료"]
+    assert tools._list_guidelines(db, own.id) == ["표기 원칙"]
+    assert tools._count_members(db, own.id) == 2
