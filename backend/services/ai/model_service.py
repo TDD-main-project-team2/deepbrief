@@ -26,12 +26,17 @@ MAX_NEW_TOKENS = {
     "category": 20,
     "article_metadata": 80,
     "company_data_tool": 150,  # agent: 사내 데이터 조회 tool 선택 (tool 필요 판단 1단계)
+    "duplicate_check": 150,
 }
 
 GENERATION_OPTIONS = {"do_sample": False, "temperature": None, "top_p": None, "top_k": None}
 
 
 EVALUATION_VERDICTS = ("충족", "미흡", "해당 없음")
+
+# 중복 기사 검사
+DUPLICATE_SIMILAR_MAX = 3000   # 모델에 넣을 비슷한 회사 기사 조각의 최대 글자 수 (조각 단위로 자름)
+NO_SIMILAR_MESSAGE = "회사 기사 중 비슷한 기사를 찾지 못했습니다."
 
 # 기사 분야. 생활 기사(건강, 여행, 음식 등)도 문화로 분류한다
 ARTICLE_CATEGORIES = ("정치", "경제", "사회", "문화", "IT", "과학", "세계", "엔터테인먼트", "스포츠")
@@ -278,6 +283,19 @@ ARTICLE_METADATA_TEMPLATE = (
     "작성일: (기사에 적힌 입력 일시)"
 )
 
+DUPLICATE_CHECK_TEMPLATE = (
+    "기사:\n{article}\n\n"
+    "회사의 다른 기사에서 찾은 비슷한 내용:\n{similar}\n\n"
+    "위 기사가 회사의 다른 기사와 같은 사건을 같은 내용으로 다룬 중복 기사인지 판단하세요.\n"
+    "판정은 아래 둘 중 하나입니다.\n"
+    "- 중복 의심: 지역·기관 이름과 숫자·날짜가 같은, 같은 사건을 다뤘다\n"
+    "- 중복 아님: 지역이나 기관이 다르거나, 같은 기관이라도 다른 시점의 새 소식(후속 보도)이다\n"
+    "- 이유에는 두 글에 모두 있는 단어만 쓰세요.\n"
+    "반드시 아래 형식으로만 답하세요.\n"
+    "판정: 중복 의심, 중복 아님 중 하나\n"
+    "이유: 겹치는 내용이나 다른 점을 담은 짧은 한 문장"
+)
+
 
 # 예시 답변 (few-shot): 테스트 기사와 겹치지 않는 가상 기사. 모델이 "어떻게 답하는지" 보고 따라 하게 한다.
 _EXAMPLE_ARTICLE = (
@@ -312,6 +330,27 @@ EVALUATION_EXAMPLES = [
     {
         "item": {"title": "그래픽 자료 제공", "description": "수치가 많은 기사는 표나 그래프를 함께 제공합니다."},
         "answer": "판정: 해당 없음\n이유: 표나 그래프를 함께 제공했는지는 기사 본문만으로 알 수 없다.",
+    },
+]
+
+# 중복 검사 예시: 같은 발표 / 다른 기관의 같은 정책 / 같은 기관의 후속 소식 (확인용 테스트 기사와 겹치지 않는 주제)
+DUPLICATE_CHECK_EXAMPLE_ARTICLE = (
+    "다온구는 이달 20일부터 공공자전거 대여소 30곳을 새로 연다고 5일 밝혔다. "
+    "사업비 12억 원은 모두 구비로 충당한다."
+)
+
+DUPLICATE_CHECK_EXAMPLES = [
+    {
+        "similar": "다온구가 20일부터 공공자전거 대여소 30곳을 추가로 운영한다. 12억 원은 모두 구 예산이다.",
+        "answer": "판정: 중복 의심\n이유: 다온구, 대여소 30곳, 20일, 12억 원이 두 글에 모두 있다.",
+    },
+    {
+        "similar": "누리시는 다음 달부터 공공자전거 대여소 15곳을 연다. 사업비는 6억 원이다.",
+        "answer": "판정: 중복 아님\n이유: 다온구와 누리시로 기관이 다르고, 대여소 수와 사업비도 다르다.",
+    },
+    {
+        "similar": "다온구 공공자전거 새 대여소가 문을 연 지 한 달 만에 이용 건수가 2만 건을 넘었다.",
+        "answer": "판정: 중복 아님\n이유: 같은 다온구 소식이지만 대여소를 연 뒤의 이용 실적을 다룬 새 소식이다.",
     },
 ]
 
@@ -449,6 +488,18 @@ def _article_metadata_messages(article: str) -> list[dict]:
     )
 
 
+def _duplicate_check_prompt(article: str, similar: str) -> str:
+    return DUPLICATE_CHECK_TEMPLATE.format(article=article, similar=similar)
+
+
+def _duplicate_check_messages(article: str, similar: str) -> list[dict]:
+    return _with_examples(
+        _system_messages(_duplicate_check_prompt(article, similar)),
+        [(_duplicate_check_prompt(DUPLICATE_CHECK_EXAMPLE_ARTICLE, ex["similar"]), ex["answer"])
+         for ex in DUPLICATE_CHECK_EXAMPLES],
+    )
+
+
 def _company_data_tool_messages(question: str) -> list[dict]:
     return [{"role": "system", "content": COMPANY_DATA_TOOL_TEMPLATE}, {"role": "user", "content": question}]
 
@@ -461,6 +512,7 @@ _TITLE_LINE = re.compile(r"제목\s*:\s*(.+?)\s*/\s*부제목\s*:\s*(.+)")
 _VERDICT = re.compile(r"판정\s*:\s*(충족|미흡|해당\s*없음)")
 _VERDICT_AT_START = re.compile(r"^\s*(충족|미흡|해당\s*없음)")   # "판정:" 없이 판정부터 쓴 경우
 _REASON = re.compile(r"이유\s*:\s*(.+)")
+_DUPLICATE_VERDICT = re.compile(r"판정\s*:\s*(중복\s*의심|중복\s*아님)")
 
 
 _TOOL_CALL = re.compile(r"<tool_call>\s*(\{.*?\})\s*</tool_call>", re.DOTALL)
@@ -540,6 +592,31 @@ def _parse_verdict(text: str) -> dict:
         "verdict": re.sub(r"\s+", " ", verdict.group(1)),
         "reason": reason.group(1).strip() if reason else "",
     }
+
+
+def _parse_duplicate_check(text: str) -> dict:
+    verdict = _DUPLICATE_VERDICT.search(text)
+    if verdict is None:
+        raise ModelOutputError(f"중복 판정을 읽을 수 없습니다: {text!r}")
+    reason = _REASON.search(text)
+    return {
+        "verdict": re.sub(r"\s+", " ", verdict.group(1)),
+        "reason": reason.group(1).strip() if reason else "",
+    }
+
+
+def _limit_chunks(text: str, max_chars: int) -> str:
+    """조각(빈 줄로 구분)을 앞에서부터 max_chars까지만 남긴다. 조각 중간에서 자르지 않는다 (첫 조각만 너무 길면 그 조각을 자름)."""
+    kept, length = [], 0
+    for chunk in (part.strip() for part in text.split("\n\n")):
+        if not chunk:
+            continue
+        added = len(chunk) + (2 if kept else 0)
+        if length + added > max_chars:
+            break
+        kept.append(chunk)
+        length += added
+    return "\n\n".join(kept) if kept else text.strip()[:max_chars]
 
 
 _NOT_FOUND = re.compile(r"\(?\s*기사에\s*없음\s*\)?")
@@ -899,6 +976,26 @@ def generate_article_metadata(article) -> dict:
         "category": generate_category(body),
         "published_at": found["published_at"],
     }
+
+
+def generate_duplicate_check(article, similar_context) -> str:
+    """
+    중복 기사 검사 (메시지용 문자열).
+    article은 현재 기사 본문(조각을 이은 문자열 또는 Article 객체),
+    similar_context는 회사 기사에서 찾은 비슷한 조각을 이은 문자열.
+    비슷한 조각이 없으면 모델을 부르지 않고 NO_SIMILAR_MESSAGE. 조각은 DUPLICATE_SIMILAR_MAX 글자까지만 넣는다.
+    "[중복 의심] 이유: ..." 형식, 형식이 깨지면 모델 원문.
+    """
+    similar = _limit_chunks(_article_text(similar_context), DUPLICATE_SIMILAR_MAX)
+    if not similar:
+        return NO_SIMILAR_MESSAGE
+    raw = _generate(_duplicate_check_messages(_article_text(article), similar), None, "duplicate_check")
+    try:
+        result = _parse_duplicate_check(raw)
+    except ModelOutputError:
+        return _message_text(raw)
+    reason = f" 이유: {result['reason']}" if result["reason"] else ""
+    return _message_text(f"[{result['verdict']}]{reason}")
 
 
 def decide_answer_source(context, question: str) -> dict:

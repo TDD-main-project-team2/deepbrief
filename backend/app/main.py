@@ -2,7 +2,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from backend.app.api import auth, users, articles, conversations, features
+from backend.app.api import auth, users, articles, conversations, features, admin
 from backend.services.auth.auth_service import (
     EmailAlreadyExistsError,
     InvalidCredentialsError,
@@ -51,7 +51,7 @@ app.include_router(users.router)
 app.include_router(articles.router)
 app.include_router(conversations.router)
 app.include_router(features.router)
-
+app.include_router(admin.router)
 
 @app.get("/health")
 def health_check():
