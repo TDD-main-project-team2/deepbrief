@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from unittest.mock import MagicMock
 import pytest
 
@@ -64,3 +65,15 @@ def test_register_user_with_invalid_organization_code():
     # 사용자 저장이나 커밋이 일어나면 안 됨
     db.add.assert_not_called()
     db.commit.assert_not_called()
+=======
+from backend.models.organization import Organization
+
+def test_register(client):
+    response = client.post("/auth/register", json={
+    "email": "test@example.com",
+    "password": "StrongPass123!",
+    "nickname": "tester",
+})
+    
+    assert response.status_code == 200
+>>>>>>> b931b7f433ad6f63423eef7e8490a307aac2ce84
