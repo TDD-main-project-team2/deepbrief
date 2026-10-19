@@ -12,16 +12,13 @@ export default function ArchiveItem({ article, onOpen, onDelete }) {
         </span>
 
         <span className="archive-info">
-          <strong>{article.file.name}</strong>
-          <small>
-            {article.file.name.split(".").pop().toUpperCase()} ·{" "}
-            {(article.file.size / 1024).toFixed(1)} KB · {formatDateTime(article.createdAt)}
-          </small>
+          <strong>{article.title || article.file.name}</strong>
+          <small>{formatDateTime(article.createdAt)}</small>
         </span>
         <span className="archive-open">열기 ↗</span>
       </button>
 
-      <DeleteButton label={`${article.file.name} 기사 삭제`} onClick={() => onDelete(article)} />
+      <DeleteButton label={`${article.title} 기사 삭제`} onClick={() => onDelete(article)} />
     </div>
   );
 }

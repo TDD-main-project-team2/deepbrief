@@ -26,9 +26,7 @@ export default function ChatPanel({ messages, onSendMessage }) {
   useEffect(() => {
     const area = messageArea.current;
     if (area) {
-      const reduceMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)",
-      ).matches;
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       area.scrollTo({
         top: area.scrollHeight,
         behavior: reduceMotion ? "auto" : "smooth",
@@ -62,17 +60,19 @@ export default function ChatPanel({ messages, onSendMessage }) {
 
             {messages.map((message, messageIndex) => (
               <div className="message-pair" key={messageIndex}>
-                <div className="user-message">{message.question}</div>
+                {message.question && <div className="user-message">{message.question}</div>}
 
-                <div className="assistant-message">
-                  <span className="assistant-avatar">
-                    <Icons type="spark" />
-                  </span>
-                  <div>
-                    <strong>DeepBrief</strong>
-                    <p>{message.answer}</p>
+                {message.answer && (
+                  <div className="assistant-message">
+                    <span className="assistant-avatar">
+                      <Icons type="spark" />
+                    </span>
+                    <div>
+                      <strong>DeepBrief</strong>
+                      <p>{message.answer}</p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
@@ -94,10 +94,7 @@ export default function ChatPanel({ messages, onSendMessage }) {
 
             <div className="quick-actions">
               {suggestions.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => sendMessage(suggestion)}
-                >
+                <button key={suggestion} onClick={() => sendMessage(suggestion)}>
                   {suggestion}
                   <span>↗</span>
                 </button>
@@ -116,22 +113,14 @@ export default function ChatPanel({ messages, onSendMessage }) {
                 value={text}
                 onChange={(event) => setText(event.target.value)}
                 onKeyDown={(event) => {
-                  if (
-                    event.key === "Enter" &&
-                    !event.shiftKey &&
-                    !event.nativeEvent.isComposing
-                  ) {
+                  if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
                     event.preventDefault();
                     sendMessage();
                   }
                 }}
               />
 
-              <button
-                className="primary send"
-                aria-label="메시지 보내기"
-                disabled={!text.trim()}
-              >
+              <button className="primary send" aria-label="메시지 보내기" disabled={!text.trim()}>
                 <Icons type="arrow" />
               </button>
             </form>

@@ -9,7 +9,7 @@ export default function ConversationMenuItem({
   onOpen,
   onDelete,
 }) {
-  const title = article?.file.name || "기사를 찾을 수 없습니다";
+  const title = conversation.title || article?.title || article?.file?.name || "대화";
 
   return (
     <div className={`history-item ${selected ? "active" : ""}`}>
@@ -18,7 +18,6 @@ export default function ConversationMenuItem({
         className="history-open"
         onClick={() => onOpen(conversation)}
         title={title}
-        disabled={!article}
         aria-current={selected ? "page" : undefined}
       >
         <span>

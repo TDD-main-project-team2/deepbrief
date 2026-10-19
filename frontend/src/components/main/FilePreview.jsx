@@ -20,11 +20,11 @@ function PdfContent({ previewUrl }) {
   );
 }
 
-function TextContent({ file, previewText, previewError }) {
+function TextContent({ file, previewText, previewError, article }) {
   return (
     <article className="text-paper">
-      <p className="paper-label">ORIGINAL DOCUMENT</p>
-      <h2>{file.name.replace(/\.[^.]+$/, "")}</h2>
+      <p className="paper-label">ARTICLE</p>
+      <h2>{article?.title || file.name.replace(/\.[^.]+$/, "")}</h2>
       <pre>{previewError || previewText || "내용이 없는 파일입니다."}</pre>
     </article>
   );
@@ -41,9 +41,7 @@ function ImageContent({ file, previewUrl, previewError, setPreviewError }) {
           setPreviewError("이미지를 표시할 수 없습니다.");
         }}
       />
-      {previewError && (
-        <p role="alert">이미지를 표시할 수 없습니다. 파일을 확인해주세요.</p>
-      )}
+      {previewError && <p role="alert">이미지를 표시할 수 없습니다. 파일을 확인해주세요.</p>}
     </div>
   );
 }
@@ -58,6 +56,7 @@ export default function FilePreview(props) {
     content = (
       <TextContent
         file={props.file}
+        article={props.article}
         previewText={props.previewText}
         previewError={props.previewError}
       />

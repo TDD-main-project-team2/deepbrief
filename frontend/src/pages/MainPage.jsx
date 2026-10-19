@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import "./MainPage.css";
 import "../components/main/MainCommon.css";
@@ -11,9 +11,10 @@ import Archive from "../components/main/Archive.jsx";
 import ArchivePreview from "../components/main/ArchivePreview.jsx";
 
 import useFilePreview from "../hooks/useFilePreview.js";
-import { createConversation } from "../api/conversations.js";
-import { getArticle } from "../api/articles.js";
+import { createConversation, getConversationList, getConversation } from "../api/conversations.js";
+import { getArticle, getArticleList } from "../api/articles.js";
 import { getAccessToken } from "../utils/tokenStorage.js";
+import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
 
 export default function MainPage({ user, onLogout }) {
   const viewVersion = useRef(0); // 업로드를 기다리는 동안 사용자가 다른 화면으로 이동했는지 확인하는 값
@@ -23,10 +24,58 @@ export default function MainPage({ user, onLogout }) {
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [articleId, setArticleId] = useState(null);
   const [view, setView] = useState("chat");
+  const [archiveView, setArchiveView] = useState("private");
   const [articles, setArticles] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [visibility, setVisibility] = useState("private");
   const [menuOpen, setMenuOpen] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [historyError, setHistoryError] = useState("");
+  const [historyReload, setHistoryReload] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const token = getAccessToken();
+
+    async function loadHistory() {
+      try {
+        const [articleResult, conversationResult] = await Promise.all([
+          getArticleList(),
+          getConversationList(),
+        ]);
+
+        if (cancelled || getAccessToken() !== token) return;
+
+        setArticles((current) =>
+          mergeHistory(
+            articleResult.articles.map((item) => toArticleView(item)),
+            current,
+          ),
+        );
+        setConversations((current) =>
+          mergeHistory(conversationResult.map(toConversationView), current),
+        );
+      } catch (error) {
+        if (cancelled || getAccessToken() !== token) return;
+        if (error.response?.status === 401) void onLogout();
+        else setHistoryError("기사·대화 목록을 불러오지 못했습니다. 다시 시도해주세요.");
+      } finally {
+        if (!cancelled) setLoadingHistory(false);
+      }
+    }
+
+    loadHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, onLogout, historyReload]);
+
+  function retryHistory() {
+    setHistoryError("");
+    setLoadingHistory(true);
+    setHistoryReload((value) => value + 1);
+  }
 
   const { file, previewUrl, previewText, previewError, setPreviewError, changeFile } =
     useFilePreview();
@@ -54,20 +103,38 @@ export default function MainPage({ user, onLogout }) {
     );
   }
 
-  function openChat(conversation) {
-    viewVersion.current += 1;
-    const article = articles.find((article) => article.id === conversation.articleId);
+  async function openChat(conversation) {
+    const version = ++viewVersion.current;
+    const token = getAccessToken();
 
-    if (!article) return;
+    setHistoryError("");
 
-    setActiveConversationId(conversation.id);
-    changeFile(article.file);
-    setVisibility(article.visibility);
-    setView("chat");
+    try {
+      const detail = await getConversation({ conversationId: conversation.id });
+      const cachedArticle = articles.find((article) => article.id === detail.article_id);
+      const article =
+        cachedArticle ?? toArticleView(await getArticle({ articleId: detail.article_id }));
+
+      if (version !== viewVersion.current || getAccessToken() !== token) return;
+      if (!cachedArticle) setArticles((items) => mergeHistory(items, [article]));
+
+      const restored = toConversationView(detail);
+
+      setConversations((items) => items.map((item) => (item.id === restored.id ? restored : item)));
+      setActiveConversationId(restored.id);
+      changeFile(article.file);
+      setVisibility(article.visibility);
+      setView("chat");
+    } catch (error) {
+      if (version !== viewVersion.current || getAccessToken() !== token) return;
+      if (error.response?.status === 401) void onLogout();
+      else setHistoryError("대화를 불러오지 못했습니다. 대화를 다시 선택해주세요.");
+    }
   }
 
   function openArticle(article) {
     viewVersion.current += 1;
+    setArchiveView(view === "public" ? "public" : "private");
     setArticleId(article.id);
     changeFile(article.file);
     setVisibility(article.visibility);
@@ -96,17 +163,8 @@ export default function MainPage({ user, onLogout }) {
       if (getAccessToken() !== token) return;
       pendingUploads.current.delete(uploadedFile);
 
-      const article = {
-        ...articleData,
-        file: uploadedFile,
-        createdAt: articleData.created_at,
-      };
-
-      const conversation = {
-        ...result,
-        articleId: result.article_id,
-        createdAt: result.created_at,
-      };
+      const article = toArticleView(articleData, uploadedFile);
+      const conversation = toConversationView(result);
 
       setArticles((items) => [...items.filter((item) => item.id !== article.id), article]);
       setConversations((items) => [
@@ -167,7 +225,7 @@ export default function MainPage({ user, onLogout }) {
 
     if (deletesOpenArticle || (view === "chat" && deletesActiveConversation)) {
       startNewConversation();
-      if (deletesOpenArticle) setView(article.visibility);
+      if (deletesOpenArticle) setView(archiveView);
     } else {
       if (deletesActiveConversation) setActiveConversationId(null);
       if (articleId === article.id) setArticleId(null);
@@ -201,6 +259,9 @@ export default function MainPage({ user, onLogout }) {
     previewText,
     previewError,
     setPreviewError,
+    article: articles.find(
+      (article) => article.id === (view === "article" ? articleId : activeConversation?.articleId),
+    ),
   };
 
   return (
@@ -208,14 +269,24 @@ export default function MainPage({ user, onLogout }) {
       <SideMenu {...sideMenuProps} />
 
       <div className="main">
+        {loadingHistory && (
+          <p className="history-feedback" role="status">
+            목록을 불러오는 중...
+          </p>
+        )}
+
+        {historyError && (
+          <div className="history-feedback" role="alert">
+            <span>{historyError}</span>
+            <button type="button" onClick={retryHistory}>
+              목록 다시 불러오기
+            </button>
+          </div>
+        )}
+
         {view === "article" && (
           <main className="article-detail-main split-main">
-            <ArchivePreview
-              {...previewProps}
-              articles={articles}
-              articleId={articleId}
-              setView={changeView}
-            />
+            <ArchivePreview {...previewProps} archiveView={archiveView} setView={changeView} />
           </main>
         )}
 

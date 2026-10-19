@@ -10,6 +10,7 @@ export default function ArticlePanel({
   previewText,
   previewError,
   setPreviewError,
+  article,
 }) {
   return (
     <>
@@ -18,8 +19,8 @@ export default function ArticlePanel({
           <span>
             <Icons />
             <span className="header-document-info">
-              <strong title={file.name}>{file.name}</strong>
-              <span>이 대화의 기준 파일</span>
+              <strong title={article?.title || file.name}>{article?.title || file.name}</strong>
+              <span>이 대화의 기준 기사</span>
             </span>
           </span>
           <small>{visibility === "private" ? "개인 문서" : "공개 문서"}</small>
@@ -27,6 +28,7 @@ export default function ArticlePanel({
 
         <FilePreview
           file={file}
+          article={article}
           previewUrl={previewUrl}
           previewText={previewText}
           previewError={previewError}
