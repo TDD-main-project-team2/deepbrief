@@ -15,6 +15,7 @@ import { createConversation, getConversationList, getConversation } from "../api
 import { getArticle, getArticleList } from "../api/articles.js";
 import {
   askQuestion,
+  formatArticle,
   checkDuplicates,
   evaluateArticle,
   recommendKeywords,
@@ -98,6 +99,7 @@ export default function MainPage({ user, onLogout }) {
   async function sendMessage(messageText, action) {
     const featureApi =
       {
+        format: formatArticle,
         duplicate: checkDuplicates,
         evaluation: evaluateArticle,
         keywords: recommendKeywords,

@@ -3,17 +3,18 @@ import { useEffect, useRef, useState } from "react";
 import "./ChatPanel.css";
 import Icons from "../Icons.jsx";
 
+const toolButtonLabels = {
+  Edit: ["템플릿에 맞춰 다듬기"],
+  Review: ["중복·유사 기사 검사", "회사 지침으로 평가"],
+  Recommend: ["키워드·태그", "제목·부제목", "헤드라인", "후속 기사 아이디어"],
+};
+
+const editActions = { "템플릿에 맞춰 다듬기": "format" };
 const reviewActions = { "중복·유사 기사 검사": "duplicate", "회사 지침으로 평가": "evaluation" };
 const recommendActions = {
   "키워드·태그": "keywords",
   "제목·부제목": "title",
   "후속 기사 아이디어": "ideas",
-};
-
-const toolButtonLabels = {
-  Edit: ["스트레이트로 다듬기", "기획·해설로 다듬기", "인터뷰 형식으로 다듬기"],
-  Review: ["중복·유사 기사 검사", "회사 지침으로 평가"],
-  Recommend: ["키워드·태그", "제목·부제목", "헤드라인", "후속 기사 아이디어"],
 };
 
 export default function ChatPanel({ messages, onSendMessage, isSending = false }) {
@@ -118,7 +119,11 @@ export default function ChatPanel({ messages, onSendMessage, isSending = false }
                   onClick={() =>
                     sendMessage(
                       suggestion,
-                      tool === "Review" ? reviewActions[suggestion] : recommendActions[suggestion],
+                      tool === "Edit"
+                        ? editActions[suggestion]
+                        : tool === "Review"
+                          ? reviewActions[suggestion]
+                          : recommendActions[suggestion],
                     )
                   }
                 >
