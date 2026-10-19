@@ -15,13 +15,13 @@ from sqlalchemy.orm import Session
 router = APIRouter(prefix="/features", tags=["Features"])
 
 @router.post("/conversations/{conversation_id}/qa", response_model=MessageResponse)
-def ask_question(
+async def ask_question(
     conversation_id: int,
     request: MessageRequest,
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return qa_service.ask_question(
+    return await qa_service.ask_question(
         conversation_id, request, current_user.id, db
     )
 
