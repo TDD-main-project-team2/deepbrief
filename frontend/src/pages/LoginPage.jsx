@@ -21,8 +21,8 @@ export default function LoginPage({ onLogin }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const { values, field, canSubmit } = useAuthValidation(validators, {
-    email: "",
-    password: "",
+    email: import.meta.env.DEV ? "example@test.com" : "",
+    password: import.meta.env.DEV ? "12345678" : "",
   });
 
   async function submit(event) {
@@ -42,9 +42,7 @@ export default function LoginPage({ onLogin }) {
     } catch (error) {
       const detail = error.response?.data?.detail;
       setError(
-        typeof detail === "string"
-          ? detail
-          : "로그인에 실패했습니다. 잠시 후 다시 시도해주세요.",
+        typeof detail === "string" ? detail : "로그인에 실패했습니다. 잠시 후 다시 시도해주세요.",
       );
     } finally {
       setSubmitting(false);
