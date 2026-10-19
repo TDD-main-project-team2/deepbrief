@@ -72,6 +72,7 @@ def _embed_and_save_document_chunks(
 def process_article(
     file_bytes: bytes,
     filename: str,
+    article_visibility: str,
     db: Session,
     reprocess: bool = False,
 ) -> Article:
@@ -115,6 +116,7 @@ def process_article(
             body=document.text,
             content_hash=content_hash,
             **_article_metadata(document),
+            visibility=article_visibility
         )
         article_repository.create(db, article)
 
