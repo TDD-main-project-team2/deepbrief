@@ -20,8 +20,8 @@ export default function UploadForm({ onStartConversationWithFile }) {
       setError("PDF, PNG, JPG, JPEG, TXT 또는 MD 파일을 선택해주세요.");
       return;
     }
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      setError("10MB 이하의 파일을 선택해주세요.");
+    if (selectedFile.size > 20 * 1024 * 1024) {
+      setError("20MB 이하의 파일을 선택해주세요.");
       return;
     }
 
@@ -102,7 +102,7 @@ export default function UploadForm({ onStartConversationWithFile }) {
               >
                 파일 선택
               </button>
-              <small>PDF · PNG · JPG · JPEG · TXT · MD / 최대 10MB</small>
+              <small>PDF · PNG · JPG · JPEG · TXT · MD / 최대 20MB</small>
             </>
           )}
         </div>
