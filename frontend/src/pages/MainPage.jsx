@@ -18,6 +18,10 @@ import useConversationUpload from "../hooks/useConversationUpload.js";
 import { getConversationList, getConversation } from "../api/conversations.js";
 import { getArticle, getArticleList } from "../api/articles.js";
 import { chatFeatureConfig } from "../config/chatFeatureConfig.js";
+import {
+  appendConversationMessage,
+  updateConversationMessage,
+} from "../utils/conversationMessages.js";
 import { getAccessToken } from "../utils/tokenStorage.js";
 import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
 
@@ -106,36 +110,17 @@ export default function MainPage({ user, onLogout }) {
 
       const updateMessage = (changes) =>
         setConversations((items) =>
-          items.map((item) =>
-            item.id === conversationId
-              ? {
-                  ...item,
-                  messages: item.messages.map((message) =>
-                    message.requestId === requestId ? { ...message, ...changes } : message,
-                  ),
-                }
-              : item,
-          ),
+          updateConversationMessage(items, conversationId, requestId, changes),
         );
 
       setConversations((items) =>
-        items.map((item) =>
-          item.id === conversationId
-            ? {
-                ...item,
-                messages: [
-                  ...item.messages,
-                  {
-                    requestId,
-                    question: messageText.trim(),
-                    answer: "",
-                    pending: true,
-                    pendingText,
-                  },
-                ],
-              }
-            : item,
-        ),
+        appendConversationMessage(items, conversationId, {
+          requestId,
+          question: messageText.trim(),
+          answer: "",
+          pending: true,
+          pendingText,
+        }),
       );
 
       try {
