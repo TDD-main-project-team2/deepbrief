@@ -49,7 +49,7 @@ class VectorDB:
         
             query = (
                 session.query(ArticleChunk)
-                .join(ArticleChunk.article)
+                .join(Article, Article.id == ArticleChunk.article_id)
                 .join(UserArticle, UserArticle.article_id == Article.id)
                 .join(User, User.id == UserArticle.user_id)
                 .filter(

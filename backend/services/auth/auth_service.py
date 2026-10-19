@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.models.user import User
+from backend.models.organization import Organization
 from backend.schemas.auth import LoginRequest, LoginResponse
 from backend.schemas.user import UserCreate, UserResponse
 from backend.services.auth.password_service import (
@@ -27,6 +28,10 @@ class EmailAlreadyExistsError(AuthError):
 
 class InvalidCredentialsError(AuthError):
     """이메일 또는 비밀번호가 올바르지 않음."""
+
+
+class InvalidOrganizationCodeError(AuthError):
+    """등록되지 않은 조직 코드."""
 
 
 def _is_email_unique_violation(exc: IntegrityError) -> bool:
@@ -55,10 +60,20 @@ def register_user(db: Session, data: UserCreate) -> UserResponse:
         if existing_user is not None:
             raise EmailAlreadyExistsError("이미 사용 중인 이메일입니다.")
 
+        organization = db.scalar(
+            select(Organization).where(
+            Organization.code == data.organization_code
+            )
+        )
+
+        if organization is None:
+            raise InvalidOrganizationCodeError("유효하지 않은 조직 코드입니다.")
+
         user = User(
             email=str(data.email),
             password_hash=hash_password(data.password),
             nickname=data.nickname,
+            organization_id=organization.id,
         )
 
         db.add(user)
