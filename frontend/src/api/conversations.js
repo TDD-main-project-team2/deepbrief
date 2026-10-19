@@ -1,7 +1,7 @@
 import apiClient, { authConfig } from "./apiClient.js";
 import { API_PATH } from "./config/paths.js";
 
-export const getConversations = async (accessToken) => {
+export const getConversationList = async (accessToken) => {
   const response = await apiClient.get(API_PATH.conversations.default, authConfig(accessToken));
   return response.data;
 };

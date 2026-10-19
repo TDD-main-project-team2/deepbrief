@@ -1,7 +1,7 @@
 import apiClient, { authConfig } from "./apiClient.js";
 import { API_PATH } from "./config/paths.js";
 
-export const getArticles = async (accessToken) => {
+export const getArticleList = async (accessToken) => {
   const response = await apiClient.get(API_PATH.articles.default, authConfig(accessToken));
   return response.data;
 };
