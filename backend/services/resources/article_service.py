@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from backend.repositories import article_repository
-from backend.app.dependencies import ensure_article_access, ensure_owner, _not_found
+from backend.app.dependencies import ensure_article_access, _not_found
 from backend.services.ai import model_service
 from backend.services.rag import rag_service
 
@@ -16,7 +16,7 @@ def get_articles_by_user(current_user_id):
 
 def get_article_by_id(article_id, current_user_id, db):
     article = find_article_by_id(article_id)
-    if article.visibility == "Public":
+    if article.visibility == "public":
         return article
     ensure_article_access(article_id, current_user_id, db)
     return article
@@ -26,7 +26,7 @@ def get_article_by_conversation_id(conversation_id, current_user_id, db: Session
     if article is None:
         raise _not_found()
     
-    if article.visibility == "Public":
+    if article.visibility == "public":
         return article
     ensure_article_access(article.id, current_user_id, db)
     return article
@@ -34,7 +34,13 @@ def get_article_by_conversation_id(conversation_id, current_user_id, db: Session
 def delete_article(article_id, current_user_id):
     article = find_article_by_id(article_id)
     ensure_owner(article.user_id, current_user_id)
-    article_repository.delete_article(article_id)
+    deleted = article_repository.delete_article(
+        article_id,
+        current_user_id,
+    )
+
+    if not deleted:
+        raise _not_found()
 
 def categorize_article(article_id):
     article = find_article_by_id(article_id)

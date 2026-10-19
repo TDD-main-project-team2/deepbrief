@@ -69,5 +69,14 @@ def ensure_article_access(article_id: int, user_id: int, db: Session) -> None:
     if db.get(UserArticle, (user_id, article_id)) is None:
         raise _not_found()
 
-def ensure_organization_member():
-    pass
+
+def ensure_organization_member(
+    organization_id: int,
+    user_id: int,
+    db: Session,
+) -> None:
+    """사용자가 해당 조직의 소속이 아니면 404 오류를 발생시킨다."""
+    user = db.get(User, user_id)
+
+    if user is None or user.organization_id != organization_id:
+        raise _not_found()

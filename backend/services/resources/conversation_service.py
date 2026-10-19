@@ -1,5 +1,5 @@
 from backend.services.document import article_processing_service
-from backend.repositories import conversation_repository, message_repository
+from backend.repositories import (article_repository, conversation_repository, message_repository)
 from backend.app.dependencies import ensure_owner, _not_found
 from backend.services.resources import article_service
 
@@ -7,12 +7,26 @@ from backend.services.resources import article_service
 async def create_conversation(file, title, current_user_id, rdb):
     file_bytes = await file.read()
     filename = file.filename
-    article = article_processing_service.process_article(file_bytes, filename, rdb, reprocess=False)
+
+    article = article_processing_service.process_article(
+        file_bytes,
+        filename,
+        rdb,
+        reprocess=False,
+    )
+
     article_service.categorize_article(article.id)
+
+    # 현재 사용자와 기사 연결 등록
+    article_repository.add_article_to_user(
+        current_user_id,
+        article.id,
+    )
+
     return conversation_repository.create_conversation(
         title,
         current_user_id,
-        article.id
+        article.id,
     )
 
 def find_conversation_by_id(conversation_id):
@@ -54,7 +68,7 @@ def get_conversation_history(conversation_id, current_user_id, limit=5):
     )
 
 def save_message(conversation_id, message: str, current_user_id, role:str):
-    conversation = conversation_repository.find_conversation_by_id(conversation_id)
+    conversation = find_conversation_by_id(conversation_id)
     ensure_owner(conversation.user_id, current_user_id)
     return message_repository.create_message(
         conversation_id=conversation_id,
