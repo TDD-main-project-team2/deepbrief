@@ -4,10 +4,8 @@ from datetime import datetime, timedelta, timezone
 from hashlib import sha256
 
 import jwt
-from sqlalchemy import delete, select
+from backend.repositories import refresh_token_repository
 from sqlalchemy.orm import Session
-
-from backend.models.refresh_token import RefreshToken
 
 
 class TokenValidationError(ValueError):
@@ -41,14 +39,12 @@ def create_token_pair(user_id: int, db: Session) -> dict[str, str]:
     access_token = _create_access_token(user_id)
     refresh_token = _create_refresh_token()
 
-    db.add(
-        RefreshToken(
-            user_id=user_id,
-            token_hash=sha256(refresh_token.encode("utf-8")).hexdigest(),
-            expired_at=datetime.now(timezone.utc) + timedelta(days=7),
-        )
+    refresh_token_repository.create(
+        db,
+        user_id,
+        refresh_token,
+        datetime.now(timezone.utc) + timedelta(days=7),
     )
-    db.flush()
 
     return {
         "access_token": access_token,
@@ -181,11 +177,7 @@ def _verify_refresh_token(
     if not isinstance(refresh_token, str) or not refresh_token:
         raise TokenValidationError("리프레시 토큰이 없습니다.")
 
-    token_hash = sha256(refresh_token.encode("utf-8")).hexdigest()
-    query = select(RefreshToken).where(RefreshToken.token_hash == token_hash)
-    if for_update:
-        query = query.with_for_update()
-    record = db.execute(query).scalar_one_or_none()
+    record = refresh_token_repository.get_by_token(db, refresh_token, for_update=for_update)
 
     if record is None:
         raise TokenValidationError("유효하지 않거나 폐기된 리프레시 토큰입니다.")
@@ -245,8 +237,7 @@ def delete_refresh_token(refresh_token: str, db: Session) -> None:
     if not isinstance(refresh_token, str) or not refresh_token:
         raise TokenValidationError("리프레시 토큰이 없습니다.")
 
-    token_hash = sha256(refresh_token.encode("utf-8")).hexdigest()
-    db.execute(delete(RefreshToken).where(RefreshToken.token_hash == token_hash))
+    refresh_token_repository.delete_by_token(db, refresh_token)
 
 
 def delete_expired_refresh_tokens(db: Session) -> int:
@@ -265,11 +256,4 @@ def delete_expired_refresh_tokens(db: Session) -> int:
     Notes:
         호출자가 성공 시 commit(), 실패 시 rollback()을 수행해야 한다.
     """
-
-    result = db.execute(
-        delete(RefreshToken).where(
-            RefreshToken.expired_at <= datetime.now(timezone.utc)
-        )
-    )
-
-    return result.rowcount
+    return refresh_token_repository.delete_expired(db, datetime.now(timezone.utc))

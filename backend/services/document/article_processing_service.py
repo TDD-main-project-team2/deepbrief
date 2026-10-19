@@ -10,6 +10,7 @@ from backend.models.article_chunk import ArticleChunk
 from backend.services.ai.embedding_service import embed_documents
 from backend.services.ai.model_service import generate_article_metadata
 from backend.services.document.document_service import DocumentResult, process_file
+from backend.repositories import article_repository
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +104,7 @@ def process_article(
         raise ValueError("저장할 기사 본문 또는 청크가 없습니다.")
 
     content_hash = sha256(document.text.encode("utf-8")).hexdigest()
-    article = db.query(Article).filter(Article.content_hash == content_hash).first()
+    article = article_repository.get_by_content_hash(db, content_hash)
 
     if article is None:
         title = (document.title or Path(filename).stem).strip()
@@ -115,7 +116,7 @@ def process_article(
             content_hash=content_hash,
             **_article_metadata(document),
         )
-        db.add(article)
+        article_repository.create(db, article)
 
         try:
             db.commit()
