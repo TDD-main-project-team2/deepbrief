@@ -17,6 +17,7 @@ export default function SideMenu({
   activeConversationId,
   conversations,
   openChat,
+  onDeleteConversation,
   setView,
   user,
   onLogout,
@@ -57,16 +58,17 @@ export default function SideMenu({
         </button>
 
         <nav className="menu-groups">
-          <section
-            className={`menu-section conversation-section ${chatsOpen ? "expanded" : ""}`}
-          >
+          <section className={`menu-section conversation-section ${chatsOpen ? "expanded" : ""}`}>
             <button
               className="menu-group-title"
               aria-expanded={chatsOpen}
               onClick={() => setChatsOpen((isOpen) => !isOpen)}
             >
               <Icons type="chat" />
-              대화<span>{chatsOpen ? "⌄" : "›"}</span>
+              대화
+              <span className="menu-chevron">
+                <Icons type={chatsOpen ? "chevronDown" : "chevronRight"} />
+              </span>
             </button>
 
             {chatsOpen && (
@@ -82,11 +84,9 @@ export default function SideMenu({
                         key={conversation.id}
                         conversation={conversation}
                         article={article}
-                        selected={
-                          view === "chat" &&
-                          activeConversationId === conversation.id
-                        }
+                        selected={view === "chat" && activeConversationId === conversation.id}
                         onOpen={openChat}
+                        onDelete={onDeleteConversation}
                       />
                     );
                   })
@@ -104,7 +104,10 @@ export default function SideMenu({
               onClick={() => setArticlesOpen((isOpen) => !isOpen)}
             >
               <Icons />
-              보관함<span>{articlesOpen ? "⌄" : "›"}</span>
+              보관함
+              <span className="menu-chevron">
+                <Icons type={articlesOpen ? "chevronDown" : "chevronRight"} />
+              </span>
             </button>
 
             {articlesOpen && (
@@ -112,22 +115,14 @@ export default function SideMenu({
                 <ArchiveMenuItem
                   label="내 기사"
                   scopeLabel="개인"
-                  count={
-                    articles.filter(
-                      (article) => article.visibility === "private",
-                    ).length
-                  }
+                  count={articles.filter((article) => article.visibility === "private").length}
                   selected={view === "private"}
                   onClick={() => setView("private")}
                 />
                 <ArchiveMenuItem
                   label="사내 기사"
                   scopeLabel="공용"
-                  count={
-                    articles.filter(
-                      (article) => article.visibility === "public",
-                    ).length
-                  }
+                  count={articles.filter((article) => article.visibility === "public").length}
                   selected={view === "public"}
                   onClick={() => setView("public")}
                 />
@@ -137,15 +132,10 @@ export default function SideMenu({
         </nav>
 
         <div className="sidebar-bottom">
-          <div
-            className="user-profile"
-            aria-label={user ? "로그인 사용자" : "비로그인 사용자"}
-          >
+          <div className="user-profile" aria-label={user ? "로그인 사용자" : "비로그인 사용자"}>
             <div className="user-details">
               <strong>{user ? user.nickname : "Guest"}</strong>
-              <small title={user?.email}>
-                {user ? user.email : "로그인 후 이용해 주세요"}
-              </small>
+              <small title={user?.email}>{user ? user.email : "로그인 후 이용해 주세요"}</small>
             </div>
           </div>
 

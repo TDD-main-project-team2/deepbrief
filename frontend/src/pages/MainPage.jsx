@@ -22,14 +22,8 @@ export default function MainPage({ user, onLogout }) {
     [visibility, setVisibility] = useState("private"),
     [menuOpen, setMenuOpen] = useState(true);
 
-  const {
-    file,
-    previewUrl,
-    previewText,
-    previewError,
-    setPreviewError,
-    changeFile,
-  } = useFilePreview();
+  const { file, previewUrl, previewText, previewError, setPreviewError, changeFile } =
+    useFilePreview();
 
   const activeConversation = conversations.find(
     (conversation) => conversation.id === activeConversationId,
@@ -55,9 +49,7 @@ export default function MainPage({ user, onLogout }) {
   }
 
   function openChat(conversation) {
-    const article = articles.find(
-      (article) => article.id === conversation.articleId,
-    );
+    const article = articles.find((article) => article.id === conversation.articleId);
 
     if (!article) return;
 
@@ -74,10 +66,7 @@ export default function MainPage({ user, onLogout }) {
     setView("article");
   }
 
-  function startConversationWithFile({
-    file: uploadedFile,
-    visibility: uploadedVisibility,
-  }) {
+  function startConversationWithFile({ file: uploadedFile, visibility: uploadedVisibility }) {
     // 저장 API 연결 전, 브라우저 시안의 기록 선택에만 쓰는 임시 ID입니다.
     // API 연결 시 아래 레코드를 서버가 반환한 article/conversation으로 대체합니다.
     const localArticleId = `local-article-${crypto.randomUUID()}`;
@@ -111,6 +100,41 @@ export default function MainPage({ user, onLogout }) {
     setUploadSession((session) => session + 1);
   }
 
+  function deleteConversation(conversation) {
+    if (!window.confirm("이 대화를 삭제할까요? 기사 파일은 보관함에 유지됩니다.")) return;
+
+    setConversations((conversations) =>
+      conversations.filter((existingConversation) => existingConversation.id !== conversation.id),
+    );
+
+    if (activeConversationId === conversation.id) {
+      if (view === "chat") startNewConversation();
+      else setActiveConversationId(null);
+    }
+  }
+
+  function deleteArticle(article) {
+    if (!window.confirm("이 기사를 삭제할까요? 연결된 대화 기록도 함께 삭제됩니다.")) return;
+
+    const deletesActiveConversation = activeConversation?.articleId === article.id;
+    const deletesOpenArticle = view === "article" && articleId === article.id;
+
+    setArticles((articles) =>
+      articles.filter((existingArticle) => existingArticle.id !== article.id),
+    );
+    setConversations((conversations) =>
+      conversations.filter((conversation) => conversation.articleId !== article.id),
+    );
+
+    if (deletesOpenArticle || (view === "chat" && deletesActiveConversation)) {
+      startNewConversation();
+      if (deletesOpenArticle) setView(article.visibility);
+    } else {
+      if (deletesActiveConversation) setActiveConversationId(null);
+      if (articleId === article.id) setArticleId(null);
+    }
+  }
+
   const previewProps = {
     file,
     visibility,
@@ -131,6 +155,7 @@ export default function MainPage({ user, onLogout }) {
         activeConversationId={activeConversationId}
         conversations={conversations}
         openChat={openChat}
+        onDeleteConversation={deleteConversation}
         setView={setView}
         user={user}
         onLogout={onLogout}
@@ -153,6 +178,7 @@ export default function MainPage({ user, onLogout }) {
               view={view}
               articles={articles}
               openArticle={openArticle}
+              onDeleteArticle={deleteArticle}
             />
           </main>
         )}
