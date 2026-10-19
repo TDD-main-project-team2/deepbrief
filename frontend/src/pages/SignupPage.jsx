@@ -1,8 +1,11 @@
-import "./SignupPage.css";
+import { useState } from "react";
+import { useNavigate } from "react-router";
 
 import AuthLayout from "../components/auth/AuthLayout.jsx";
 import AuthInput from "../components/auth/AuthInput.jsx";
 import PasswordInput from "../components/auth/PasswordInput.jsx";
+import AuthError from "../components/auth/AuthError.jsx";
+import "./SignupPage.css";
 
 import useAuthValidation, {
   validateEmail,
@@ -11,6 +14,7 @@ import useAuthValidation, {
   validateSignupPassword,
   validateConfirmation,
 } from "../hooks/useAuthValidation.js";
+import { signupUser } from "../api/auth.js";
 
 const validators = {
   organizationCode: validateOrganizationCode,
@@ -21,7 +25,10 @@ const validators = {
 };
 
 export default function SignupPage() {
-  const { field, canSubmit } = useAuthValidation(validators, {
+  const navigate = useNavigate();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const { values, field, canSubmit } = useAuthValidation(validators, {
     organizationCode: "",
     nickname: "",
     email: "",
@@ -29,10 +36,31 @@ export default function SignupPage() {
     confirmPassword: "",
   });
 
-  function submit(event) {
+  async function submit(event) {
     event.preventDefault();
+    if (!canSubmit || submitting) return;
 
-    if (!canSubmit) return;
+    setSubmitting(true);
+    setError("");
+
+    try {
+      await signupUser({
+        organizationCode: values.organizationCode.trim(),
+        email: values.email.trim(),
+        password: values.password,
+        nickname: values.nickname.trim(),
+      });
+      navigate("/login");
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      setError(
+        typeof detail === "string"
+          ? detail
+          : "회원가입에 실패했습니다. 입력 내용을 확인하고 다시 시도해주세요.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -90,12 +118,14 @@ export default function SignupPage() {
           required
         />
 
+        <AuthError variant="form">{error}</AuthError>
+
         <button
           className="primary signup-submit"
           type="submit"
-          disabled={!canSubmit}
+          disabled={!canSubmit || submitting}
         >
-          회원가입
+          {submitting ? "가입 중..." : "회원가입"}
         </button>
       </form>
     </AuthLayout>
