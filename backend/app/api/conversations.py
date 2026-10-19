@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, File, UploadFile, Form
+from sqlalchemy.orm import Session
+
 from backend.services.resources import conversation_service
 from backend.app.dependencies import get_current_user
 from backend.schemas.conversation import ConversationResponse
-from sqlalchemy.orm import Session
 from backend.database.rdb.rdb import get_db
-
 
 
 router = APIRouter(prefix="/conversations", tags=["Conversations"])
@@ -14,14 +14,14 @@ def get_conversations_by_user(current_user=Depends(get_current_user)):
     return conversation_service.get_conversations_by_user(current_user.id)
 
 @router.post("/", response_model=ConversationResponse)
-def create_conversation(
+async def create_conversation(
     file: UploadFile = File(...),
     title: str = Form(...),
     article_visibility: str=Form(...),
     current_user=Depends(get_current_user),
     rdb: Session = Depends(get_db)
 ):
-    return conversation_service.create_conversation(file, title, article_visibility, current_user.id, rdb)
+    return await conversation_service.create_conversation(file, title, article_visibility, current_user.id, rdb)
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)
 def get_conversation(

@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router";
 import MainPage from "./pages/MainPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
+import ProtectedRoute from "./ProtectedRoute.jsx";
 
 import { getCurrentUser } from "./api/users.js";
 import { logoutUser } from "./api/auth.js";
@@ -11,6 +12,7 @@ import { getAccessToken, getRefreshToken, saveTokens, removeTokens } from "./uti
 
 export default function App() {
   const [session, setSession] = useState(null);
+  const [restoringSession, setRestoringSession] = useState(() => Boolean(getAccessToken())); // 새로고침 후 저장된 토큰으로 로그인 상태를 확인 중인지 나타내는 값
 
   useEffect(() => {
     const accessToken = getAccessToken();
@@ -28,6 +30,8 @@ export default function App() {
         if (!cancelled && getAccessToken() === accessToken && error.response?.status === 401) {
           removeTokens();
         }
+      } finally {
+        if (!cancelled) setRestoringSession(false);
       }
     }
 
@@ -45,12 +49,15 @@ export default function App() {
     });
 
     setSession(session);
+    setRestoringSession(false);
   }
 
   async function handleLogout() {
     const refreshToken = getRefreshToken();
+
     removeTokens();
     setSession(null);
+    setRestoringSession(false);
 
     if (refreshToken) {
       try {
@@ -63,7 +70,14 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<MainPage user={session?.user} onLogout={handleLogout} />} />
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute user={session?.user} loading={restoringSession}>
+            <MainPage key={session?.user?.id} user={session?.user} onLogout={handleLogout} />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
       <Route path="/signup" element={<SignupPage />} />
     </Routes>

@@ -2,6 +2,19 @@ from backend.services.document import article_processing_service
 from backend.repositories import (article_repository, conversation_repository, message_repository)
 from backend.app.dependencies import ensure_owner, _not_found
 from backend.services.resources import article_service
+from backend.schemas.conversation import ConversationResponse
+
+
+def _conversation_response(conversation, messages):
+    return ConversationResponse(
+        id=conversation.id,
+        user_id=conversation.user_id,
+        article_id=conversation.article_id,
+        title=conversation.title,
+        messages=messages,
+        created_at=conversation.created_at,
+        updated_at=conversation.updated_at,
+    )
 
 async def create_conversation(file, title, article_visibility, current_user_id, rdb):
     file_bytes = await file.read()
@@ -22,11 +35,14 @@ async def create_conversation(file, title, article_visibility, current_user_id, 
         article.id,
     )
 
-    return conversation_repository.create_conversation(
+    conversation = conversation_repository.create_conversation(
         title,
         current_user_id,
         article.id,
     )
+    
+    messages = message_repository.find_messages_by_conversation_id(conversation.id)
+    return _conversation_response(conversation, messages)
 
 def find_conversation_by_id(conversation_id):
     conversation = conversation_repository.find_conversation_by_id(conversation_id)
@@ -46,7 +62,8 @@ def get_conversations_by_user(current_user_id):
 def get_conversation_by_id(conversation_id, current_user_id):
     conversation = find_conversation_by_id(conversation_id)
     ensure_owner(conversation.user_id, current_user_id)
-    return conversation
+    messages = message_repository.find_messages_by_conversation_id(conversation_id)
+    return _conversation_response(conversation, messages)
 
 def delete_conversation(conversation_id, current_user_id):
     conversation = find_conversation_by_id(conversation_id)

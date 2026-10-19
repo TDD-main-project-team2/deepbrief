@@ -5,41 +5,30 @@ import formatDateTime from "../../utils/formatDateTime.js";
 export default function ArchivePreview({
   file,
   visibility,
-  articles,
-  articleId,
+  archiveView,
   setView,
   previewUrl,
   previewText,
   previewError,
   setPreviewError,
+  article,
 }) {
   return (
     <>
       <section className="file-panel" aria-label="보관함 기사 미리보기">
         <div className="upload-record">
-          <button className="back-archive" onClick={() => setView(visibility)}>
-            ← {visibility === "private" ? "내 기사" : "사내 기사"} 목록
+          <button className="back-archive" onClick={() => setView(archiveView)}>
+            ← {archiveView === "private" ? "내 기사" : "사내 기사"} 목록
           </button>
 
           <div className="document-title-row">
-            <h1>{file.name.replace(/\.[^.]+$/, "")}</h1>
-            <span className="document-tag format-tag">
-              {file.name.split(".").pop().toUpperCase()}
-            </span>
-            <span className="document-tag">
-              {(file.size / 1024).toFixed(1)} KB
-            </span>
+            <h1>{article?.title || file.name}</h1>
           </div>
 
           <dl>
             <div>
               <dt>등록일</dt>
-              <dd>
-                {formatDateTime(
-                  articles.find((article) => article.id === articleId)
-                    ?.createdAt,
-                )}
-              </dd>
+              <dd>{formatDateTime(article?.createdAt)}</dd>
             </div>
             <div>
               <dt>공개 범위</dt>
@@ -47,16 +36,14 @@ export default function ArchivePreview({
             </div>
             <div>
               <dt>카테고리</dt>
-              <dd>
-                {articles.find((article) => article.id === articleId)
-                  ?.category || "미분류"}
-              </dd>
+              <dd>{article?.category || "미분류"}</dd>
             </div>
           </dl>
         </div>
 
         <FilePreview
           file={file}
+          article={article}
           previewUrl={previewUrl}
           previewText={previewText}
           previewError={previewError}

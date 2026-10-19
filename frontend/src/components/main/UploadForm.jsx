@@ -5,29 +5,48 @@ import Icons from "../Icons.jsx";
 
 export default function UploadForm({ onStartConversationWithFile }) {
   const input = useRef(null);
+  const submittingRef = useRef(false); // 중복 업로드 요청을 막는 잠금 값
 
+  const [submitting, setSubmitting] = useState(false);
   const [file, setFile] = useState(null);
   const [drag, setDrag] = useState(false);
   const [error, setError] = useState("");
   const [visibility, setVisibility] = useState("private");
 
   function select(selectedFile) {
-    if (!selectedFile) return;
+    if (!selectedFile || submittingRef.current) return;
     if (!/\.(pdf|png|jpg|jpeg|txt|md)$/i.test(selectedFile.name)) {
       setError("PDF, PNG, JPG, JPEG, TXT 또는 MD 파일을 선택해주세요.");
       return;
     }
-    if (selectedFile.size > 20 * 1024 * 1024) {
-      setError("20MB 이하의 파일을 선택해주세요.");
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      setError("10MB 이하의 파일을 선택해주세요.");
       return;
     }
+
     setError("");
     setFile(selectedFile);
   }
 
-  function startConversationWithFile() {
-    if (!file) return;
-    onStartConversationWithFile({ file, visibility });
+  async function startConversationWithFile() {
+    if (!file || submittingRef.current) return;
+    submittingRef.current = true;
+
+    setSubmitting(true);
+    setError("");
+    try {
+      await onStartConversationWithFile({ file, visibility });
+    } catch (error) {
+      const detail = error.response?.data?.detail;
+      setError(
+        typeof detail === "string"
+          ? detail
+          : "대화를 생성하지 못했습니다. 잠시 후 다시 시도해주세요.",
+      );
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -62,6 +81,7 @@ export default function UploadForm({ onStartConversationWithFile }) {
               <small>{(file.size / 1024).toFixed(1)} KB · 선택한 파일</small>
               <button
                 className="change-file"
+                disabled={submitting}
                 onClick={() => input.current.click()}
               >
                 다른 파일 선택
@@ -76,11 +96,12 @@ export default function UploadForm({ onStartConversationWithFile }) {
               <p>또는 아래 버튼으로 파일을 선택하세요</p>
               <button
                 className="file-picker"
+                disabled={submitting}
                 onClick={() => input.current.click()}
               >
                 파일 선택
               </button>
-              <small>PDF · PNG · JPG · JPEG · TXT · MD / 최대 20MB</small>
+              <small>PDF · PNG · JPG · JPEG · TXT · MD / 최대 10MB</small>
             </>
           )}
         </div>
@@ -88,6 +109,7 @@ export default function UploadForm({ onStartConversationWithFile }) {
         <input
           ref={input}
           type="file"
+          disabled={submitting}
           accept=".pdf,.png,.jpg,.jpeg,.txt,.md"
           aria-label="기사 파일 업로드"
           className="hidden-input"
@@ -100,14 +122,12 @@ export default function UploadForm({ onStartConversationWithFile }) {
           </p>
         )}
 
-        <fieldset className="visibility-options">
+        <fieldset className="visibility-options" disabled={submitting}>
           <legend>문서 공개 범위</legend>
 
           <label
             className={
-              visibility === "private"
-                ? "visibility-choice selected"
-                : "visibility-choice"
+              visibility === "private" ? "visibility-choice selected" : "visibility-choice"
             }
           >
             <input
@@ -124,11 +144,7 @@ export default function UploadForm({ onStartConversationWithFile }) {
           </label>
 
           <label
-            className={
-              visibility === "public"
-                ? "visibility-choice selected"
-                : "visibility-choice"
-            }
+            className={visibility === "public" ? "visibility-choice selected" : "visibility-choice"}
           >
             <input
               type="radio"
@@ -144,12 +160,14 @@ export default function UploadForm({ onStartConversationWithFile }) {
           </label>
         </fieldset>
 
-        <button className="primary start" disabled={!file} onClick={startConversationWithFile}>
-          이 파일로 대화 시작
+        <button
+          className="primary start"
+          disabled={!file || submitting}
+          onClick={startConversationWithFile}
+        >
+          {submitting ? "파일 처리 중..." : "이 파일로 대화 시작"}
           <Icons type="arrow" />
         </button>
-
-        <p className="upload-note">파일 한 개를 기준으로 대화합니다.</p>
       </section>
     </>
   );

@@ -68,11 +68,6 @@
   width: 16px;
   transform: rotate(90deg);
 }
-.upload-note {
-  font-size: 9px;
-  color: #b1a0aa;
-  margin-top: 13px;
-}
 .has-file {
   justify-content: center;
   gap: 10px;

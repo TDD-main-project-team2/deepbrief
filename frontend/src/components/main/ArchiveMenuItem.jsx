@@ -15,7 +15,7 @@ export default function ArchiveMenuItem({
     >
       {label}
       <small>{scopeLabel}</small>
-      <span>{count}</span>
+      {count != null && <span>{count}</span>}
     </button>
   );
 }
