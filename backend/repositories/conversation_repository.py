@@ -1,6 +1,7 @@
 """대화 데이터 조회 Repository."""
 
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 
 from backend.database.rdb.rdb import SessionLocal
 from backend.models.conversation import Conversation
@@ -54,7 +55,7 @@ def create_conversation(
     user_id: int,
     article_id: int,
 ) -> Conversation:
-    """새 대화를 생성한다."""
+    """새 대화를 생성하거나 같은 사용자·기사의 기존 대화를 반환한다."""
     with SessionLocal() as db:
         conversation = Conversation(
             title=title,
@@ -62,6 +63,23 @@ def create_conversation(
             article_id=article_id,
         )
         db.add(conversation)
-        db.commit()
+        
+        try:
+            db.commit()
+        except IntegrityError as exc:
+            db.rollback()
+
+            diagnostic = getattr(exc.orig, "diag", None)
+            if getattr(diagnostic, "constraint_name", None) != "uq_conversations_user_article":
+                raise
+            
+            return db.scalars(
+                select(Conversation).where(
+                    Conversation.user_id == user_id,
+                    Conversation.article_id == article_id,
+                )
+            ).one()
+        
         db.refresh(conversation)
+
         return conversation
