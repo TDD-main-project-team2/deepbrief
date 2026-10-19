@@ -17,10 +17,11 @@ def get_conversations_by_user(current_user=Depends(get_current_user)):
 def create_conversation(
     file: UploadFile = File(...),
     title: str = Form(...),
+    article_visibility: str=Form(...),
     current_user=Depends(get_current_user),
     rdb: Session = Depends(get_db)
 ):
-    return conversation_service.create_conversation(file, title, current_user.id, rdb)
+    return conversation_service.create_conversation(file, title, article_visibility, current_user.id, rdb)
 
 @router.get("/{conversation_id}", response_model=ConversationResponse)
 def get_conversation(
