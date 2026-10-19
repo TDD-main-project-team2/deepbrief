@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, RootModel
+from pydantic import BaseModel, ConfigDict
 
 
 class ArticleResponse(BaseModel):
@@ -21,8 +21,8 @@ class ArticleResponse(BaseModel):
     updated_at: datetime
 
 
-class ArticleListResponse(RootModel[list[ArticleResponse]]):
+class ArticleListResponse(BaseModel):
     """기사 목록 응답 데이터."""
-    
+
     articles: list[ArticleResponse]
     total: int
