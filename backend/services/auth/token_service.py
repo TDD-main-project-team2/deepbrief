@@ -213,14 +213,19 @@ def renew_token_pair(refresh_token: str, db: Session) -> dict[str, str]:
 
     Notes:
         기존 리프레시 토큰 기록을 잠근 뒤 삭제하고 새 기록을 저장한다.
-        호출자가 성공 시 commit(), 실패 시 rollback()을 수행해야 한다.
+        성공 시 commit(), 실패 시 rollback()으로 갱신 트랜잭션을 마무리한다.
         새로운 리프레시/액세스 토큰은 커밋 성공 후 클라이언트에 전달한다.
     """
 
-    user_id = _verify_refresh_token(refresh_token, db, for_update=True)
-    delete_refresh_token(refresh_token, db)
-
-    return create_token_pair(user_id, db)
+    try:
+        user_id = _verify_refresh_token(refresh_token, db, for_update=True)
+        delete_refresh_token(refresh_token, db)
+        tokens = create_token_pair(user_id, db)
+        db.commit()
+        return tokens
+    except Exception:
+        db.rollback()
+        raise
 
 
 def delete_refresh_token(refresh_token: str, db: Session) -> None:
