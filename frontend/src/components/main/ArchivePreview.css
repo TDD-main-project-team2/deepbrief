@@ -88,21 +88,12 @@
   border-color: #e8ccda;
   color: var(--wine);
 }
-.split-main:not(.article-detail-main) > .file-panel {
-  border-right: 1px solid #ded5da;
-}
 
 @media (max-width: 680px) {
   .split-main:not(.article-detail-main) > .file-panel {
     border-right: 0;
     border-bottom: 1px solid #ded5da;
   }
-}
-.split-main:not(.article-detail-main) > .file-panel {
-  border-right: 0;
-}
-.split-main:not(.article-detail-main) > .file-panel > .panel-heading {
-  border-right: 1px solid #ded5da;
 }
 
 @media (max-width: 680px) {

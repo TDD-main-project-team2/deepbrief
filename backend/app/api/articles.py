@@ -11,7 +11,8 @@ router = APIRouter(prefix="/articles", tags=["Articles"])
 
 @router.get("/", response_model=ArticleListResponse)
 def get_articles_by_user(current_user=Depends(get_current_user)):
-    return article_service.get_articles_by_user(current_user.id)
+    articles = article_service.get_articles_by_user(current_user.id)
+    return ArticleListResponse(articles=articles, total=len(articles))
 
 @router.get("/{article_id}", response_model=ArticleResponse)
 def get_article(article_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):

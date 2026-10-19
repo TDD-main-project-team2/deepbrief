@@ -46,7 +46,6 @@
 .split-main {
   display: grid;
   grid-template-columns: minmax(300px, 1fr) minmax(360px, 1.05fr);
-  height: calc(100dvh - 68px);
   padding: 0;
   max-width: none;
   margin: 0;

@@ -2,10 +2,8 @@ import "./Archive.css";
 import ArchiveItem from "./ArchiveItem.jsx";
 import Icons from "../Icons.jsx";
 
-export default function Archive({ view, articles, openArticle }) {
-  const visibleArticles = articles.filter(
-    (article) => article.visibility === view,
-  );
+export default function Archive({ view, articles, openArticle, onDeleteArticle }) {
+  const visibleArticles = articles.filter((article) => article.visibility === view);
 
   return (
     <>
@@ -33,6 +31,7 @@ export default function Archive({ view, articles, openArticle }) {
                 key={article.id}
                 article={article}
                 onOpen={openArticle}
+                onDelete={onDeleteArticle}
               />
             ))}
           </div>

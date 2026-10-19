@@ -62,5 +62,5 @@ export default function useAuthValidation(validators, initialValues) {
     };
   }
 
-  return { field, canSubmit };
+  return { values, field, canSubmit };
 }

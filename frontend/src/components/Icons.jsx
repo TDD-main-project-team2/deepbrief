@@ -1,5 +1,8 @@
 export default function Icons({ type = "file" }) {
   const paths = {
+    trash: "M3 6h18 M9 6V3h6v3 M5 6l1 15h12l1-15 M10 10v7 M14 10v7",
+    chevronDown: "M6 9l6 6 6-6",
+    chevronRight: "M9 6l6 6-6 6",
     file: "M14 3H5v18h14V8z M14 3v5h5 M8 12h8 M8 16h6",
     upload: "M12 16V3 M7 8l5-5 5 5 M4 16v5h16v-5",
     plus: "M12 5v14 M5 12h14",
@@ -24,4 +27,3 @@ export default function Icons({ type = "file" }) {
     </svg>
   );
 }
-

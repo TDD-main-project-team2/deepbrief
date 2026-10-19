@@ -1,10 +1,8 @@
 .archive-article {
   display: flex;
   align-items: center;
-  gap: 15px;
   width: 100%;
   text-align: left;
-  padding: 18px;
   background: #fdfafb;
   border: 1px solid #ece0e7;
   border-radius: 8px;
@@ -28,4 +26,18 @@
   white-space: nowrap;
   font-size: 10px;
   color: var(--wine);
+}
+.archive-article {
+  padding: 0 12px 0 0;
+  gap: 8px;
+}
+.archive-item-open {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+  padding: 18px;
+  border-radius: 8px;
 }

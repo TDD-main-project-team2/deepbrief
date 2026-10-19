@@ -1,4 +1,5 @@
 import "./PasswordInput.css";
+import AuthError from "./AuthError.jsx";
 
 import { useState } from "react";
 
@@ -33,11 +34,7 @@ export default function PasswordInput({
         </button>
       </div>
 
-      {error && (
-        <span id={errorId} className="auth-field-error" role="alert">
-          {error}
-        </span>
-      )}
+      <AuthError id={errorId}>{error}</AuthError>
     </label>
   );
 }
