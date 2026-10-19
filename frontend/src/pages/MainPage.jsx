@@ -14,6 +14,7 @@ import useFilePreview from "../hooks/useFilePreview.js";
 import { createConversation, getConversationList, getConversation } from "../api/conversations.js";
 import { getArticle, getArticleList } from "../api/articles.js";
 import {
+  askQuestion,
   checkDuplicates,
   evaluateArticle,
   recommendKeywords,
@@ -95,13 +96,14 @@ export default function MainPage({ user, onLogout }) {
   const messages = activeConversation?.messages || [];
 
   async function sendMessage(messageText, action) {
-    const featureApi = {
-      duplicate: checkDuplicates,
-      evaluation: evaluateArticle,
-      keywords: recommendKeywords,
-      title: recommendTitle,
-      ideas: recommendIdeas,
-    }[action];
+    const featureApi =
+      {
+        duplicate: checkDuplicates,
+        evaluation: evaluateArticle,
+        keywords: recommendKeywords,
+        title: recommendTitle,
+        ideas: recommendIdeas,
+      }[action] ?? askQuestion;
     const isRecommendation = ["keywords", "title", "ideas"].includes(action);
 
     if (pendingFeatures.current.has(activeConversationId)) return;
@@ -139,7 +141,11 @@ export default function MainPage({ user, onLogout }) {
                     question: messageText.trim(),
                     answer: "",
                     pending: true,
-                    pendingText: isRecommendation ? "추천 내용을 생성하고 있습니다..." : "기사를 검토하고 있습니다...",
+                    pendingText: isRecommendation
+                      ? "추천 내용을 생성하고 있습니다..."
+                      : featureApi === askQuestion
+                        ? "답변을 생성하고 있습니다..."
+                        : "기사를 검토하고 있습니다...",
                   },
                 ],
               }
@@ -155,15 +161,16 @@ export default function MainPage({ user, onLogout }) {
           throw new Error("Empty feature response");
         }
 
-        updateMessage({ answer: response.content, pending: false });
+        updateMessage({
+          answer: `“${messageText}” 요청을 받았습니다.\n\n${response.content}`,
+          pending: false,
+        });
       } catch (error) {
         if (getAccessToken() !== token) return;
 
         updateMessage({
           pending: false,
-          error: isRecommendation
-            ? "추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요."
-            : "검토 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
+          error: "요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
         });
 
         if (error.response?.status === 401) void onLogout();
@@ -172,21 +179,6 @@ export default function MainPage({ user, onLogout }) {
       }
       return;
     }
-
-    if (!messageText.trim() || !activeConversation) return;
-
-    const message = {
-      question: messageText,
-      answer: `“${messageText}” 요청을 받았습니다.\n\n@@@@ 여기에 결과 넣기 @@@@`,
-    };
-
-    setConversations((conversations) =>
-      conversations.map((conversation) =>
-        conversation.id === activeConversationId
-          ? { ...conversation, messages: [...conversation.messages, message] }
-          : conversation,
-      ),
-    );
   }
 
   async function openChat(conversation) {

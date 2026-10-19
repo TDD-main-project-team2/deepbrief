@@ -11,6 +11,16 @@ export const askQuestion = async ({ conversationId, content }, accessToken) => {
   return response.data;
 };
 
+export const formatArticle = async ({ conversationId, templateId, content }, accessToken) => {
+  const body = { content };
+  const response = await apiClient.post(
+    API_PATH.features.format(conversationId, templateId),
+    body,
+    authConfig(accessToken),
+  );
+  return response.data;
+};
+
 export const checkDuplicates = async ({ conversationId, content }, accessToken) => {
   const body = { content };
   const response = await apiClient.post(
@@ -55,16 +65,6 @@ export const recommendIdeas = async ({ conversationId, content }, accessToken) =
   const body = { content };
   const response = await apiClient.post(
     API_PATH.features.ideas(conversationId),
-    body,
-    authConfig(accessToken),
-  );
-  return response.data;
-};
-
-export const formatArticle = async ({ conversationId, templateId, content }, accessToken) => {
-  const body = { content };
-  const response = await apiClient.post(
-    API_PATH.features.format(conversationId, templateId),
     body,
     authConfig(accessToken),
   );
