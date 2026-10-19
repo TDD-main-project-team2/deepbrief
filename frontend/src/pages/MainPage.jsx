@@ -13,7 +13,9 @@ import ErrorNotice from "../components/ErrorNotice.jsx";
 import LoadingNotice from "../components/LoadingNotice.jsx";
 
 import useFilePreview from "../hooks/useFilePreview.js";
-import { createConversation, getConversationList, getConversation } from "../api/conversations.js";
+import useConversationUpload from "../hooks/useConversationUpload.js";
+
+import { getConversationList, getConversation } from "../api/conversations.js";
 import { getArticle, getArticleList } from "../api/articles.js";
 import { chatFeatureConfig } from "../config/chatFeatureConfig.js";
 import { getAccessToken } from "../utils/tokenStorage.js";
@@ -22,7 +24,7 @@ import { toArticleView, toConversationView, mergeHistory } from "../utils/histor
 export default function MainPage({ user, onLogout }) {
   const viewVersion = useRef(0); // 업로드를 기다리는 동안 사용자가 다른 화면으로 이동했는지 확인하는 값
   const pendingFeatures = useRef(new Set()); // 기능 API 요청이 진행 중인 대화 ID를 저장하는 값
-  const pendingUploads = useRef(new WeakMap()); // 같은 파일로 요청이 중복 실행되는 걸 막는 값
+  const uploadConversation = useConversationUpload();
 
   const [uploadSession, setUploadSession] = useState(0);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -216,25 +218,13 @@ export default function MainPage({ user, onLogout }) {
     const version = viewVersion.current;
 
     try {
-      // 기사 조회만 실패했다면 이미 생성한 대화를 다시 사용합니다.
-      let result = pendingUploads.current.get(uploadedFile);
+      const result = await uploadConversation({
+        file: uploadedFile,
+        visibility: uploadedVisibility,
+      });
+      if (!result) return;
 
-      if (!result) {
-        result = await createConversation({
-          file: uploadedFile,
-          title: uploadedFile.name.trim().slice(0, 255),
-          visibility: uploadedVisibility,
-        });
-        pendingUploads.current.set(uploadedFile, result);
-      }
-
-      const articleData = await getArticle({ articleId: result.article_id });
-
-      if (getAccessToken() !== token) return;
-      pendingUploads.current.delete(uploadedFile);
-
-      const article = toArticleView(articleData, uploadedFile);
-      const conversation = toConversationView(result);
+      const { article, conversation } = result;
 
       setArticles((items) => [...items.filter((item) => item.id !== article.id), article]);
       setConversations((items) => [
