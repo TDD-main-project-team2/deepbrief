@@ -1,26 +1,19 @@
 .panel-heading {
-  height: 54px;
-  min-height: 54px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 23px;
-  border-bottom: 1px solid var(--border);
   background: #fff;
-  font-size: 11px;
   color: #74616c;
 }
 .panel-heading > span {
   display: flex;
   align-items: center;
-  gap: 9px;
 }
 .panel-heading svg {
   width: 16px;
   height: 16px;
 }
 .panel-heading small {
-  font-size: 9px;
   color: #ac97a3;
 }
 
@@ -28,9 +21,6 @@
   .panel-heading {
     padding: 0 15px;
   }
-}
-.panel-heading > span {
-  gap: 9px;
 }
 .panel-heading {
   height: 60px;

@@ -86,10 +86,6 @@ small {
 .brand-dot {
   color: var(--wine);
 }
-.sidebar-bottom {
-  margin-top: auto;
-  padding: 35px 9px 0;
-}
 .sidebar-bottom p {
   font-size: 11px;
   line-height: 1.9;
@@ -215,8 +211,6 @@ h1 {
   padding: 18px 5px 0;
   border-top: 1px solid #e9dfe5;
   margin-top: auto;
-}
-.sidebar-bottom {
   flex-shrink: 0;
 }
 * {
