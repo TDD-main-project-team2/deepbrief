@@ -13,13 +13,19 @@ import ArchivePreview from "../components/main/ArchivePreview.jsx";
 import useFilePreview from "../hooks/useFilePreview.js";
 import { createConversation, getConversationList, getConversation } from "../api/conversations.js";
 import { getArticle, getArticleList } from "../api/articles.js";
-import { checkDuplicates, evaluateArticle } from "../api/features.js";
+import {
+  checkDuplicates,
+  evaluateArticle,
+  recommendKeywords,
+  recommendTitle,
+  recommendIdeas,
+} from "../api/features.js";
 import { getAccessToken } from "../utils/tokenStorage.js";
 import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
 
 export default function MainPage({ user, onLogout }) {
   const viewVersion = useRef(0); // 업로드를 기다리는 동안 사용자가 다른 화면으로 이동했는지 확인하는 값
-  const pendingReviews = useRef(new Set()); // Review API 요청이 진행 중인 대화 ID를 저장하는 값
+  const pendingFeatures = useRef(new Set()); // 기능 API 요청이 진행 중인 대화 ID를 저장하는 값
   const pendingUploads = useRef(new WeakMap()); // 같은 파일로 요청이 중복 실행되는 걸 막는 값
 
   const [uploadSession, setUploadSession] = useState(0);
@@ -89,16 +95,23 @@ export default function MainPage({ user, onLogout }) {
   const messages = activeConversation?.messages || [];
 
   async function sendMessage(messageText, action) {
-    const reviewApi = { duplicate: checkDuplicates, evaluation: evaluateArticle }[action];
+    const featureApi = {
+      duplicate: checkDuplicates,
+      evaluation: evaluateArticle,
+      keywords: recommendKeywords,
+      title: recommendTitle,
+      ideas: recommendIdeas,
+    }[action];
+    const isRecommendation = ["keywords", "title", "ideas"].includes(action);
 
-    if (pendingReviews.current.has(activeConversationId)) return;
+    if (pendingFeatures.current.has(activeConversationId)) return;
 
-    if (reviewApi && activeConversation && messageText.trim()) {
+    if (featureApi && activeConversation && messageText.trim()) {
       const conversationId = activeConversationId;
       const token = getAccessToken();
       const requestId = crypto.randomUUID();
 
-      pendingReviews.current.add(conversationId);
+      pendingFeatures.current.add(conversationId);
 
       const updateMessage = (changes) =>
         setConversations((items) =>
@@ -126,6 +139,7 @@ export default function MainPage({ user, onLogout }) {
                     question: messageText.trim(),
                     answer: "",
                     pending: true,
+                    pendingText: isRecommendation ? "추천 내용을 생성하고 있습니다..." : "기사를 검토하고 있습니다...",
                   },
                 ],
               }
@@ -134,11 +148,11 @@ export default function MainPage({ user, onLogout }) {
       );
 
       try {
-        const response = await reviewApi({ conversationId, content: messageText.trim() }, token);
+        const response = await featureApi({ conversationId, content: messageText.trim() }, token);
 
         if (getAccessToken() !== token) return;
         if (typeof response?.content !== "string" || !response.content.trim()) {
-          throw new Error("Empty review response");
+          throw new Error("Empty feature response");
         }
 
         updateMessage({ answer: response.content, pending: false });
@@ -147,12 +161,14 @@ export default function MainPage({ user, onLogout }) {
 
         updateMessage({
           pending: false,
-          error: "검토 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
+          error: isRecommendation
+            ? "추천 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요."
+            : "검토 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
         });
 
         if (error.response?.status === 401) void onLogout();
       } finally {
-        pendingReviews.current.delete(conversationId);
+        pendingFeatures.current.delete(conversationId);
       }
       return;
     }
@@ -194,7 +210,7 @@ export default function MainPage({ user, onLogout }) {
       setConversations((items) =>
         items.map((item) =>
           item.id === restored.id
-            ? pendingReviews.current.has(item.id) || item.messages !== messagesBeforeLoad
+            ? pendingFeatures.current.has(item.id) || item.messages !== messagesBeforeLoad
               ? { ...restored, messages: item.messages }
               : restored
             : item,

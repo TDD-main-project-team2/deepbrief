@@ -3,12 +3,17 @@ import { useEffect, useRef, useState } from "react";
 import "./ChatPanel.css";
 import Icons from "../Icons.jsx";
 
-const reviewActions = { "중복·유사 기사 검사": "duplicate", "가이드라인으로 평가": "evaluation" };
+const reviewActions = { "중복·유사 기사 검사": "duplicate", "회사 지침으로 평가": "evaluation" };
+const recommendActions = {
+  "키워드·태그": "keywords",
+  "제목·부제목": "title",
+  "후속 기사 아이디어": "ideas",
+};
 
-const actions = {
+const toolButtonLabels = {
   Edit: ["스트레이트로 다듬기", "기획·해설로 다듬기", "인터뷰 형식으로 다듬기"],
-  Review: ["중복·유사 기사 검사", "가이드라인으로 평가"],
-  Recommend: ["키워드·태그 추천", "제목·부제목 추천", "후속 기사 아이디어"],
+  Review: ["중복·유사 기사 검사", "회사 지침으로 평가"],
+  Recommend: ["키워드·태그", "제목·부제목", "헤드라인", "후속 기사 아이디어"],
 };
 
 export default function ChatPanel({ messages, onSendMessage, isSending = false }) {
@@ -22,8 +27,8 @@ export default function ChatPanel({ messages, onSendMessage, isSending = false }
   }
 
   const messageArea = useRef(null);
-  const toolNames = Object.keys(actions);
-  const suggestions = actions[tool] || actions.Edit;
+  const toolNames = Object.keys(toolButtonLabels);
+  const suggestions = toolButtonLabels[tool] || toolButtonLabels.Edit;
 
   useEffect(() => {
     const area = messageArea.current;
@@ -72,7 +77,7 @@ export default function ChatPanel({ messages, onSendMessage, isSending = false }
                     <div>
                       <strong>DeepBrief</strong>
                       {message.pending ? (
-                        <p role="status">기사를 검토하고 있습니다...</p>
+                        <p role="status">{message.pendingText || "요청을 처리하고 있습니다..."}</p>
                       ) : message.error ? (
                         <p role="alert">{message.error}</p>
                       ) : (
@@ -104,15 +109,21 @@ export default function ChatPanel({ messages, onSendMessage, isSending = false }
               {suggestions.map((suggestion) => (
                 <button
                   key={suggestion}
-                  disabled={isSending}
+                  disabled={isSending || (tool === "Recommend" && !recommendActions[suggestion])}
+                  title={
+                    tool === "Recommend" && !recommendActions[suggestion]
+                      ? "헤드라인 추천은 준비 중입니다."
+                      : undefined
+                  }
                   onClick={() =>
                     sendMessage(
                       suggestion,
-                      tool === "Review" ? reviewActions[suggestion] : undefined,
+                      tool === "Review" ? reviewActions[suggestion] : recommendActions[suggestion],
                     )
                   }
                 >
                   {suggestion}
+                  {tool === "Recommend" && !recommendActions[suggestion] ? " (준비 중)" : ""}
                   <span>↗</span>
                 </button>
               ))}
