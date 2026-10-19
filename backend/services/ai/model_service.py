@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import threading
@@ -24,27 +25,11 @@ MAX_NEW_TOKENS = {
     "article_ideas": 300,
     "category": 20,
     "article_metadata": 80,
+    "company_data_tool": 150,  # agent: 사내 데이터 조회 tool 선택 (tool 필요 판단 1단계)
 }
 
-# 생성 설정: "greedy"는 같은 입력이면 같은 출력, "sampling"은 Qwen3 공식 권장값(생각 모드 끔)
-GENERATION_OPTIONS = {
-    "greedy": {"do_sample": False, "temperature": None, "top_p": None, "top_k": None},
-    "sampling": {"do_sample": True, "temperature": 0.7, "top_p": 0.8, "top_k": 20, "min_p": 0.0},
-}
+GENERATION_OPTIONS = {"do_sample": False, "temperature": None, "top_p": None, "top_k": None}
 
-# 기능별 생성 설정. 요약·QA는 정답이 정해진 작업이라 greedy로 둔다
-# 10/15 가상 기사 비교(샘플링 시드 5개)에서 사실 오류가 늘어 나머지도 greedy로 둔다
-GENERATION_MODE = {
-    "summary": "greedy",
-    "answer": "greedy",
-    "formatted_article": "greedy",
-    "evaluation_item": "greedy",
-    "keyword_tags": "greedy",
-    "titles": "greedy",
-    "article_ideas": "greedy",
-    "category": "greedy",
-    "article_metadata": "greedy",
-}
 
 EVALUATION_VERDICTS = ("충족", "미흡", "해당 없음")
 
@@ -146,27 +131,29 @@ def _load():
     return _model, _tokenizer
 
 
-def _build_prompt(tokenizer, messages: list[dict]) -> str:
-    """메시지를 모델 입력 문자열로 바꾼다. 생각 모드를 끈다."""
+def _build_prompt(tokenizer, messages: list[dict], tools: list[dict] | None = None) -> str:
+    """메시지를 모델 입력 문자열로 바꾼다. 생각 모드를 끈다. tools가 있으면 채팅 템플릿이 도구 목록과 호출 형식을 넣는다."""
     return tokenizer.apply_chat_template(
         messages,
+        tools=tools,
         tokenize=False,
         add_generation_prompt=True,
         enable_thinking=False,
     )
 
 
-def _generate(messages: list[dict], adapter: str | None, feature: str) -> str:
+def _generate(messages: list[dict], adapter: str | None, feature: str, tools: list[dict] | None = None) -> str:
     """
     adapter가 "summary"/"qa"면 그 어댑터로, None이면 기본 모델로 생성한다.
-    feature(기능 이름)로 최대 토큰 수(MAX_NEW_TOKENS)와 생성 설정(GENERATION_MODE)을 고른다.
+    feature(기능 이름)로 최대 토큰 수(MAX_NEW_TOKENS)를 고른다. 생성은 모두 greedy다.
+    tools가 있으면 tool calling 형식으로 생성한다 (agent용).
     어댑터 전환은 모델 전체 상태라 한 번에 한 요청만 생성한다.
     """
     import torch
 
     with _lock:
         model, tokenizer = _load()
-        prompt = _build_prompt(tokenizer, messages)
+        prompt = _build_prompt(tokenizer, messages, tools)
         inputs = tokenizer(prompt, return_tensors="pt").to(_device)
 
         if adapter is None:
@@ -179,7 +166,7 @@ def _generate(messages: list[dict], adapter: str | None, feature: str) -> str:
             output = model.generate(
                 **inputs,
                 max_new_tokens=MAX_NEW_TOKENS[feature],
-                **GENERATION_OPTIONS[GENERATION_MODE[feature]],
+                **GENERATION_OPTIONS,
             )
 
         generated = output[0][inputs["input_ids"].shape[-1]:]
@@ -189,7 +176,7 @@ def _generate(messages: list[dict], adapter: str | None, feature: str) -> str:
 
 # ── 프롬프트 ──────────────────────────────────────────
 
-# 요약·QA: 학습 코드(fine_tuning/*/training.py)와 같은 문구. 바꾸면 어댑터 성능이 떨어진다.
+# 요약·QA: 학습 코드와 같은 문구. 바꾸면 어댑터 성능이 떨어진다.
 SUMMARY_TEMPLATE = (
     "다음 원문의 핵심 내용을 한국어로 간결하게 요약하세요. "
     "원문에 없는 사실은 추가하지 마세요.\n\n"
@@ -292,7 +279,7 @@ ARTICLE_METADATA_TEMPLATE = (
 )
 
 
-# 예시 답변 (few-shot): 테스트 기사와 겹치지 않는 가상 기사. 모델이 "어떻게 답하는지" 보고 따라 하게 한다
+# 예시 답변 (few-shot): 테스트 기사와 겹치지 않는 가상 기사. 모델이 "어떻게 답하는지" 보고 따라 하게 한다.
 _EXAMPLE_ARTICLE = (
     "새봄구립도서관은 다음 달 1일부터 평일 운영 시간을 오후 10시까지 2시간 늘린다고 20일 밝혔다. "
     "이용자 설문에서 응답자의 68%가 저녁 시간 연장을 원했다는 결과를 반영한 조치다. "
@@ -312,7 +299,7 @@ FORMATTED_ARTICLE_EXAMPLE = {
     ),
 }
 
-# 판정 세 가지를 하나씩 보여 준다. 기준은 실제 지침 항목과 겹치지 않게 만든 것
+# 판정 세 가지를 하나씩 보여 준다. 기준은 실제 지침 항목과 겹치지 않게 만든 것.
 EVALUATION_EXAMPLES = [
     {
         "item": {"title": "날짜는 구체적으로", "description": "일정은 요일이나 '최근' 대신 구체적인 날짜로 씁니다."},
@@ -333,6 +320,61 @@ ARTICLE_METADATA_EXAMPLE = {
     "article": "새봄신문\n입력 2026.09.20. 오전 10:05  수정 2026.09.20. 오후 3:40\n" + _EXAMPLE_ARTICLE,
     "answer": "언론사: 새봄신문\n기자: (기사에 없음)\n작성일: 2026.09.20. 오전 10:05",
 }
+
+
+# agent 프롬프트
+# tool 필요 판단 1단계: 질문만 보고, 사내 데이터 질문이면 조회 도구 하나를 바로 호출한다.
+COMPANY_DATA_TOOL_TEMPLATE = (
+    "당신은 언론사 기사 작성 도구에서 사용자의 질문을 처리합니다.\n"
+    "- 질문이 우리 회사(조직)의 데이터(회사 기사 수, 최근 회사 기사 목록, 분야별·기자별·언론사별 기사 수, 기사 템플릿, 작성 지침, 구성원 수)를 묻는 것이면 맞는 도구 하나를 골라 호출하세요.\n"
+    "- 질문이 기사 내용이나 일반 지식을 묻는 것이면 도구를 호출하지 말고 \"없음\"이라고만 쓰세요.\n"
+    "- 인자는 도구 설명에 있는 값 중에서만 고르세요.\n"
+    "- 질문에 기간이 없으면 period는 \"all\"로 두고, 분야가 없으면 category를 넣지 마세요.\n"
+    "- '정치부'처럼 부서 이름은 같은 분야(정치)로 보세요. 기자 이름과 언론사 이름은 질문에 적힌 그대로 옮기세요."
+)
+
+# 기간 값. 모델은 이 중에서 고르고 날짜 계산은 tools.py가 한다 (tools.PERIODS와 같은 값)
+AGENT_PERIODS = ("today", "yesterday", "this_week", "last_week", "this_month", "last_month",
+                 "last_7_days", "last_30_days", "this_year", "all")
+_PERIOD_PARAM = {"type": "string", "enum": list(AGENT_PERIODS),
+                 "description": "기간. 오늘=today, 지난주=last_week, 이번 달=this_month, 지난달=last_month, "
+                                "최근 7일=last_7_days, 올해=this_year, 기간이 없으면 all"}
+_CATEGORY_PARAM = {"type": "string", "enum": list(ARTICLE_CATEGORIES),
+                   "description": "기사 분야. '정치부'는 정치. 분야가 없으면 넣지 않는다"}
+
+
+def _tool_spec(name: str, description: str, properties: dict | None = None, required: list | None = None) -> dict:
+    return {"type": "function", "function": {
+        "name": name, "description": description,
+        "parameters": {"type": "object", "properties": properties or {}, "required": required or []},
+    }}
+
+
+# 사내 데이터 조회 도구 목록 (이름은 tools.py의 조회 도구와 같다).
+COMPANY_DATA_TOOLS = [
+    _tool_spec("count_articles", "회사 기사 개수를 센다. '몇 개', '몇 건'처럼 개수를 물을 때 쓴다. "
+               "예: '지난달 정치부 기사 몇 개야?', '최근 7일 IT 기사 몇 개야?'",
+               {"period": _PERIOD_PARAM, "category": _CATEGORY_PARAM}),
+    _tool_spec("list_recent_articles", "회사의 최근 기사 제목 목록을 보여준다. 개수가 아니라 어떤 기사가 있는지 물을 때 쓴다. "
+               "예: '최근 회사 기사 뭐 있어?'",
+               {"period": _PERIOD_PARAM, "category": _CATEGORY_PARAM}),
+    _tool_spec("count_articles_by_category", "회사 기사를 분야별로 나눠 센다. '분야별'로 물을 때만 쓴다. "
+               "예: '분야별로 몇 개씩 있어?'", {"period": _PERIOD_PARAM}),
+    _tool_spec("count_articles_by_author", "기자가 쓴 회사 기사 개수를 센다. 예: '김바다 기자가 쓴 기사 몇 개야?'",
+               {"author": {"type": "string", "description": "기자 이름. 질문에 적힌 그대로"}, "period": _PERIOD_PARAM},
+               ["author"]),
+    _tool_spec("count_articles_by_media", "언론사별 회사 기사 개수를 센다. 예: '새봄신문 기사 몇 개야?'",
+               {"media": {"type": "string", "description": "언론사 이름. 질문에 적힌 그대로"}, "period": _PERIOD_PARAM},
+               ["media"]),
+    _tool_spec("list_templates", "회사에 등록된 기사 템플릿 목록을 보여준다. 예: '우리 회사 템플릿 뭐 있어?'"),
+    _tool_spec("list_guidelines", "회사의 기사 작성 지침 목록을 보여준다. 예: '우리 회사 작성 지침 알려줘'"),
+    _tool_spec("count_members", "회사 구성원(사용자) 수를 센다. 예: '우리 회사 사용자 몇 명이야?'"),
+]
+_COMPANY_DATA_TOOL_NAMES = {tool["function"]["name"] for tool in COMPANY_DATA_TOOLS}
+
+# 모델이 사내 도구를 골라도, 질문에 사내 데이터를 가리키는 말이 없으면 사내 질문으로 보지 않는다
+COMPANY_CUE_WORDS = ("기사", "회사", "우리", "조직", "템플릿", "지침", "구성원", "사용자", "기자", "언론사", "신문",
+                     *(f"{category}부" for category in ARTICLE_CATEGORIES))
 
 
 def _with_examples(messages: list[dict], examples: list[tuple[str, str]]) -> list[dict]:
@@ -407,6 +449,10 @@ def _article_metadata_messages(article: str) -> list[dict]:
     )
 
 
+def _company_data_tool_messages(question: str) -> list[dict]:
+    return [{"role": "system", "content": COMPANY_DATA_TOOL_TEMPLATE}, {"role": "user", "content": question}]
+
+
 # ── 결과 정리 ─────────────────────────────────────────
 
 _THINK_BLOCK = re.compile(r"<think>.*?</think>", re.DOTALL)
@@ -415,6 +461,35 @@ _TITLE_LINE = re.compile(r"제목\s*:\s*(.+?)\s*/\s*부제목\s*:\s*(.+)")
 _VERDICT = re.compile(r"판정\s*:\s*(충족|미흡|해당\s*없음)")
 _VERDICT_AT_START = re.compile(r"^\s*(충족|미흡|해당\s*없음)")   # "판정:" 없이 판정부터 쓴 경우
 _REASON = re.compile(r"이유\s*:\s*(.+)")
+
+
+_TOOL_CALL = re.compile(r"<tool_call>\s*(\{.*?\})\s*</tool_call>", re.DOTALL)
+_JSON_OBJECT = re.compile(r"\{.*\}", re.DOTALL)
+
+
+def _parse_tool_call(text: str) -> dict | None:
+    """
+    모델 출력에서 도구 호출 하나를 읽는다. {"name": str, "arguments": dict}, 호출이 없거나 읽을 수 없으면 None.
+    <tool_call> 표시가 지워진 경우를 대비해, 표시가 없으면 출력 속 JSON 객체를 찾는다.
+    """
+    match = _TOOL_CALL.search(text) or _JSON_OBJECT.search(text)
+    if not match:
+        return None
+    try:
+        data = json.loads(match.group(1) if match.re is _TOOL_CALL else match.group(0))
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("name"), str):
+        return None
+    arguments = data.get("arguments") or {}
+    if isinstance(arguments, str):           # 인자를 JSON 문자열로 쓴 경우
+        try:
+            arguments = json.loads(arguments)
+        except json.JSONDecodeError:
+            return None
+    if not isinstance(arguments, dict):
+        return None
+    return {"name": data["name"], "arguments": arguments}
 
 
 def _clean(text: str) -> str:
@@ -475,7 +550,7 @@ _META_LINE = {
 }
 _EMAIL = re.compile(r"\S+@\S+")
 _DOMAIN = re.compile(r"[A-Za-z0-9-]+\.(?:co\.kr|or\.kr|com|net|kr|org)\b", re.IGNORECASE)
-_MAX_COLUMN_LENGTH = 255   # articles.media, author 컬럼 길이 (String(255))
+_MAX_COLUMN_LENGTH = 255
 _AUTHOR_TITLE = re.compile(r"\s*(선임기자|수석기자|객원기자|인턴기자|기자|특파원)$")
 _DATE = re.compile(
     r"(\d{4})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})\s*일?\.?"
@@ -531,7 +606,7 @@ def _date_in_article(value: datetime, article: str) -> bool:
 
 
 def _valid_media(media: str, author: str | None) -> bool:
-    """언론사 칸에 기자 이름·직함, 이메일·도메인이 들어온 경우를 거른다 (실제 기사 테스트에서 확인한 오류)."""
+    """언론사 칸에 기자 이름·직함, 이메일·도메인이 들어온 경우를 거른다."""
     if _AUTHOR_TITLE.search(media) or "@" in media or _DOMAIN.search(media):
         return False
     names = author.split(", ") if author else []
@@ -558,7 +633,7 @@ def _parse_article_metadata(text: str, article: str) -> dict:
     }
 
 
-# ── 입력·결과 변환 (다른 서비스가 그대로 호출할 수 있게) ──────────────
+# ── 입력·결과 변환 ──────────────
 
 def _article_text(article) -> str:
     """기사 본문 문자열, DB의 Article 객체(.body), 업로드 처리 결과 DocumentResult(.text)를 받아 본문 문자열을 돌려준다."""
@@ -579,7 +654,7 @@ def _meta_lines(lines) -> list[str]:
     """
     OCR이 본문에서 뺀 줄(meta_text) 중 언론사·기자 후보만 고른다. 메뉴·숫자 같은 잡음은 버린다.
     - 기자·특파원·Copyright(ⓒ)가 들어간 줄
-    - 처음 나오는, 띄어쓰기 없는 짧은 줄 하나 (1쪽 맨 위 언론사 이름. 10/16 실제 기사 진단에서 7/7)
+    - 처음 나오는, 띄어쓰기 없는 짧은 줄 하나
     """
     picked, masthead = [], False
     for line in (str(item).strip() for item in lines):
@@ -709,7 +784,7 @@ def _usable_answer(answer: str, context: str) -> bool:
 
 
 # ── 기능 함수 ─────────────────────────────────────────
-# 메시지로 저장하는 기능은 문자열을 돌려준다 (conversation_service.save_message에 그대로 넣으면 됨).
+# 메시지로 저장하는 기능은 문자열을 돌려준다.
 # 목록·딕셔너리 원본이 필요하면 *_data 함수를 쓴다.
 # article에는 기사 본문 문자열이나 Article 객체를 넘긴다.
 
@@ -845,3 +920,50 @@ def generate_organization_answer(context, question: str) -> str:
     text = _article_text(context)
     answer = generate_answer(text, question)
     return answer if _usable_answer(answer, text) else NOT_FOUND_MESSAGE
+
+
+# ── agent ─────────────────────────────────────────────
+
+def _compact(text: str) -> str:
+    return re.sub(r"\s+", "", text)
+
+
+def _has_company_cue(question: str) -> bool:
+    text = _compact(question)
+    return any(word in text for word in COMPANY_CUE_WORDS)
+
+
+def _echoes_question(answer: str, question: str) -> bool:
+    """뽑은 답이 질문에 이미 있는 말인지 (예: "수소버스와 전기버스 차이" → "전기버스"). 예/아니오는 제외."""
+    normalized = _compact(answer).rstrip(".")
+    return bool(normalized) and normalized not in _YES_NO_ANSWERS and normalized in _compact(question)
+
+
+def select_company_data_tool(question: str) -> dict | None:
+    """
+    tool 필요 판단 1단계. 질문만 보고, 사내 데이터 질문이면 조회 도구 하나와 인자를 고른다 (기본 모델 1번, tool calling).
+    {"name", "arguments"}, 도구를 호출하지 않았거나 읽을 수 없으면 None.
+    도구 이름과 인자가 맞는지는 부르는 쪽(tools.py)이 확인한다.
+    """
+    raw = _generate(_company_data_tool_messages(question), None, "company_data_tool", tools=COMPANY_DATA_TOOLS)
+    return _parse_tool_call(raw)
+
+
+def classify_retrieval_scope(question: str, context) -> str:
+    """
+    agent: 질문에 답하려면 tool이 필요한지 판단한다.
+    1. 모델이 질문만 보고 사내 조회 도구를 호출하면(질문에 사내 데이터를 가리키는 말이 있을 때만) → "company_data"
+    2. 아니면 현재 기사에서 답이 나오는지 실제로 뽑아 본다(decide_answer_source, QA 어댑터 + 근거 확인)
+       → 나오면 "current_article" (질문을 되풀이한 답은 인정하지 않음)
+    3. 안 나오면 "web"
+    """
+    call = select_company_data_tool(question)
+    if call is not None and call["name"] in _COMPANY_DATA_TOOL_NAMES and _has_company_cue(question):
+        return "company_data"
+
+    text = _article_text(context)
+    if text.strip():
+        result = decide_answer_source(text, question)
+        if result["source"] == "current_article" and not _echoes_question(result["answer"], question):
+            return "current_article"
+    return "web"
