@@ -79,3 +79,20 @@ def ensure_organization_member(
 
     if user is None or user.organization_id != organization_id:
         raise _not_found()
+
+def ensure_organization_admin(
+    organization_id: int,
+    user_id: int,
+    db: Session,
+) -> None:
+    user = user_repository.get_by_id(db, user_id)
+
+    if user is None or user.organization_id != organization_id:
+        raise _not_found()
+
+    if user.role != "admin":
+        raise _unauthorized("관리자 권한 없습니다.")
+
+def get_current_admin(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    ensure_organization_admin(current_user.organization_id, current_user.id, db)
+    return current_user

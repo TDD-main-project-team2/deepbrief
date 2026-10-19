@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.database.rdb.rdb import SessionLocal
+from backend.models.user import User
 from backend.models.article import Article
 from backend.models.conversation import Conversation
 from backend.models.user_article import UserArticle
@@ -34,6 +35,29 @@ def find_all_by_user(user_id: int) -> list[Article]:
                 .order_by(Article.id.asc())
             ).all()
         )
+
+
+def find_all_by_org(db: Session, organization_id: int) -> list[Article]:
+    return db.scalars(
+        select(Article)
+        .join(UserArticle, UserArticle.article_id == Article.id)
+        .join(User, User.id == UserArticle.user_id)
+        .where(User.organization_id == organization_id)
+        .distinct()
+    ).all()
+
+
+def find_all_public_by_org(db: Session, organization_id: int) -> list[Article]:
+    return db.scalars(
+        select(Article)
+        .join(UserArticle, UserArticle.article_id == Article.id)
+        .join(User, User.id == UserArticle.user_id)
+        .where(
+            User.organization_id == organization_id,
+            Article.visibility == "public",
+        )
+        .distinct()
+    ).all()
 
 
 def find_article_by_conversation_id(

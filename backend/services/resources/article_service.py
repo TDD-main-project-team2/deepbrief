@@ -11,6 +11,12 @@ def find_article_by_id(article_id):
         raise _not_found()
     return article
 
+def get_all_articles_by_org_id(current_user, db):
+    return article_repository.find_all_by_org(db, current_user.organization_id)
+
+def get_all_public_articles_by_org_id(current_user, db):
+    return article_repository.find_all_public_by_org(db, current_user.organization_id)
+
 def get_articles_by_user(current_user_id):
     return article_repository.find_all_by_user(current_user_id)
 
