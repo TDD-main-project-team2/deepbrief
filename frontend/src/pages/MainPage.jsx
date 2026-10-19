@@ -13,12 +13,14 @@ import ArchivePreview from "../components/main/ArchivePreview.jsx";
 import useFilePreview from "../hooks/useFilePreview.js";
 import { createConversation, getConversationList, getConversation } from "../api/conversations.js";
 import { getArticle, getArticleList } from "../api/articles.js";
+import { checkDuplicates, evaluateArticle } from "../api/features.js";
 import { getAccessToken } from "../utils/tokenStorage.js";
 import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
 
 export default function MainPage({ user, onLogout }) {
   const viewVersion = useRef(0); // 업로드를 기다리는 동안 사용자가 다른 화면으로 이동했는지 확인하는 값
-  const pendingUploads = useRef(new WeakMap()); // 보통 같은 파일로 요청이 중복 실행되는 걸 막는 값
+  const pendingReviews = useRef(new Set()); // Review API 요청이 진행 중인 대화 ID를 저장하는 값
+  const pendingUploads = useRef(new WeakMap()); // 같은 파일로 요청이 중복 실행되는 걸 막는 값
 
   const [uploadSession, setUploadSession] = useState(0);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -86,7 +88,75 @@ export default function MainPage({ user, onLogout }) {
   const hasActiveConversation = Boolean(activeConversation);
   const messages = activeConversation?.messages || [];
 
-  function sendMessage(messageText) {
+  async function sendMessage(messageText, action) {
+    const reviewApi = { duplicate: checkDuplicates, evaluation: evaluateArticle }[action];
+
+    if (pendingReviews.current.has(activeConversationId)) return;
+
+    if (reviewApi && activeConversation && messageText.trim()) {
+      const conversationId = activeConversationId;
+      const token = getAccessToken();
+      const requestId = crypto.randomUUID();
+
+      pendingReviews.current.add(conversationId);
+
+      const updateMessage = (changes) =>
+        setConversations((items) =>
+          items.map((item) =>
+            item.id === conversationId
+              ? {
+                  ...item,
+                  messages: item.messages.map((message) =>
+                    message.requestId === requestId ? { ...message, ...changes } : message,
+                  ),
+                }
+              : item,
+          ),
+        );
+
+      setConversations((items) =>
+        items.map((item) =>
+          item.id === conversationId
+            ? {
+                ...item,
+                messages: [
+                  ...item.messages,
+                  {
+                    requestId,
+                    question: messageText.trim(),
+                    answer: "",
+                    pending: true,
+                  },
+                ],
+              }
+            : item,
+        ),
+      );
+
+      try {
+        const response = await reviewApi({ conversationId, content: messageText.trim() }, token);
+
+        if (getAccessToken() !== token) return;
+        if (typeof response?.content !== "string" || !response.content.trim()) {
+          throw new Error("Empty review response");
+        }
+
+        updateMessage({ answer: response.content, pending: false });
+      } catch (error) {
+        if (getAccessToken() !== token) return;
+
+        updateMessage({
+          pending: false,
+          error: "검토 요청을 완료하지 못했습니다. 잠시 후 다시 시도해주세요.",
+        });
+
+        if (error.response?.status === 401) void onLogout();
+      } finally {
+        pendingReviews.current.delete(conversationId);
+      }
+      return;
+    }
+
     if (!messageText.trim() || !activeConversation) return;
 
     const message = {
@@ -104,6 +174,7 @@ export default function MainPage({ user, onLogout }) {
   }
 
   async function openChat(conversation) {
+    const messagesBeforeLoad = conversation.messages;
     const version = ++viewVersion.current;
     const token = getAccessToken();
 
@@ -120,7 +191,15 @@ export default function MainPage({ user, onLogout }) {
 
       const restored = toConversationView(detail);
 
-      setConversations((items) => items.map((item) => (item.id === restored.id ? restored : item)));
+      setConversations((items) =>
+        items.map((item) =>
+          item.id === restored.id
+            ? pendingReviews.current.has(item.id) || item.messages !== messagesBeforeLoad
+              ? { ...restored, messages: item.messages }
+              : restored
+            : item,
+        ),
+      );
       setActiveConversationId(restored.id);
       changeFile(article.file);
       setVisibility(article.visibility);
@@ -308,6 +387,7 @@ export default function MainPage({ user, onLogout }) {
               <ChatPanel
                 key={activeConversationId}
                 messages={messages}
+                isSending={messages.some((message) => message.pending)}
                 onSendMessage={sendMessage}
               />
             </main>
