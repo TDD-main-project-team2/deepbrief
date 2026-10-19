@@ -3,13 +3,14 @@ from backend.repositories import (article_repository, conversation_repository, m
 from backend.app.dependencies import ensure_owner, _not_found
 from backend.services.resources import article_service
 
-async def create_conversation(file, title, current_user_id, rdb):
+async def create_conversation(file, title, article_visibility, current_user_id, rdb):
     file_bytes = await file.read()
     filename = file.filename
 
     article = article_processing_service.process_article(
         file_bytes,
         filename,
+        article_visibility,
         rdb,
         reprocess=False,
     )
