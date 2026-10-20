@@ -9,6 +9,7 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=1, max_length=128)
     nickname: str = Field(min_length=1, max_length=255)
     organization_code: str = Field(min_length=1, max_length=50)
+    admin_code: str = Field(min_length=1, max_length=50)
 
     @field_validator("nickname")
     @classmethod
