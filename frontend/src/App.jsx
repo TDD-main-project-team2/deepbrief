@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { Routes, Route } from "react-router";
 
 import MainPage from "./pages/MainPage.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
+import AdminRoute from "./AdminRoute.jsx";
 
 import { getCurrentUser } from "./api/users.js";
 import { logoutUser } from "./api/auth.js";
@@ -76,6 +78,14 @@ export default function App() {
           <ProtectedRoute user={session?.user} loading={restoringSession}>
             <MainPage key={session?.user?.id} user={session?.user} onLogout={handleLogout} />
           </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute user={session?.user} loading={restoringSession}>
+            <AdminPage key={session?.user?.id} user={session?.user} onLogout={handleLogout}/>
+          </AdminRoute>
         }
       />
       <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />

@@ -27,3 +27,4 @@ class UserResponse(BaseModel):
     id: int
     email: EmailStr
     nickname: str
+    role: str
