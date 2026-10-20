@@ -13,6 +13,7 @@ export default function SideMenu({
   setMenuOpen,
   onStartNewConversation,
   articles,
+  publicArticleCount,
   view,
   activeConversationId,
   conversations,
@@ -121,7 +122,8 @@ export default function SideMenu({
                 />
                 <ArchiveMenuItem
                   label="사내 기사"
-                  scopeLabel="준비 중"
+                  scopeLabel="조직 공개"
+                  count={publicArticleCount}
                   selected={view === "public"}
                   onClick={() => setView("public")}
                 />

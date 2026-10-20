@@ -17,7 +17,7 @@ import useConversationWithFile from "../hooks/useConversationWithFile.js";
 import useConversationMessages from "../hooks/useConversationMessages.js";
 
 import { getConversationList, getConversation } from "../api/conversations.js";
-import { getArticle, getArticleList } from "../api/articles.js";
+import { getArticle, getArticleList, getPublicArticleList } from "../api/articles.js";
 import { getAccessToken } from "../utils/tokenStorage.js";
 import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
 
@@ -31,6 +31,7 @@ export default function MainPage({ user, onLogout }) {
   const [view, setView] = useState("chat");
   const [archiveView, setArchiveView] = useState("private");
   const [articles, setArticles] = useState([]);
+  const [publicArticles, setPublicArticles] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [visibility, setVisibility] = useState("private");
   const [menuOpen, setMenuOpen] = useState(true);
@@ -44,9 +45,10 @@ export default function MainPage({ user, onLogout }) {
 
     async function loadHistory() {
       try {
-        const [articleResult, conversationResult] = await Promise.all([
+        const [articleResult, conversationResult, publicResult] = await Promise.all([
           getArticleList(),
           getConversationList(),
+          getPublicArticleList(),
         ]);
 
         if (cancelled || getAccessToken() !== token) return;
@@ -57,6 +59,7 @@ export default function MainPage({ user, onLogout }) {
             current,
           ),
         );
+        setPublicArticles(publicResult.articles.map((item) => toArticleView(item)));
         setConversations((current) =>
           mergeHistory(conversationResult.map(toConversationView), current),
         );
@@ -158,6 +161,9 @@ export default function MainPage({ user, onLogout }) {
       const { article, conversation } = result;
 
       setArticles((items) => [...items.filter((item) => item.id !== article.id), article]);
+      if (article.visibility === "public") {
+        setPublicArticles((items) => mergeHistory(items, [article]));
+      }
       setConversations((items) => [
         ...items.filter((item) => item.id !== conversation.id),
         conversation,
@@ -233,6 +239,7 @@ export default function MainPage({ user, onLogout }) {
     setMenuOpen,
     onStartNewConversation: startNewConversation,
     articles,
+    publicArticleCount: publicArticles.length,
     view,
     activeConversationId,
     conversations,
@@ -250,7 +257,7 @@ export default function MainPage({ user, onLogout }) {
     previewText,
     previewError,
     setPreviewError,
-    article: articles.find(
+    article: (view === "article" && archiveView === "public" ? publicArticles : articles).find(
       (article) => article.id === (view === "article" ? articleId : activeConversation?.articleId),
     ),
   };
@@ -282,7 +289,7 @@ export default function MainPage({ user, onLogout }) {
           <main className="archive-main">
             <Archive
               view={view}
-              articles={articles}
+              articles={view === "public" ? publicArticles : articles}
               openArticle={openArticle}
               onDeleteArticle={deleteArticle}
             />
