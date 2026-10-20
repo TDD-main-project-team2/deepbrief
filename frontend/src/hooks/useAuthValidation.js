@@ -38,6 +38,13 @@ export const validateOrganizationCode = (value) =>
       ? "조직 코드는 50자 이하로 입력해주세요."
       : "";
 
+export const validateAdminCode = (value) =>
+  !value.trim()
+    ? "관리자 코드를 입력해주세요."
+    : value.length > 50
+      ? "관리자 코드는 50자 이하로 입력해주세요."
+      : "";
+
 export default function useAuthValidation(validators, initialValues) {
   const [values, setValues] = useState(initialValues);
   const [touched, setTouched] = useState({});
