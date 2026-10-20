@@ -33,7 +33,7 @@ def get_org_guidelines(db: Session = Depends(get_db), current_user=Depends(get_c
     return admin_service.get_org_guidelines(db, current_user)
 
 
-@router.get("/articles", response_model=list[ArticleListResponse])
+@router.get("/articles", response_model=ArticleListResponse)
 def get_org_articles(db: Session = Depends(get_db), current_user=Depends(get_current_admin)):
     return article_service.get_all_articles_by_org_id(db, current_user)
 
@@ -85,7 +85,7 @@ def delete_org_guideline(guideline_id: int, db: Session = Depends(get_db), curre
 
 @router.delete("/articles/{article_id}", status_code=204)
 def delete_org_article(article_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_admin)):
-    admin_service.delete_org_article(db, current_user, article_id)
+    admin_service.delete_org_article(db, article_id)
 
 
 @router.delete("/members/{member_id}", status_code=204)
