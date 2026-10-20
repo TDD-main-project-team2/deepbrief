@@ -2,10 +2,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.models.article import Article
+from backend.models.user_article import UserArticle
 from backend.models.guideline import Guideline
 from backend.models.organization import Organization
 from backend.models.template import Template
 from backend.models.user import User
+from backend.models.conversation import Conversation
 
 
 def get_org_members(db: Session, organization_id: int):
@@ -72,5 +74,23 @@ def update_member(db: Session, member: User, nickname: str | None = None, role: 
 
 
 def delete_record(db: Session, record):
+    db.delete(record)
+    db.flush()
+
+def delete_record(db: Session, record):
+    if isinstance(record, User):
+        db.query(Conversation).filter(Conversation.user_id == record.id).delete()
+
+        private_article_ids = db.scalars(
+            select(UserArticle.article_id)
+            .join(Article, Article.id == UserArticle.article_id)
+            .where(UserArticle.user_id == record.id, Article.visibility == "private")
+        ).all()
+
+        if private_article_ids:
+            db.query(Article).filter(Article.id.in_(private_article_ids)).delete(synchronize_session=False)
+
+        db.query(UserArticle).filter(UserArticle.user_id == record.id).delete()
+
     db.delete(record)
     db.flush()
