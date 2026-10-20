@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 from backend.database.rdb.rdb import SessionLocal
 from backend.models.user import User
 from backend.models.article import Article
+from backend.models.message import Message
 from backend.models.conversation import Conversation
 from backend.models.user_article import UserArticle
+from backend.models.article_chunk import ArticleChunk
 
 def get_by_content_hash(db: Session, content_hash: str) -> Article | None:
     return db.query(Article).filter(Article.content_hash == content_hash).first()
@@ -77,14 +79,38 @@ def delete_article_association(article_id: int, user_id: int, db: Session) -> bo
     if user_article is None:
         return False
 
+    conversation_ids = db.query(Conversation.id).filter(
+        Conversation.article_id == article_id,
+        Conversation.user_id == user_id
+    ).all()
+    conversation_ids = [row[0] for row in conversation_ids]
+
+    db.query(Message).filter(
+        Message.conversation_id.in_(conversation_ids)
+    ).delete(synchronize_session=False)
+
+    db.query(Conversation).filter(
+        Conversation.article_id == article_id,
+        Conversation.user_id == user_id
+    ).delete(synchronize_session=False)
+
     db.delete(user_article)
     return True
 
-
 def delete_article_associations(article_id: int, db: Session) -> bool:
-    deleted = db.query(UserArticle).filter(UserArticle.article_id == article_id).delete()
+    conversation_ids = db.query(Conversation.id).filter(Conversation.article_id == article_id).all()
+    conversation_ids = [row[0] for row in conversation_ids]
+
+    if conversation_ids:
+        db.query(Message).filter(Message.conversation_id.in_(conversation_ids)).delete(synchronize_session=False)
+        db.query(Conversation).filter(Conversation.article_id == article_id).delete(synchronize_session=False)
+
+    db.query(UserArticle).filter(UserArticle.article_id == article_id).delete(synchronize_session=False)
+    db.query(ArticleChunk).filter(ArticleChunk.article_id == article_id).delete(synchronize_session=False)
+
+    deleted = db.query(Article).filter(Article.id == article_id).delete(synchronize_session=False)
     return deleted > 0
-    
+
 
 def update_category(article_id: int, category: str) -> None:
     """기사의 카테고리를 갱신한다."""
