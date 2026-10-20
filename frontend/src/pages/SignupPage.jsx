@@ -73,17 +73,6 @@ export default function SignupPage() {
     >
       <form className="signup-form" onSubmit={submit} noValidate>
         <AuthInput
-          label="조직 코드"
-          {...field("organizationCode")}
-          autoComplete="off"
-          autoCapitalize="none"
-          spellCheck={false}
-          placeholder="소속 조직에서 받은 코드를 입력하세요"
-          required
-          maxLength={50}
-        />
-
-        <AuthInput
           label="닉네임"
           {...field("nickname")}
           autoComplete="nickname"
@@ -116,6 +105,27 @@ export default function SignupPage() {
           autoComplete="new-password"
           placeholder="비밀번호를 다시 입력하세요"
           required
+        />
+
+        <AuthInput
+          label="조직 코드"
+          {...field("organizationCode")}
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="소속 조직에서 받은 코드를 입력하세요"
+          required
+          maxLength={50}
+        />
+
+        <AuthInput
+          label="관리자 코드 (선택)"
+          {...field("adminCode")}
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="관리자라면 관리자 코드를 입력하세요"
+          maxLength={50}
         />
 
         <AuthError variant="form">{error}</AuthError>

@@ -61,11 +61,17 @@ def register_user(db: Session, data: UserCreate) -> UserResponse:
         if organization is None:
             raise InvalidOrganizationCodeError("유효하지 않은 조직 코드입니다.")
 
+        if data.admin_code and organization.admin_code and data.admin_code == organization.admin_code:
+            role = "admin"
+        else:
+            role = "member"
+
         user = User(
             email=str(data.email),
             password_hash=hash_password(data.password),
             nickname=data.nickname,
             organization_id=organization.id,
+            role=role
         )
 
         user_repository.create(db, user)
