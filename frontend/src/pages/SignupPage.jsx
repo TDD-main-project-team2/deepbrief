@@ -31,6 +31,7 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const { values, field, canSubmit } = useAuthValidation(validators, {
     organizationCode: "",
+    adminCode: "",
     nickname: "",
     email: "",
     password: "",
@@ -47,6 +48,7 @@ export default function SignupPage() {
     try {
       await signupUser({
         organizationCode: values.organizationCode.trim(),
+        adminCode: values.adminCode,
         email: values.email.trim(),
         password: values.password,
         nickname: values.nickname.trim(),
