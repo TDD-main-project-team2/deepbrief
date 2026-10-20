@@ -7,6 +7,7 @@ import AuthLayout from "../components/auth/AuthLayout.jsx";
 import AuthInput from "../components/auth/AuthInput.jsx";
 import PasswordInput from "../components/auth/PasswordInput.jsx";
 import AuthError from "../components/auth/AuthError.jsx";
+import LoadingDots from "../components/feedback/LoadingDots.jsx";
 
 import useAuthValidation, {
   validateEmail,
@@ -76,7 +77,7 @@ export default function LoginPage({ onLogin }) {
         <AuthError variant="form">{error}</AuthError>
 
         <button className="primary login-submit" type="submit" disabled={!canSubmit || submitting}>
-          {submitting ? "로그인 중..." : "로그인"}
+          {submitting ? <LoadingDots>로그인 중</LoadingDots> : "로그인"}
         </button>
       </form>
     </AuthLayout>

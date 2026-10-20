@@ -9,8 +9,8 @@ import ArticlePanel from "../components/main/ArticlePanel.jsx";
 import ChatPanel from "../components/main/ChatPanel.jsx";
 import Archive from "../components/main/Archive.jsx";
 import ArchivePreview from "../components/main/ArchivePreview.jsx";
-import ErrorNotice from "../components/ErrorNotice.jsx";
-import LoadingNotice from "../components/LoadingNotice.jsx";
+import ErrorNotice from "../components/feedback/ErrorNotice.jsx";
+import LoadingNotice from "../components/feedback/LoadingNotice.jsx";
 
 import useFilePreview from "../hooks/useFilePreview.js";
 import useConversationWithFile from "../hooks/useConversationWithFile.js";
