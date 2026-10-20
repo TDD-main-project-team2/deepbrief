@@ -11,14 +11,28 @@ def find_article_by_id(article_id):
         raise _not_found()
     return article
 
-def get_all_articles_by_org_id(current_user, db):
-    return article_repository.find_all_by_org(db, current_user.organization_id)
+def get_all_articles_by_org_id(db: Session, current_user):
+    articles = article_repository.find_all_by_org(db, current_user.organization_id)
+
+    return {
+        "articles": articles,
+        "total": len(articles),
+    }
 
 def get_all_public_articles_by_org_id(current_user, db):
-    return article_repository.find_all_public_by_org(db, current_user.organization_id)
+    articles = article_repository.find_all_public_by_org(db, current_user.organization_id)
+
+    return {
+        "articles": articles,
+        "total": len(articles),
+    }
 
 def get_articles_by_user(current_user_id):
-    return article_repository.find_all_by_user(current_user_id)
+    articles = article_repository.find_all_by_user(current_user_id)
+    return {
+        "articles": articles,
+        "total": len(articles),
+    }
 
 def get_article_by_id(article_id, current_user_id, db):
     article = find_article_by_id(article_id)
