@@ -36,5 +36,21 @@ export const API_PATH = {
       `/features/conversations/${conversationId}/format/${templateId}`,
   },
 
+  admin: {
+    members: "/admin/members",
+    member: (memberId) => `/admin/members/${memberId}`,
+
+    templates: "/admin/templates",
+    template: (templateId) => `/admin/templates/${templateId}`,
+
+    guidelines: "/admin/guidelines",
+    guideline: (guidelineId) => `/admin/guidelines/${guidelineId}`,
+
+    articles: "/admin/articles",
+    article: (articleId) => `/admin/articles/${articleId}`,
+
+    code: "/admin/code",
+  },
+
   health: "/health",
 };
