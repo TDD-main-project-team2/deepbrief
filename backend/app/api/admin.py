@@ -85,7 +85,7 @@ def delete_org_guideline(guideline_id: int, db: Session = Depends(get_db), curre
 
 @router.delete("/articles/{article_id}", status_code=204)
 def delete_org_article(article_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_admin)):
-    admin_service.delete_org_article(db, article_id)
+    admin_service.delete_org_article(db, current_user, article_id)
 
 
 @router.delete("/members/{member_id}", status_code=204)

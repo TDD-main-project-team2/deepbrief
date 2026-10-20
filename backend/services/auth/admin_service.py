@@ -10,6 +10,8 @@ from backend.models.guideline import Guideline
 from backend.models.template import Template
 from backend.schemas.organization import OrgGuidelineRequest, OrgTemplateRequest
 from backend.repositories import admin_repository, article_repository
+from backend.app.dependencies import ensure_organization_article
+from backend.services.resources import conversation_service
 
 def get_org_members(db: Session, current_user):
     return admin_repository.get_org_members(db, current_user.organization_id)
@@ -85,7 +87,7 @@ def update_org_guideline(db: Session, current_user, guideline_id: int, data: Org
     return guideline
 
 
-def update_org_article(db: Session, current_user, article_id: int, title: str | None = None, visibility: str | None = None):
+def update_org_article(db: Session, article_id: int, title: str | None = None, visibility: str | None = None):
     article = article_repository.get_by_id(db, article_id)
     if not article:
         raise HTTPException(status_code=404, detail="기사를 찾을 수 없습니다.")
@@ -133,21 +135,26 @@ def delete_org_guideline(db: Session, current_user, guideline_id: int):
     admin_repository.delete_record(db, guideline)
     db.commit()
 
-# 수정 필요
+
 def delete_org_article(db: Session, current_user, article_id: int):
-    article = article_repository.get_by_id(db, article_id)
+    article = article_repository.find_article_by_id(article_id)
     if not article:
         raise HTTPException(status_code=404, detail="기사를 찾을 수 없습니다.")
 
-    article_repository.delete_article(article_id, current_user.id)
+    ensure_organization_article(article_id, current_user.organization_id, db)
+
+    conversation = conversation_service.find_conversation_by_article_id(article_id)
+    if conversation is not None:
+        conversation_service.delete_conversation(conversation.id, conversation.user_id)
+    article_repository.delete_article_associations(article_id, db)
     db.commit()
 
 
-def delete_org_member(db: Session, current_user, member_id: int):
-    if current_user.id == member_id:
+def delete_org_member(db: Session, admin_user, member_id: int):
+    if admin_user.id == member_id:
         raise HTTPException(status_code=400, detail="본인 계정은 삭제할 수 없습니다.")
 
-    member = admin_repository.get_org_member(db, current_user.organization_id, member_id)
+    member = admin_repository.get_org_member(db, admin_user.organization_id, member_id)
     if not member:
         raise HTTPException(status_code=404, detail="회원을 찾을 수 없습니다.")
 

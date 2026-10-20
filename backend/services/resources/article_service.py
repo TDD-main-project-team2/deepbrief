@@ -1,8 +1,7 @@
 from sqlalchemy.orm import Session
 from backend.repositories import article_repository
-from backend.app.dependencies import ensure_article_access, _not_found, ensure_owner
-from backend.services.ai import model_service
-from backend.services.rag import rag_service
+from backend.app.dependencies import ensure_article_access, _not_found
+from backend.services.resources import conversation_service
 
 
 def find_article_by_id(article_id):
@@ -51,25 +50,20 @@ def get_article_by_conversation_id(conversation_id, current_user_id, db: Session
     ensure_article_access(article.id, current_user_id, db)
     return article
 
-def delete_article(article_id, current_user_id):
-    article = find_article_by_id(article_id)
-    ensure_owner(article.user_id, current_user_id)
-    deleted = article_repository.delete_article(
-        article_id,
-        current_user_id,
-    )
-
+def delete_article(article_id, current_user_id, db: Session):
+    article = find_article_by_id(article_id)    
+    if article.visibility == "private":
+        ensure_article_access(article_id, current_user_id, db)
+        conversation = conversation_service.find_conversation_by_article_id(article_id)
+        conversation_service.delete_conversation(conversation.id, current_user_id)
+        deleted = article_repository.delete_article_associations(article_id, db)
+    else:
+        deleted = article_repository.delete_article_association(
+            article_id,
+            current_user_id,
+            db
+        )
     if not deleted:
         raise _not_found()
-
-def categorize_article(article_id):
-    article = find_article_by_id(article_id)
-    source = f"{article.title}\n{article.body.split(chr(10) + chr(10))[0]}"
-
-    chunks = rag_service.retrieve_similar_article_chunks(source, article_id, 5)
-    context = rag_service.build_context(chunks)
-
-    category = model_service.generate_category(context)
-    article_repository.update_category(article_id, category)
-
-    return category
+    
+    db.commit()
