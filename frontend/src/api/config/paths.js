@@ -10,6 +10,7 @@ export const API_PATH = {
 
   articles: {
     default: "/articles/",
+    public: "/articles/public",
     detail: (articleId) => `/articles/${articleId}`,
   },
 
