@@ -142,10 +142,6 @@ def delete_org_article(db: Session, current_user, article_id: int):
         raise HTTPException(status_code=404, detail="기사를 찾을 수 없습니다.")
 
     ensure_organization_article(article_id, current_user.organization_id, db)
-
-    conversation = conversation_service.find_conversation_by_article_id(article_id)
-    if conversation is not None:
-        conversation_service.delete_conversation(conversation.id, conversation.user_id)
     article_repository.delete_article_associations(article_id, db)
     db.commit()
 

@@ -54,8 +54,6 @@ def delete_article(article_id, current_user_id, db: Session):
     article = find_article_by_id(article_id)    
     if article.visibility == "private":
         ensure_article_access(article_id, current_user_id, db)
-        conversation = conversation_service.find_conversation_by_article_id(article_id)
-        conversation_service.delete_conversation(conversation.id, current_user_id)
         deleted = article_repository.delete_article_associations(article_id, db)
     else:
         deleted = article_repository.delete_article_association(
