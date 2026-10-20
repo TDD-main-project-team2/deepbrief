@@ -8,8 +8,9 @@ from backend.database.vector.vector_db import vector_db
 from backend.models.article import Article
 from backend.models.article_chunk import ArticleChunk
 from backend.services.ai.embedding_service import embed_documents
-from backend.services.ai.model_service import generate_article_metadata
+from backend.services.ai.model_service import generate_article_metadata, generate_category
 from backend.services.document.document_service import DocumentResult, process_file
+from backend.services.rag import rag_service
 from backend.repositories import article_repository
 
 logger = logging.getLogger(__name__)
@@ -136,3 +137,16 @@ def process_article(
     _embed_and_save_document_chunks(document, article.id)
 
     return article
+
+
+def categorize_article(article_id):
+    article = article_repository.find_article_by_id(article_id)
+    source = f"{article.title}\n{article.body.split(chr(10) + chr(10))[0]}"
+
+    chunks = rag_service.retrieve_similar_article_chunks(source, article_id, 5)
+    context = rag_service.build_context(chunks)
+
+    category = generate_category(context)
+    article_repository.update_category(article_id, category)
+
+    return category

@@ -32,6 +32,10 @@ def find_conversation_by_id(
         )
 
 
+def find_conversation_by_article_id(article_id: int) -> Conversation | None:
+    with SessionLocal() as db:
+        return db.query(Conversation).filter(Conversation.article_id == article_id).first()
+
 def delete_conversation(conversation_id: int) -> None:
     """대화와 해당 대화의 메시지를 함께 삭제한다."""
     with SessionLocal() as db:

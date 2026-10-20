@@ -1,7 +1,6 @@
 from backend.services.document import article_processing_service
 from backend.repositories import (article_repository, conversation_repository, message_repository)
 from backend.app.dependencies import ensure_owner, _not_found
-from backend.services.resources import article_service
 from backend.schemas.conversation import ConversationResponse
 
 
@@ -28,7 +27,7 @@ async def create_conversation(file, title, article_visibility, current_user_id, 
         reprocess=False,
     )
 
-    article_service.categorize_article(article.id)
+    article_processing_service.categorize_article(article.id)
 
     article_repository.add_article_to_user(
         current_user_id,
@@ -49,6 +48,9 @@ def find_conversation_by_id(conversation_id):
     if conversation is None:
         raise _not_found()
     return conversation
+
+def find_conversation_by_article_id(article_id: int):
+    return conversation_repository.find_conversation_by_article_id(article_id)
 
 def find_message_by_id(message_id):
     message = message_repository.find_message_by_id(message_id)

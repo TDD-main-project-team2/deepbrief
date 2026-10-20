@@ -71,23 +71,20 @@ def find_article_by_conversation_id(
             .where(Conversation.id == conversation_id)
         )
 
+def delete_article_association(article_id: int, user_id: int, db: Session) -> bool:
+    user_article = db.get(UserArticle, (user_id, article_id))
 
-def delete_article(article_id: int, user_id: int) -> bool:
-    """사용자와 기사의 연결만 삭제한다.
+    if user_article is None:
+        return False
 
-    기사 본문은 다른 사용자도 사용할 수 있으므로 삭제하지 않는다.
-    연결이 없으면 False를 반환한다.
-    """
-    with SessionLocal() as db:
-        user_article = db.get(UserArticle, (user_id, article_id))
+    db.delete(user_article)
+    return True
 
-        if user_article is None:
-            return False
 
-        db.delete(user_article)
-        db.commit()
-        return True
-
+def delete_article_associations(article_id: int, db: Session) -> bool:
+    deleted = db.query(UserArticle).filter(UserArticle.article_id == article_id).delete()
+    return deleted > 0
+    
 
 def update_category(article_id: int, category: str) -> None:
     """기사의 카테고리를 갱신한다."""

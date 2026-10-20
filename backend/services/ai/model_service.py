@@ -22,10 +22,10 @@ _FINE_TUNING_DIR = _BACKEND_DIR / "fine_tuning"   # 기본 어댑터 위치: fin
 MAX_NEW_TOKENS = {
     "summary": 150,          # 학습 config와 같음
     "answer": 150,           # 학습 config와 같음
-    "formatted_article": 1024,
-    "evaluation_item": 100,
+    "formatted_article": 4096,
+    "evaluation_item": 200,
     "keyword_tags": 100,
-    "titles": 200,
+    "titles": 300,
     "article_ideas": 300,
     "category": 20,
     "article_metadata": 80,
