@@ -24,5 +24,5 @@ def get_article(article_id: int, current_user=Depends(get_current_user), db: Ses
     return article_service.get_article_by_id(article_id, current_user.id, db)
 
 @router.delete("/{article_id}", status_code=204)
-def delete_article(article_id: int, current_user=Depends(get_current_user)):
-    article_service.delete_article(article_id, current_user.id)
+def delete_article(article_id: int, current_user=Depends(get_current_user), db: Session = Depends(get_db)):
+    article_service.delete_article(article_id, current_user.id, db)
