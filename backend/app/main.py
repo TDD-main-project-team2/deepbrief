@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
@@ -7,6 +6,7 @@ from backend.services.auth.auth_service import (
     EmailAlreadyExistsError,
     InvalidCredentialsError,
     InvalidOrganizationCodeError,
+    InvalidAdminCodeError,
 )
 
 app = FastAPI()
@@ -23,6 +23,7 @@ async def email_already_exists_handler(
     )
 
 
+@app.exception_handler(InvalidAdminCodeError)
 @app.exception_handler(InvalidOrganizationCodeError)
 async def invalid_organization_code_handler(
     request: Request,
