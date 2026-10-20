@@ -2,7 +2,6 @@ import "./ArchiveMenuItem.css";
 
 export default function ArchiveMenuItem({
   label,
-  scopeLabel,
   count,
   selected,
   onClick,
@@ -14,7 +13,6 @@ export default function ArchiveMenuItem({
       aria-current={selected ? "page" : undefined}
     >
       {label}
-      <small>{scopeLabel}</small>
       {count != null && <span>{count}</span>}
     </button>
   );
