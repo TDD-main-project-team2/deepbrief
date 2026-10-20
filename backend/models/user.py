@@ -13,7 +13,7 @@ class User(Base):
     )
 
     organization_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("organizations.id"), nullable=False)
-    role: Mapped[Literal["member", "admin"]] = mapped_column(String(255), nullable=False, default="member")
+    role: Mapped[Literal["member", "admin"]] = mapped_column(String(255), nullable=False, default="member", server_default="member")
     nickname: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
