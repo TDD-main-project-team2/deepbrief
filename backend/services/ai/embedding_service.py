@@ -1,8 +1,12 @@
+import os
 from functools import lru_cache
 
+from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 
-MODEL_NAME = "BAAI/bge-m3"
+load_dotenv()
+
+MODEL_NAME = os.environ["EMBEDDING_MODEL"]
 
 @lru_cache(maxsize=1)
 def _get_embedding_model() -> SentenceTransformer:

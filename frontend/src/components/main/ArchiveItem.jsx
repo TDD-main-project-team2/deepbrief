@@ -18,7 +18,9 @@ export default function ArchiveItem({ article, onOpen, onDelete }) {
         <span className="archive-open">열기 ↗</span>
       </button>
 
-      <DeleteButton label={`${article.title} 기사 삭제`} onClick={() => onDelete(article)} />
+      {onDelete && (
+        <DeleteButton label={`${article.title} 기사 삭제`} onClick={() => onDelete(article)} />
+      )}
     </div>
   );
 }

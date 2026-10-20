@@ -10,6 +10,7 @@ export const API_PATH = {
 
   articles: {
     default: "/articles/",
+    public: "/articles/public",
     detail: (articleId) => `/articles/${articleId}`,
   },
 
@@ -29,6 +30,8 @@ export const API_PATH = {
       `/features/conversations/${conversationId}/recommend/title`,
     keyword: (conversationId) =>
       `/features/conversations/${conversationId}/recommend/keyword`,
+    headline: (conversationId) =>
+      `/features/conversations/${conversationId}/recommend/headline`,
     ideas: (conversationId) =>
       `/features/conversations/${conversationId}/recommend/ideas`,
     templates: "/features/templates",

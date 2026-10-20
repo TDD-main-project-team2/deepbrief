@@ -6,6 +6,11 @@ export const getArticleList = async (accessToken) => {
   return response.data;
 };
 
+export const getPublicArticleList = async (accessToken) => {
+  const response = await apiClient.get(API_PATH.articles.public, authConfig(accessToken));
+  return response.data;
+};
+
 export const getArticle = async ({ articleId }, accessToken) => {
   const response = await apiClient.get(
     API_PATH.articles.detail(articleId),

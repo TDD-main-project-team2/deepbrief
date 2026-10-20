@@ -9,16 +9,21 @@ import ArticlePanel from "../components/main/ArticlePanel.jsx";
 import ChatPanel from "../components/main/ChatPanel.jsx";
 import Archive from "../components/main/Archive.jsx";
 import ArchivePreview from "../components/main/ArchivePreview.jsx";
+import ErrorNotice from "../components/ErrorNotice.jsx";
+import LoadingNotice from "../components/LoadingNotice.jsx";
 
 import useFilePreview from "../hooks/useFilePreview.js";
-import { createConversation, getConversationList, getConversation } from "../api/conversations.js";
-import { getArticle, getArticleList } from "../api/articles.js";
+import useConversationWithFile from "../hooks/useConversationWithFile.js";
+import useConversationMessages from "../hooks/useConversationMessages.js";
+
+import { getConversationList, getConversation } from "../api/conversations.js";
+import { getArticle, getArticleList, getPublicArticleList } from "../api/articles.js";
 import { getAccessToken } from "../utils/tokenStorage.js";
 import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
 
 export default function MainPage({ user, onLogout }) {
   const viewVersion = useRef(0); // 업로드를 기다리는 동안 사용자가 다른 화면으로 이동했는지 확인하는 값
-  const pendingUploads = useRef(new WeakMap()); // 보통 같은 파일로 요청이 중복 실행되는 걸 막는 값
+  const createConversationWithFile = useConversationWithFile();
 
   const [uploadSession, setUploadSession] = useState(0);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -26,6 +31,7 @@ export default function MainPage({ user, onLogout }) {
   const [view, setView] = useState("chat");
   const [archiveView, setArchiveView] = useState("private");
   const [articles, setArticles] = useState([]);
+  const [publicArticles, setPublicArticles] = useState([]);
   const [conversations, setConversations] = useState([]);
   const [visibility, setVisibility] = useState("private");
   const [menuOpen, setMenuOpen] = useState(true);
@@ -39,9 +45,10 @@ export default function MainPage({ user, onLogout }) {
 
     async function loadHistory() {
       try {
-        const [articleResult, conversationResult] = await Promise.all([
+        const [articleResult, conversationResult, publicResult] = await Promise.all([
           getArticleList(),
           getConversationList(),
+          getPublicArticleList(),
         ]);
 
         if (cancelled || getAccessToken() !== token) return;
@@ -52,6 +59,7 @@ export default function MainPage({ user, onLogout }) {
             current,
           ),
         );
+        setPublicArticles(publicResult.articles.map((item) => toArticleView(item)));
         setConversations((current) =>
           mergeHistory(conversationResult.map(toConversationView), current),
         );
@@ -86,24 +94,14 @@ export default function MainPage({ user, onLogout }) {
   const hasActiveConversation = Boolean(activeConversation);
   const messages = activeConversation?.messages || [];
 
-  function sendMessage(messageText) {
-    if (!messageText.trim() || !activeConversation) return;
-
-    const message = {
-      question: messageText,
-      answer: `“${messageText}” 요청을 받았습니다.\n\n@@@@ 여기에 결과 넣기 @@@@`,
-    };
-
-    setConversations((conversations) =>
-      conversations.map((conversation) =>
-        conversation.id === activeConversationId
-          ? { ...conversation, messages: [...conversation.messages, message] }
-          : conversation,
-      ),
-    );
-  }
+  const { sendMessage, isConversationPending } = useConversationMessages({
+    activeConversation,
+    setConversations,
+    onLogout,
+  });
 
   async function openChat(conversation) {
+    const messagesBeforeLoad = conversation.messages;
     const version = ++viewVersion.current;
     const token = getAccessToken();
 
@@ -120,7 +118,15 @@ export default function MainPage({ user, onLogout }) {
 
       const restored = toConversationView(detail);
 
-      setConversations((items) => items.map((item) => (item.id === restored.id ? restored : item)));
+      setConversations((items) =>
+        items.map((item) =>
+          item.id === restored.id
+            ? isConversationPending(item.id) || item.messages !== messagesBeforeLoad
+              ? { ...restored, messages: item.messages }
+              : restored
+            : item,
+        ),
+      );
       setActiveConversationId(restored.id);
       changeFile(article.file);
       setVisibility(article.visibility);
@@ -146,27 +152,18 @@ export default function MainPage({ user, onLogout }) {
     const version = viewVersion.current;
 
     try {
-      // 기사 조회만 실패했다면 이미 생성한 대화를 다시 사용합니다.
-      let result = pendingUploads.current.get(uploadedFile);
+      const result = await createConversationWithFile({
+        file: uploadedFile,
+        visibility: uploadedVisibility,
+      });
+      if (!result) return;
 
-      if (!result) {
-        result = await createConversation({
-          file: uploadedFile,
-          title: uploadedFile.name.trim().slice(0, 255),
-          visibility: uploadedVisibility,
-        });
-        pendingUploads.current.set(uploadedFile, result);
-      }
-
-      const articleData = await getArticle({ articleId: result.article_id });
-
-      if (getAccessToken() !== token) return;
-      pendingUploads.current.delete(uploadedFile);
-
-      const article = toArticleView(articleData, uploadedFile);
-      const conversation = toConversationView(result);
+      const { article, conversation } = result;
 
       setArticles((items) => [...items.filter((item) => item.id !== article.id), article]);
+      if (article.visibility === "public") {
+        setPublicArticles((items) => mergeHistory(items, [article]));
+      }
       setConversations((items) => [
         ...items.filter((item) => item.id !== conversation.id),
         conversation,
@@ -242,6 +239,7 @@ export default function MainPage({ user, onLogout }) {
     setMenuOpen,
     onStartNewConversation: startNewConversation,
     articles,
+    publicArticleCount: publicArticles.length,
     view,
     activeConversationId,
     conversations,
@@ -259,7 +257,7 @@ export default function MainPage({ user, onLogout }) {
     previewText,
     previewError,
     setPreviewError,
-    article: articles.find(
+    article: (view === "article" && archiveView === "public" ? publicArticles : articles).find(
       (article) => article.id === (view === "article" ? articleId : activeConversation?.articleId),
     ),
   };
@@ -269,20 +267,17 @@ export default function MainPage({ user, onLogout }) {
       <SideMenu {...sideMenuProps} />
 
       <div className="main">
-        {loadingHistory && (
-          <p className="history-feedback" role="status">
-            목록을 불러오는 중...
-          </p>
+        {loadingHistory && !historyError && (
+          <LoadingNotice className="history-feedback">목록을 불러오는 중...</LoadingNotice>
         )}
 
-        {historyError && (
-          <div className="history-feedback" role="alert">
-            <span>{historyError}</span>
-            <button type="button" onClick={retryHistory}>
-              목록 다시 불러오기
-            </button>
-          </div>
-        )}
+        <ErrorNotice
+          className="history-feedback"
+          onRetry={retryHistory}
+          retryLabel="목록 다시 불러오기"
+        >
+          {historyError}
+        </ErrorNotice>
 
         {view === "article" && (
           <main className="article-detail-main split-main">
@@ -294,7 +289,7 @@ export default function MainPage({ user, onLogout }) {
           <main className="archive-main">
             <Archive
               view={view}
-              articles={articles}
+              articles={view === "public" ? publicArticles : articles}
               openArticle={openArticle}
               onDeleteArticle={deleteArticle}
             />
@@ -308,6 +303,7 @@ export default function MainPage({ user, onLogout }) {
               <ChatPanel
                 key={activeConversationId}
                 messages={messages}
+                isSending={messages.some((message) => message.pending)}
                 onSendMessage={sendMessage}
               />
             </main>

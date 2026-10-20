@@ -3,25 +3,34 @@ import { useEffect, useRef, useState } from "react";
 import "./ChatPanel.css";
 import Icons from "../Icons.jsx";
 
-const actions = {
-  Edit: ["스트레이트로 다듬기", "기획·해설로 다듬기", "인터뷰 형식으로 다듬기"],
+const toolButtonLabels = {
+  Edit: ["템플릿에 맞춰 다듬기"],
   Review: ["중복·유사 기사 검사", "회사 지침으로 평가"],
-  Recommend: ["키워드·태그 추천", "제목·부제목 추천", "후속 기사 아이디어"],
+  Recommend: ["키워드·태그", "제목·부제목", "헤드라인", "후속 기사 아이디어"],
 };
 
-export default function ChatPanel({ messages, onSendMessage }) {
+const editActions = { "템플릿에 맞춰 다듬기": "format" };
+const reviewActions = { "중복·유사 기사 검사": "duplicate", "회사 지침으로 평가": "evaluation" };
+const recommendActions = {
+  "키워드·태그": "keywords",
+  "제목·부제목": "title",
+  "헤드라인": "headline",
+  "후속 기사 아이디어": "ideas",
+};
+
+export default function ChatPanel({ messages, onSendMessage, isSending = false }) {
   const [text, setText] = useState("");
   const [tool, setTool] = useState("Edit");
 
-  function sendMessage(messageText = text) {
-    if (!messageText.trim()) return;
-    onSendMessage(messageText);
+  function sendMessage(messageText = text, action) {
+    if (!messageText.trim() || isSending) return;
+    onSendMessage(messageText, action);
     setText("");
   }
 
   const messageArea = useRef(null);
-  const toolNames = Object.keys(actions);
-  const suggestions = actions[tool] || actions.Edit;
+  const toolNames = Object.keys(toolButtonLabels);
+  const suggestions = toolButtonLabels[tool] || toolButtonLabels.Edit;
 
   useEffect(() => {
     const area = messageArea.current;
@@ -62,14 +71,20 @@ export default function ChatPanel({ messages, onSendMessage }) {
               <div className="message-pair" key={messageIndex}>
                 {message.question && <div className="user-message">{message.question}</div>}
 
-                {message.answer && (
+                {(message.pending || message.error || message.answer) && (
                   <div className="assistant-message">
                     <span className="assistant-avatar">
                       <Icons type="spark" />
                     </span>
                     <div>
                       <strong>DeepBrief</strong>
-                      <p>{message.answer}</p>
+                      {message.pending ? (
+                        <p role="status">{message.pendingText || "요청을 처리하고 있습니다..."}</p>
+                      ) : message.error ? (
+                        <p role="alert">{message.error}</p>
+                      ) : (
+                        <p>{message.answer}</p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -94,7 +109,20 @@ export default function ChatPanel({ messages, onSendMessage }) {
 
             <div className="quick-actions">
               {suggestions.map((suggestion) => (
-                <button key={suggestion} onClick={() => sendMessage(suggestion)}>
+                <button
+                  key={suggestion}
+                  disabled={isSending}
+                  onClick={() =>
+                    sendMessage(
+                      suggestion,
+                      tool === "Edit"
+                        ? editActions[suggestion]
+                        : tool === "Review"
+                          ? reviewActions[suggestion]
+                          : recommendActions[suggestion],
+                    )
+                  }
+                >
                   {suggestion}
                   <span>↗</span>
                 </button>
@@ -120,7 +148,11 @@ export default function ChatPanel({ messages, onSendMessage }) {
                 }}
               />
 
-              <button className="primary send" aria-label="메시지 보내기" disabled={!text.trim()}>
+              <button
+                className="primary send"
+                aria-label="메시지 보내기"
+                disabled={isSending || !text.trim()}
+              >
                 <Icons type="arrow" />
               </button>
             </form>

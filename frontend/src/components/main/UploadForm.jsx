@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 
 import "./UploadForm.css";
 import Icons from "../Icons.jsx";
+import ErrorNotice from "../ErrorNotice.jsx";
 
 export default function UploadForm({ onStartConversationWithFile }) {
   const input = useRef(null);
@@ -19,8 +20,8 @@ export default function UploadForm({ onStartConversationWithFile }) {
       setError("PDF, PNG, JPG, JPEG, TXT 또는 MD 파일을 선택해주세요.");
       return;
     }
-    if (selectedFile.size > 10 * 1024 * 1024) {
-      setError("10MB 이하의 파일을 선택해주세요.");
+    if (selectedFile.size > 20 * 1024 * 1024) {
+      setError("20MB 이하의 파일을 선택해주세요.");
       return;
     }
 
@@ -101,7 +102,7 @@ export default function UploadForm({ onStartConversationWithFile }) {
               >
                 파일 선택
               </button>
-              <small>PDF · PNG · JPG · JPEG · TXT · MD / 최대 10MB</small>
+              <small>PDF · PNG · JPG · JPEG · TXT · MD / 최대 20MB</small>
             </>
           )}
         </div>
@@ -116,11 +117,7 @@ export default function UploadForm({ onStartConversationWithFile }) {
           onChange={(event) => select(event.target.files[0])}
         />
 
-        {error && (
-          <p className="error" role="alert">
-            {error}
-          </p>
-        )}
+        <ErrorNotice className="upload-error">{error}</ErrorNotice>
 
         <fieldset className="visibility-options" disabled={submitting}>
           <legend>문서 공개 범위</legend>

@@ -6,10 +6,14 @@ from contextlib import nullcontext
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 
 # ── 설정 ─────────────────────────────────────────────
 
-BASE_MODEL = "Qwen/Qwen3-1.7B"
+load_dotenv()
+
+BASE_MODEL = os.environ["BASE_MODEL"]
 
 # 어댑터 위치: 환경 변수(.env) SUMMARY_ADAPTER_PATH, QA_ADAPTER_PATH가 있으면 그걸 쓰고, 없으면 기본 폴더
 _BACKEND_DIR = Path(__file__).resolve().parents[2]
