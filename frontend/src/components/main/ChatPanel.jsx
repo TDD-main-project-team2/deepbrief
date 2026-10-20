@@ -14,6 +14,7 @@ const reviewActions = { "중복·유사 기사 검사": "duplicate", "회사 지
 const recommendActions = {
   "키워드·태그": "keywords",
   "제목·부제목": "title",
+  "헤드라인": "headline",
   "후속 기사 아이디어": "ideas",
 };
 
@@ -110,12 +111,7 @@ export default function ChatPanel({ messages, onSendMessage, isSending = false }
               {suggestions.map((suggestion) => (
                 <button
                   key={suggestion}
-                  disabled={isSending || (tool === "Recommend" && !recommendActions[suggestion])}
-                  title={
-                    tool === "Recommend" && !recommendActions[suggestion]
-                      ? "헤드라인 추천은 준비 중입니다."
-                      : undefined
-                  }
+                  disabled={isSending}
                   onClick={() =>
                     sendMessage(
                       suggestion,
@@ -128,7 +124,6 @@ export default function ChatPanel({ messages, onSendMessage, isSending = false }
                   }
                 >
                   {suggestion}
-                  {tool === "Recommend" && !recommendActions[suggestion] ? " (준비 중)" : ""}
                   <span>↗</span>
                 </button>
               ))}

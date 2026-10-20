@@ -6,6 +6,7 @@ import {
   recommendKeywords,
   recommendTitle,
   recommendIdeas,
+  extractHeadline,
 } from "../api/features.js";
 
 export const chatFeatureConfig = {
@@ -15,5 +16,6 @@ export const chatFeatureConfig = {
   evaluation: { api: evaluateArticle, pendingText: "기사를 검토하고 있습니다..." },
   keywords: { api: recommendKeywords, pendingText: "추천 내용을 생성하고 있습니다..." },
   title: { api: recommendTitle, pendingText: "추천 내용을 생성하고 있습니다..." },
+  headline: { api: extractHeadline, pendingText: "헤드라인을 추출하고 있습니다..." },
   ideas: { api: recommendIdeas, pendingText: "추천 내용을 생성하고 있습니다..." },
 };

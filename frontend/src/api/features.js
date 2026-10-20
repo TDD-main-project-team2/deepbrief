@@ -75,3 +75,12 @@ export const getTemplateList = async (accessToken) => {
   const response = await apiClient.get(API_PATH.features.templates, authConfig(accessToken));
   return response.data;
 };
+
+export const extractHeadline = async ({ conversationId, content }, accessToken) => {
+  const response = await apiClient.post(
+    API_PATH.features.headline(conversationId),
+    { content },
+    authConfig(accessToken),
+  );
+  return response.data;
+};
