@@ -13,7 +13,7 @@ import ErrorNotice from "../components/ErrorNotice.jsx";
 import LoadingNotice from "../components/LoadingNotice.jsx";
 
 import useFilePreview from "../hooks/useFilePreview.js";
-import useConversationUpload from "../hooks/useConversationUpload.js";
+import useConversationWithFile from "../hooks/useConversationWithFile.js";
 import useConversationMessages from "../hooks/useConversationMessages.js";
 
 import { getConversationList, getConversation } from "../api/conversations.js";
@@ -23,7 +23,7 @@ import { toArticleView, toConversationView, mergeHistory } from "../utils/histor
 
 export default function MainPage({ user, onLogout }) {
   const viewVersion = useRef(0); // 업로드를 기다리는 동안 사용자가 다른 화면으로 이동했는지 확인하는 값
-  const uploadConversation = useConversationUpload();
+  const createConversationWithFile = useConversationWithFile();
 
   const [uploadSession, setUploadSession] = useState(0);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -149,7 +149,7 @@ export default function MainPage({ user, onLogout }) {
     const version = viewVersion.current;
 
     try {
-      const result = await uploadConversation({
+      const result = await createConversationWithFile({
         file: uploadedFile,
         visibility: uploadedVisibility,
       });
