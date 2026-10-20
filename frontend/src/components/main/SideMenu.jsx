@@ -115,14 +115,12 @@ export default function SideMenu({
               <div className="article-submenus">
                 <ArchiveMenuItem
                   label="내 기사"
-                  scopeLabel="전체"
                   count={articles.length}
                   selected={view === "private"}
                   onClick={() => setView("private")}
                 />
                 <ArchiveMenuItem
                   label="사내 기사"
-                  scopeLabel="조직 공개"
                   count={publicArticleCount}
                   selected={view === "public"}
                   onClick={() => setView("public")}
