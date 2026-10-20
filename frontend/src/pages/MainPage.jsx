@@ -18,7 +18,7 @@ import useConversationMessages from "../hooks/useConversationMessages.js";
 
 import { getConversationList, getConversation } from "../api/conversations.js";
 import { getArticle, getArticleList, getPublicArticleList } from "../api/articles.js";
-import { getAccessToken } from "../utils/tokenStorage.js";
+import { getAuthSessionVersion } from "../utils/tokenStorage.js";
 import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
 
 export default function MainPage({ user, onLogout }) {
@@ -41,7 +41,7 @@ export default function MainPage({ user, onLogout }) {
 
   useEffect(() => {
     let cancelled = false;
-    const token = getAccessToken();
+    const requestSessionVersion = getAuthSessionVersion();
 
     async function loadHistory() {
       try {
@@ -51,7 +51,7 @@ export default function MainPage({ user, onLogout }) {
           getPublicArticleList(),
         ]);
 
-        if (cancelled || getAccessToken() !== token) return;
+        if (cancelled || getAuthSessionVersion() !== requestSessionVersion) return;
 
         setArticles((current) =>
           mergeHistory(
@@ -64,7 +64,7 @@ export default function MainPage({ user, onLogout }) {
           mergeHistory(conversationResult.map(toConversationView), current),
         );
       } catch (error) {
-        if (cancelled || getAccessToken() !== token) return;
+        if (cancelled || getAuthSessionVersion() !== requestSessionVersion) return;
         if (error.response?.status === 401) void onLogout();
         else setHistoryError("기사·대화 목록을 불러오지 못했습니다. 다시 시도해주세요.");
       } finally {
@@ -103,7 +103,7 @@ export default function MainPage({ user, onLogout }) {
   async function openChat(conversation) {
     const messagesBeforeLoad = conversation.messages;
     const version = ++viewVersion.current;
-    const token = getAccessToken();
+    const requestSessionVersion = getAuthSessionVersion();
 
     setHistoryError("");
 
@@ -113,7 +113,8 @@ export default function MainPage({ user, onLogout }) {
       const article =
         cachedArticle ?? toArticleView(await getArticle({ articleId: detail.article_id }));
 
-      if (version !== viewVersion.current || getAccessToken() !== token) return;
+      if (version !== viewVersion.current || getAuthSessionVersion() !== requestSessionVersion)
+        return;
       if (!cachedArticle) setArticles((items) => mergeHistory(items, [article]));
 
       const restored = toConversationView(detail);
@@ -132,7 +133,8 @@ export default function MainPage({ user, onLogout }) {
       setVisibility(article.visibility);
       setView("chat");
     } catch (error) {
-      if (version !== viewVersion.current || getAccessToken() !== token) return;
+      if (version !== viewVersion.current || getAuthSessionVersion() !== requestSessionVersion)
+        return;
       if (error.response?.status === 401) void onLogout();
       else setHistoryError("대화를 불러오지 못했습니다. 대화를 다시 선택해주세요.");
     }
@@ -148,7 +150,7 @@ export default function MainPage({ user, onLogout }) {
   }
 
   async function startConversationWithFile({ file: uploadedFile, visibility: uploadedVisibility }) {
-    const token = getAccessToken();
+    const requestSessionVersion = getAuthSessionVersion();
     const version = viewVersion.current;
 
     try {
@@ -176,7 +178,7 @@ export default function MainPage({ user, onLogout }) {
       setVisibility(article.visibility);
       setView("chat");
     } catch (error) {
-      if (error.response?.status === 401 && getAccessToken() === token) {
+      if (error.response?.status === 401 && getAuthSessionVersion() === requestSessionVersion) {
         void onLogout();
         return;
       }

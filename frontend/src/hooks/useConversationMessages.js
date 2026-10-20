@@ -5,7 +5,7 @@ import {
   appendConversationMessage,
   updateConversationMessage,
 } from "../utils/conversationMessages.js";
-import { getAccessToken } from "../utils/tokenStorage.js";
+import { getAccessToken, getAuthSessionVersion } from "../utils/tokenStorage.js";
 
 export default function useConversationMessages({
   activeConversation,
@@ -22,6 +22,7 @@ export default function useConversationMessages({
     if (featureApi && activeConversation && messageText.trim()) {
       const conversationId = activeConversation.id;
       const token = getAccessToken();
+      const requestSessionVersion = getAuthSessionVersion();
       const requestId = crypto.randomUUID();
 
       pendingFeatures.current.add(conversationId);
@@ -44,7 +45,7 @@ export default function useConversationMessages({
       try {
         const response = await featureApi({ conversationId, content: messageText.trim() }, token);
 
-        if (getAccessToken() !== token) return;
+        if (getAuthSessionVersion() !== requestSessionVersion) return;
         if (typeof response?.content !== "string" || !response.content.trim()) {
           throw new Error("Empty feature response");
         }
@@ -54,7 +55,7 @@ export default function useConversationMessages({
           pending: false,
         });
       } catch (error) {
-        if (getAccessToken() !== token) return;
+        if (getAuthSessionVersion() !== requestSessionVersion) return;
 
         updateMessage({
           pending: false,

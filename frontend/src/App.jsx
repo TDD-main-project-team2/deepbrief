@@ -10,7 +10,13 @@ import AdminRoute from "./AdminRoute.jsx";
 
 import { getCurrentUser } from "./api/users.js";
 import { logoutUser } from "./api/auth.js";
-import { getAccessToken, getRefreshToken, saveTokens, removeTokens } from "./utils/tokenStorage.js";
+import {
+  getAccessToken,
+  getAuthSessionVersion,
+  getRefreshToken,
+  saveTokens,
+  removeTokens,
+} from "./utils/tokenStorage.js";
 
 export default function App() {
   const [session, setSession] = useState(null);
@@ -18,6 +24,7 @@ export default function App() {
 
   useEffect(() => {
     const accessToken = getAccessToken();
+    const requestSessionVersion = getAuthSessionVersion();
     if (!accessToken) return;
 
     let cancelled = false;
@@ -25,11 +32,15 @@ export default function App() {
     async function loadUser() {
       try {
         const user = await getCurrentUser(accessToken);
-        if (!cancelled && getAccessToken() === accessToken) {
+        if (!cancelled && getAuthSessionVersion() === requestSessionVersion) {
           setSession({ user });
         }
       } catch (error) {
-        if (!cancelled && getAccessToken() === accessToken && error.response?.status === 401) {
+        if (
+          !cancelled &&
+          getAuthSessionVersion() === requestSessionVersion &&
+          error.response?.status === 401
+        ) {
           removeTokens();
         }
       } finally {
@@ -42,6 +53,15 @@ export default function App() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    function handleExpiredSession() {
+      setSession(null);
+      setRestoringSession(false);
+    }
+    window.addEventListener("auth:expired", handleExpiredSession);
+    return () => window.removeEventListener("auth:expired", handleExpiredSession);
   }, []);
 
   function handleLogin(session) {
@@ -84,7 +104,7 @@ export default function App() {
         path="/admin"
         element={
           <AdminRoute user={session?.user} loading={restoringSession}>
-            <AdminPage key={session?.user?.id} user={session?.user} onLogout={handleLogout}/>
+            <AdminPage key={session?.user?.id} user={session?.user} onLogout={handleLogout} />
           </AdminRoute>
         }
       />
