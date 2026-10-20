@@ -5,6 +5,7 @@ import AuthLayout from "../components/auth/AuthLayout.jsx";
 import AuthInput from "../components/auth/AuthInput.jsx";
 import PasswordInput from "../components/auth/PasswordInput.jsx";
 import AuthError from "../components/auth/AuthError.jsx";
+import LoadingDots from "../components/feedback/LoadingDots.jsx";
 import "./SignupPage.css";
 
 import useAuthValidation, {
@@ -130,12 +131,8 @@ export default function SignupPage() {
 
         <AuthError variant="form">{error}</AuthError>
 
-        <button
-          className="primary signup-submit"
-          type="submit"
-          disabled={!canSubmit || submitting}
-        >
-          {submitting ? "가입 중..." : "회원가입"}
+        <button className="primary signup-submit" type="submit" disabled={!canSubmit || submitting}>
+          {submitting ? <LoadingDots>가입 중</LoadingDots> : "회원가입"}
         </button>
       </form>
     </AuthLayout>

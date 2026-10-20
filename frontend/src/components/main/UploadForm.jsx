@@ -1,8 +1,9 @@
+import LoadingDots from "../feedback/LoadingDots.jsx";
 import { useRef, useState } from "react";
 
 import "./UploadForm.css";
 import Icons from "../Icons.jsx";
-import ErrorNotice from "../ErrorNotice.jsx";
+import ErrorNotice from "../feedback/ErrorNotice.jsx";
 
 export default function UploadForm({ onStartConversationWithFile }) {
   const input = useRef(null);
@@ -162,8 +163,7 @@ export default function UploadForm({ onStartConversationWithFile }) {
           disabled={!file || submitting}
           onClick={startConversationWithFile}
         >
-          {submitting ? "파일 처리 중..." : "이 파일로 대화 시작"}
-          <Icons type="arrow" />
+          {submitting ? <LoadingDots>파일 처리 중</LoadingDots> : "이 파일로 대화 시작"}
         </button>
       </section>
     </>

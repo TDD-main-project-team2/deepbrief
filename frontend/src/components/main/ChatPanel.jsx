@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import "./ChatPanel.css";
 import Icons from "../Icons.jsx";
+import LoadingDots from "../feedback/LoadingDots.jsx";
 
 const toolButtonLabels = {
   Edit: ["템플릿에 맞춰 다듬기"],
@@ -14,7 +15,7 @@ const reviewActions = { "중복·유사 기사 검사": "duplicate", "회사 지
 const recommendActions = {
   "키워드·태그": "keywords",
   "제목·부제목": "title",
-  "헤드라인": "headline",
+  헤드라인: "headline",
   "후속 기사 아이디어": "ideas",
 };
 
@@ -79,7 +80,11 @@ export default function ChatPanel({ messages, onSendMessage, isSending = false }
                     <div>
                       <strong>DeepBrief</strong>
                       {message.pending ? (
-                        <p role="status">{message.pendingText || "요청을 처리하고 있습니다..."}</p>
+                        <p role="status">
+                          <LoadingDots>
+                            {message.pendingText || "요청을 처리하고 있습니다"}
+                          </LoadingDots>
+                        </p>
                       ) : message.error ? (
                         <p role="alert">{message.error}</p>
                       ) : (

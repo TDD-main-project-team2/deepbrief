@@ -1,5 +1,5 @@
 import { Navigate } from "react-router";
-import LoadingNotice from "./components/LoadingNotice.jsx";
+import LoadingNotice from "./components/feedback/LoadingNotice.jsx";
 import brandIcon from "./assets/svg/icon-gradient.svg";
 import "./ProtectedRoute.css";
 
@@ -18,7 +18,7 @@ export default function ProtectedRoute({ user, loading, children }) {
           <section className="session-loading-card">
             <p className="headingCaption">WELCOME BACK</p>
             <h1 id="session-loading-title">잠시만 기다려주세요</h1>
-            <LoadingNotice>로그인 확인 중...</LoadingNotice>
+            <LoadingNotice>로그인 확인 중</LoadingNotice>
           </section>
         </main>
       </div>

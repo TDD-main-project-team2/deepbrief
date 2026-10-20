@@ -35,6 +35,10 @@ class InvalidOrganizationCodeError(AuthError):
     """등록되지 않은 조직 코드."""
 
 
+class InvalidAdminCodeError(AuthError):
+    """소속 조직의 관리자 코드와 일치하지 않음."""
+
+
 def _is_email_unique_violation(exc: IntegrityError) -> bool:
     """PostgreSQL에서 이메일 UNIQUE 제약조건 위반인지 확인한다."""
     original_error = exc.orig
@@ -61,7 +65,9 @@ def register_user(db: Session, data: UserCreate) -> UserResponse:
         if organization is None:
             raise InvalidOrganizationCodeError("유효하지 않은 조직 코드입니다.")
 
-        if data.admin_code and organization.admin_code and data.admin_code == organization.admin_code:
+        if data.admin_code and data.admin_code.strip():
+            if not organization.admin_code or data.admin_code != organization.admin_code:
+                raise InvalidAdminCodeError("유효하지 않은 관리자 코드입니다.")
             role = "admin"
         else:
             role = "member"

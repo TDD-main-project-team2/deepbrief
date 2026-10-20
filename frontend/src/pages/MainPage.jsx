@@ -9,20 +9,30 @@ import ArticlePanel from "../components/main/ArticlePanel.jsx";
 import ChatPanel from "../components/main/ChatPanel.jsx";
 import Archive from "../components/main/Archive.jsx";
 import ArchivePreview from "../components/main/ArchivePreview.jsx";
-import ErrorNotice from "../components/ErrorNotice.jsx";
-import LoadingNotice from "../components/LoadingNotice.jsx";
+import ErrorNotice from "../components/feedback/ErrorNotice.jsx";
+import LoadingNotice from "../components/feedback/LoadingNotice.jsx";
 
 import useFilePreview from "../hooks/useFilePreview.js";
 import useConversationWithFile from "../hooks/useConversationWithFile.js";
 import useConversationMessages from "../hooks/useConversationMessages.js";
 
-import { getConversationList, getConversation } from "../api/conversations.js";
-import { getArticle, getArticleList, getPublicArticleList } from "../api/articles.js";
-import { getAccessToken } from "../utils/tokenStorage.js";
+import {
+  getConversationList,
+  getConversation,
+  deleteConversation as deleteConversationRequest,
+} from "../api/conversations.js";
+import {
+  getArticle,
+  getArticleList,
+  getPublicArticleList,
+  deleteArticle as deleteArticleRequest,
+} from "../api/articles.js";
+import { getAuthSessionVersion } from "../utils/tokenStorage.js";
 import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
 
 export default function MainPage({ user, onLogout }) {
   const viewVersion = useRef(0); // 업로드를 기다리는 동안 사용자가 다른 화면으로 이동했는지 확인하는 값
+  const deleting = useRef(false);
   const createConversationWithFile = useConversationWithFile();
 
   const [uploadSession, setUploadSession] = useState(0);
@@ -37,11 +47,12 @@ export default function MainPage({ user, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(true);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
   const [historyReload, setHistoryReload] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-    const token = getAccessToken();
+    const requestSessionVersion = getAuthSessionVersion();
 
     async function loadHistory() {
       try {
@@ -51,7 +62,7 @@ export default function MainPage({ user, onLogout }) {
           getPublicArticleList(),
         ]);
 
-        if (cancelled || getAccessToken() !== token) return;
+        if (cancelled || getAuthSessionVersion() !== requestSessionVersion) return;
 
         setArticles((current) =>
           mergeHistory(
@@ -64,7 +75,7 @@ export default function MainPage({ user, onLogout }) {
           mergeHistory(conversationResult.map(toConversationView), current),
         );
       } catch (error) {
-        if (cancelled || getAccessToken() !== token) return;
+        if (cancelled || getAuthSessionVersion() !== requestSessionVersion) return;
         if (error.response?.status === 401) void onLogout();
         else setHistoryError("기사·대화 목록을 불러오지 못했습니다. 다시 시도해주세요.");
       } finally {
@@ -103,7 +114,7 @@ export default function MainPage({ user, onLogout }) {
   async function openChat(conversation) {
     const messagesBeforeLoad = conversation.messages;
     const version = ++viewVersion.current;
-    const token = getAccessToken();
+    const requestSessionVersion = getAuthSessionVersion();
 
     setHistoryError("");
 
@@ -113,7 +124,8 @@ export default function MainPage({ user, onLogout }) {
       const article =
         cachedArticle ?? toArticleView(await getArticle({ articleId: detail.article_id }));
 
-      if (version !== viewVersion.current || getAccessToken() !== token) return;
+      if (version !== viewVersion.current || getAuthSessionVersion() !== requestSessionVersion)
+        return;
       if (!cachedArticle) setArticles((items) => mergeHistory(items, [article]));
 
       const restored = toConversationView(detail);
@@ -132,7 +144,8 @@ export default function MainPage({ user, onLogout }) {
       setVisibility(article.visibility);
       setView("chat");
     } catch (error) {
-      if (version !== viewVersion.current || getAccessToken() !== token) return;
+      if (version !== viewVersion.current || getAuthSessionVersion() !== requestSessionVersion)
+        return;
       if (error.response?.status === 401) void onLogout();
       else setHistoryError("대화를 불러오지 못했습니다. 대화를 다시 선택해주세요.");
     }
@@ -148,7 +161,7 @@ export default function MainPage({ user, onLogout }) {
   }
 
   async function startConversationWithFile({ file: uploadedFile, visibility: uploadedVisibility }) {
-    const token = getAccessToken();
+    const requestSessionVersion = getAuthSessionVersion();
     const version = viewVersion.current;
 
     try {
@@ -176,7 +189,7 @@ export default function MainPage({ user, onLogout }) {
       setVisibility(article.visibility);
       setView("chat");
     } catch (error) {
-      if (error.response?.status === 401 && getAccessToken() === token) {
+      if (error.response?.status === 401 && getAuthSessionVersion() === requestSessionVersion) {
         void onLogout();
         return;
       }
@@ -194,38 +207,75 @@ export default function MainPage({ user, onLogout }) {
     setUploadSession((session) => session + 1);
   }
 
-  function deleteConversation(conversation) {
-    if (!window.confirm("이 대화를 삭제할까요? 기사 파일은 보관함에 유지됩니다.")) return;
+  async function deleteConversation(conversation) {
+    if (
+      deleting.current ||
+      !window.confirm("이 대화를 삭제할까요? 기사 파일은 보관함에 유지됩니다.")
+    )
+      return;
 
-    setConversations((conversations) =>
-      conversations.filter((existingConversation) => existingConversation.id !== conversation.id),
-    );
+    const requestSessionVersion = getAuthSessionVersion();
+    const version = viewVersion.current;
 
-    if (activeConversationId === conversation.id) {
-      if (view === "chat") startNewConversation();
-      else setActiveConversationId(null);
+    deleting.current = true;
+    setDeleteError("");
+
+    try {
+      await deleteConversationRequest({ conversationId: conversation.id });
+      if (getAuthSessionVersion() !== requestSessionVersion) return;
+
+      setConversations((items) => items.filter((item) => item.id !== conversation.id));
+      if (version === viewVersion.current && activeConversationId === conversation.id) {
+        if (view === "chat") startNewConversation();
+        else setActiveConversationId(null);
+      }
+    } catch (error) {
+      if (getAuthSessionVersion() !== requestSessionVersion) return;
+      if (error.response?.status === 401) void onLogout();
+      else setDeleteError("대화를 삭제하지 못했습니다. 다시 시도해주세요.");
+    } finally {
+      deleting.current = false;
     }
   }
 
-  function deleteArticle(article) {
-    if (!window.confirm("이 기사를 삭제할까요? 연결된 대화 기록도 함께 삭제됩니다.")) return;
+  async function deleteArticle(article) {
+    const confirmation =
+      article.visibility === "public"
+        ? "내 보관함에서 이 기사를 제거할까요? 공개 기사는 사내 보관함에 유지됩니다."
+        : "이 기사를 삭제할까요? 연결된 대화 기록도 함께 삭제됩니다.";
+    if (deleting.current || !window.confirm(confirmation)) return;
+    const requestSessionVersion = getAuthSessionVersion();
+    const version = viewVersion.current;
+    deleting.current = true;
+    setDeleteError("");
 
-    const deletesActiveConversation = activeConversation?.articleId === article.id;
-    const deletesOpenArticle = view === "article" && articleId === article.id;
+    try {
+      await deleteArticleRequest({ articleId: article.id });
+      if (getAuthSessionVersion() !== requestSessionVersion) return;
 
-    setArticles((articles) =>
-      articles.filter((existingArticle) => existingArticle.id !== article.id),
-    );
-    setConversations((conversations) =>
-      conversations.filter((conversation) => conversation.articleId !== article.id),
-    );
+      setArticles((items) => items.filter((item) => item.id !== article.id));
+      // 현재 서버는 비공개 기사 삭제 시에만 연결된 대화도 삭제합니다.
+      if (article.visibility === "private") {
+        setConversations((items) => items.filter((item) => item.articleId !== article.id));
+      }
 
-    if (deletesOpenArticle || (view === "chat" && deletesActiveConversation)) {
-      startNewConversation();
-      if (deletesOpenArticle) setView(archiveView);
-    } else {
-      if (deletesActiveConversation) setActiveConversationId(null);
-      if (articleId === article.id) setArticleId(null);
+      if (version !== viewVersion.current) return;
+      const deletesActiveConversation =
+        article.visibility === "private" && activeConversation?.articleId === article.id;
+      const deletesOpenArticle = view === "article" && articleId === article.id;
+      if (deletesOpenArticle || (view === "chat" && deletesActiveConversation)) {
+        startNewConversation();
+        if (deletesOpenArticle) setView(archiveView);
+      } else {
+        if (deletesActiveConversation) setActiveConversationId(null);
+        if (articleId === article.id) setArticleId(null);
+      }
+    } catch (error) {
+      if (getAuthSessionVersion() !== requestSessionVersion) return;
+      if (error.response?.status === 401) void onLogout();
+      else setDeleteError("기사를 삭제하지 못했습니다. 다시 시도해주세요.");
+    } finally {
+      deleting.current = false;
     }
   }
 
@@ -267,6 +317,7 @@ export default function MainPage({ user, onLogout }) {
       <SideMenu {...sideMenuProps} />
 
       <div className="main">
+        <ErrorNotice className="history-feedback">{deleteError}</ErrorNotice>
         {loadingHistory && !historyError && (
           <LoadingNotice className="history-feedback">목록을 불러오는 중...</LoadingNotice>
         )}
