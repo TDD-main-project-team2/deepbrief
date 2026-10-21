@@ -26,37 +26,8 @@
   background: #f8f6f7;
   border-right: 1px solid var(--admin-line);
 }
-.admin-brand {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 0 10px 33px;
-  border: 0;
-  background: transparent;
-  text-align: left;
-  color: var(--admin-ink);
-  cursor: pointer;
-  font-size: 19px;
-  font-weight: 700;
-  letter-spacing: -0.7px;
-}
-.admin-brand-mark {
-  display: grid;
-  width: 35px;
-  height: 35px;
-  place-items: center;
-  border-radius: 11px;
-  background: var(--admin-wine);
-  color: white;
-  font-size: 18px;
-}
-.admin-brand small {
-  display: block;
-  margin-top: 2px;
-  color: #92898b;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1.6px;
+.admin-sidebar > .sidebar-header {
+  padding-bottom: 33px;
 }
 .admin-side-label {
   padding: 0 11px 12px;
@@ -726,15 +697,19 @@
     align-items: center;
     padding: 18px 7px;
   }
-  .admin-brand {
+  .admin-sidebar > .sidebar-header {
     padding: 0 0 30px;
   }
-  .admin-brand > span:last-child,
+  .admin-sidebar .sidebar-header .brand-icon {
+    margin-right: 0;
+  }
+  .admin-sidebar .sidebar-header-name {
+    display: none;
+  }
   .admin-side-label,
   .admin-nav-item:not(.active) {
     font-size: 0;
   }
-  .admin-brand > span:last-child,
   .admin-side-label,
   .admin-back-button,
   .admin-sidebar-bottom .user-account {

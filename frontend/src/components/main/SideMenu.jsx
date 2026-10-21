@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router";
 
 import "./SideMenu.css";
-import brandIcon from "../../assets/svg/icon-gradient.svg";
+import SidebarHeader from "../common/SidebarHeader.jsx";
 
 import ArchiveMenuItem from "./ArchiveMenuItem.jsx";
 import ConversationMenuItem from "./ConversationMenuItem.jsx";
@@ -50,10 +49,7 @@ export default function SideMenu({
       </button>
 
       <aside id="main-menu" className="sidebar">
-        <Link className="brand" to="/" onClick={onStartNewConversation}>
-          <img className="brand-icon" src={brandIcon} alt="" />
-          DeepBrief<span className="brand-dot">.</span>
-        </Link>
+        <SidebarHeader onClick={onStartNewConversation} />
 
         <button className="new-chat" onClick={onStartNewConversation}>
           <Icons type="plus" />새 대화

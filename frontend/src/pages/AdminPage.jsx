@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import "./AdminPage.css";
 import UserProfile from "../components/common/UserProfile.jsx";
+import SidebarHeader from "../components/common/SidebarHeader.jsx";
 import {
   getOrgMembers,
   updateOrgMember,
@@ -615,17 +616,7 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
-        <button
-          className="admin-brand"
-          type="button"
-          onClick={onBackToMain}
-          aria-label="메인으로 이동"
-        >
-          <span className="admin-brand-mark">D</span>
-          <span>
-            deepbrief<small>WORKSPACE</small>
-          </span>
-        </button>
+        <SidebarHeader onClick={onBackToMain} />
         <div className="admin-side-label">ADMINISTRATION</div>
         <nav className="admin-nav" aria-label="관리자 메뉴">
           {TABS.map((tab) => (
