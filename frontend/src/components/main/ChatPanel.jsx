@@ -7,7 +7,7 @@ import LoadingDots from "../feedback/LoadingDots.jsx";
 const toolButtonLabels = {
   Edit: ["템플릿에 맞춰 다듬기"],
   Review: ["중복·유사 기사 검사", "회사 지침으로 평가"],
-  Recommend: ["키워드·태그", "제목·부제목", "헤드라인", "후속 기사 아이디어"],
+  Recommend: ["키워드·태그", "제목·부제목", "헤드라인 추출", "후속 기사 아이디어"],
 };
 
 const editActions = { "템플릿에 맞춰 다듬기": "format" };
@@ -15,7 +15,7 @@ const reviewActions = { "중복·유사 기사 검사": "duplicate", "회사 지
 const recommendActions = {
   "키워드·태그": "keywords",
   "제목·부제목": "title",
-  헤드라인: "headline",
+  "헤드라인 추출": "headline",
   "후속 기사 아이디어": "ideas",
 };
 
