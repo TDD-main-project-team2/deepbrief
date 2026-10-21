@@ -17,7 +17,7 @@ function getErrorMessage(error, fallback) {
   return error?.response?.data?.detail || error?.message || fallback;
 }
 
-export default function AdminPage({ user, onLogout, onBackToMain }) {
+export default function AdminPage({ user, onLogout }) {
   const [menuOpen, setMenuOpen] = useState(true);
   const [query, setQuery] = useState({ tab: "members", version: 0 });
   const [completedQuery, setCompletedQuery] = useState(null);
@@ -95,7 +95,6 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
         onToggle={() => setMenuOpen((open) => !open)}
         user={user}
         onLogout={onLogout}
-        onHeaderClick={onBackToMain}
       >
         <MenuContent
           activeTab={activeTab}

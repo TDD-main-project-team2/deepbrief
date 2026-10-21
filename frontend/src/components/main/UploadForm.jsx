@@ -52,116 +52,114 @@ export default function UploadForm({ onStartConversationWithFile }) {
   }
 
   return (
-    <>
-      <section className="welcome">
-        <p className="headingCaption">YOUR EDITORIAL PARTNER</p>
-        <h1>검토할 기사를 올려주세요</h1>
+    <section className="welcome">
+      <p className="headingCaption">YOUR EDITORIAL PARTNER</p>
+      <h1>검토할 기사를 올려주세요</h1>
 
-        <div
-          className={`upload-area ${drag ? "dragging" : ""} ${file ? "has-file" : ""}`}
-          onDragOver={(event) => {
-            event.preventDefault();
-            setDrag(true);
-          }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={(event) => {
-            event.preventDefault();
-            setDrag(false);
-            select(event.dataTransfer.files[0]);
-          }}
-        >
-          {file ? (
-            <>
-              <span className="file-icon">
-                <Icons />
-              </span>
-              <strong>{file.name}</strong>
-              <small>{(file.size / 1024).toFixed(1)} KB · 선택한 파일</small>
-              <button
-                className="change-file"
-                disabled={submitting}
-                onClick={() => input.current.click()}
-              >
-                다른 파일 선택
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="upload-icon">
-                <Icons type="upload" />
-              </span>
-              <strong>기사 파일을 이곳에 놓아주세요</strong>
-              <p>또는 아래 버튼으로 파일을 선택하세요</p>
-              <button
-                className="file-picker"
-                disabled={submitting}
-                onClick={() => input.current.click()}
-              >
-                파일 선택
-              </button>
-              <small>PDF · PNG · JPG · JPEG · TXT · MD / 최대 20MB</small>
-            </>
-          )}
-        </div>
-
-        <input
-          ref={input}
-          type="file"
-          disabled={submitting}
-          accept=".pdf,.png,.jpg,.jpeg,.txt,.md"
-          aria-label="기사 파일 업로드"
-          className="hidden-input"
-          onChange={(event) => select(event.target.files[0])}
-        />
-
-        <ErrorNotice className="upload-error">{error}</ErrorNotice>
-
-        <fieldset className="visibility-options" disabled={submitting}>
-          <legend>문서 공개 범위</legend>
-
-          <label
-            className={
-              visibility === "private" ? "visibility-choice selected" : "visibility-choice"
-            }
-          >
-            <input
-              type="radio"
-              name="visibility"
-              value="private"
-              checked={visibility === "private"}
-              onChange={() => setVisibility("private")}
-            />
-            <span>
-              <strong>개인</strong>
-              <small>나만 볼 수 있는 문서</small>
+      <div
+        className={`upload-area ${drag ? "dragging" : ""} ${file ? "has-file" : ""}`}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setDrag(true);
+        }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(event) => {
+          event.preventDefault();
+          setDrag(false);
+          select(event.dataTransfer.files[0]);
+        }}
+      >
+        {file ? (
+          <>
+            <span className="file-icon">
+              <Icons />
             </span>
-          </label>
-
-          <label
-            className={visibility === "public" ? "visibility-choice selected" : "visibility-choice"}
-          >
-            <input
-              type="radio"
-              name="visibility"
-              value="public"
-              checked={visibility === "public"}
-              onChange={() => setVisibility("public")}
-            />
-            <span>
-              <strong>공개</strong>
-              <small>다른 사용자도 볼 수 있는 문서</small>
+            <strong>{file.name}</strong>
+            <small>{(file.size / 1024).toFixed(1)} KB · 선택한 파일</small>
+            <button
+              className="change-file"
+              disabled={submitting}
+              onClick={() => input.current.click()}
+            >
+              다른 파일 선택
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="upload-icon">
+              <Icons type="upload" />
             </span>
-          </label>
-        </fieldset>
+            <strong>기사 파일을 이곳에 놓아주세요</strong>
+            <p>또는 아래 버튼으로 파일을 선택하세요</p>
+            <button
+              className="file-picker"
+              disabled={submitting}
+              onClick={() => input.current.click()}
+            >
+              파일 선택
+            </button>
+            <small>PDF · PNG · JPG · JPEG · TXT · MD / 최대 20MB</small>
+          </>
+        )}
+      </div>
 
-        <button
-          className="primary start"
-          disabled={!file || submitting}
-          onClick={startConversationWithFile}
+      <input
+        ref={input}
+        type="file"
+        disabled={submitting}
+        accept=".pdf,.png,.jpg,.jpeg,.txt,.md"
+        aria-label="기사 파일 업로드"
+        className="hidden-input"
+        onChange={(event) => select(event.target.files[0])}
+      />
+
+      <ErrorNotice className="upload-error">{error}</ErrorNotice>
+
+      <fieldset className="visibility-options" disabled={submitting}>
+        <legend>문서 공개 범위</legend>
+
+        <label
+          className={
+            visibility === "private" ? "visibility-choice selected" : "visibility-choice"
+          }
         >
-          {submitting ? <LoadingDots>파일 처리 중</LoadingDots> : "이 파일로 대화 시작"}
-        </button>
-      </section>
-    </>
+          <input
+            type="radio"
+            name="visibility"
+            value="private"
+            checked={visibility === "private"}
+            onChange={() => setVisibility("private")}
+          />
+          <span>
+            <strong>개인</strong>
+            <small>나만 볼 수 있는 문서</small>
+          </span>
+        </label>
+
+        <label
+          className={visibility === "public" ? "visibility-choice selected" : "visibility-choice"}
+        >
+          <input
+            type="radio"
+            name="visibility"
+            value="public"
+            checked={visibility === "public"}
+            onChange={() => setVisibility("public")}
+          />
+          <span>
+            <strong>공개</strong>
+            <small>다른 사용자도 볼 수 있는 문서</small>
+          </span>
+        </label>
+      </fieldset>
+
+      <button
+        className="primary start"
+        disabled={!file || submitting}
+        onClick={startConversationWithFile}
+      >
+        {submitting ? <LoadingDots>파일 처리 중</LoadingDots> : "이 파일로 대화 시작"}
+      </button>
+    </section>
   );
 }

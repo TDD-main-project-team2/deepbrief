@@ -1,11 +1,6 @@
 .history-item {
-  display: flex;
   text-align: left;
   width: 100%;
-}
-
-.history-item.active {
-  background: #efe3e9;
 }
 
 .history-item svg {

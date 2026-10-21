@@ -68,7 +68,6 @@
   }
   .split-main {
     grid-template-columns: 1fr;
-    height: auto;
     overflow: visible;
   }
   .welcome-main {
