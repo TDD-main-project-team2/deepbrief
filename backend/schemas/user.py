@@ -29,6 +29,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     nickname: str
     role: str
+    organization_name: str
 
 class UserUpdate(BaseModel):
     email: EmailStr | None = None
