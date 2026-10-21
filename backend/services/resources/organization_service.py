@@ -21,10 +21,10 @@ def get_organization_article_template_for_user(user_id: int, template_id: int, d
         org.id, template_id, db
     )
 
-def get_organization_evaluation_guideline_for_user(user_id: int, guideline_id: int, db: Session):
+def get_organization_evaluation_guideline_for_user(user_id: int, db: Session):
     org = get_organization_by_user_id(user_id, db)
-    return organization_repository.find_org_guideline_by_id(
-        org.id, guideline_id, db
+    return organization_repository.find_org_guideline(
+        org.id, db
     )
 
 def get_all_organization_article_templates(user_id: int, db: Session):
