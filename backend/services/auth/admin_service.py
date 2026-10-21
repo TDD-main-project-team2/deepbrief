@@ -87,18 +87,18 @@ def update_org_guideline(db: Session, current_user, guideline_id: int, data: Org
     return guideline
 
 
-def update_org_article(db: Session, article_id: int, title: str | None = None, visibility: str | None = None):
+def update_org_article(db: Session, data, article_id: int):
     article = article_repository.get_by_id(db, article_id)
     if not article:
         raise HTTPException(status_code=404, detail="기사를 찾을 수 없습니다.")
-    if title is None and visibility is None:
+    if data.title is None and data.visibility is None:
         raise HTTPException(status_code=400, detail="수정할 기사 제목 또는 공개 범위를 입력해야 합니다.")
-    if title is not None and not title.strip():
+    if data.title is not None and not data.title.strip():
         raise HTTPException(status_code=400, detail="기사 제목은 비워둘 수 없습니다.")
-    if visibility is not None and visibility not in {"private", "public"}:
+    if data.visibility is not None and data.visibility not in {"private", "public"}:
         raise HTTPException(status_code=400, detail="공개 범위는 'private' 또는 'public'이어야 합니다.")
 
-    article_repository.update_article(db, article, title=title, visibility=visibility)
+    article_repository.update_article(db, article, title=data.title, visibility=data.visibility)
     db.commit()
     db.refresh(article)
     return article

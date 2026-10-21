@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ArticleResponse(BaseModel):
@@ -26,3 +26,8 @@ class ArticleListResponse(BaseModel):
 
     articles: list[ArticleResponse]
     total: int
+
+
+class ArticleUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    visibility: str | None
