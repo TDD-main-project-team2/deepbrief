@@ -12,7 +12,7 @@ from backend.schemas.organization import (
 from backend.schemas.user import UserResponse, UserUpdate
 from backend.schemas.article import ArticleResponse, ArticleListResponse, ArticleUpdate
 from backend.services.auth import admin_service
-from backend.services.resources import article_service
+from backend.services.resources import article_service, organization_service
 
 
 router = APIRouter(prefix="/admin", tags=["Admin"],)
@@ -25,7 +25,7 @@ def get_org_members(db: Session = Depends(get_db), current_user=Depends(get_curr
 
 @router.get("/templates", response_model=list[OrgTemplateResponse])
 def get_org_templates(db: Session = Depends(get_db), current_user=Depends(get_current_admin)):
-    return admin_service.get_org_templates(db, current_user)
+    return organization_service.get_all_organization_article_templates(current_user.id, db)
 
 
 @router.get("/guidelines", response_model=list[OrgGuidelineResponse])
