@@ -41,14 +41,13 @@ export default function OrganizationContent({ user, onComplete }) {
 
       <div className="admin-settings-card">
         <div>
-          <span className="admin-settings-label">조직</span>
           <h2>{user?.organization_name || "소속 조직 정보 없음"}</h2>
           <p>조직의 템플릿과 작성 지침은 구성원들이 공통으로 사용할 수 있습니다.</p>
         </div>
         <div className="admin-settings-divider" />
         <div className="admin-code-row">
           <div>
-            <span className="admin-settings-label">회원 초대 코드</span>
+            <span className="admin-code-label">회원 초대 코드</span>
             <p>새로운 구성원이 가입할 때 사용하는 코드입니다.</p>
             {newCode && <strong className="admin-new-code">{newCode}</strong>}
           </div>
