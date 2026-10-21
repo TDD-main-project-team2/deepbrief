@@ -9,7 +9,7 @@ export default function ConversationMenuItem({
   onOpen,
   onDelete,
 }) {
-  const title = conversation.title || article?.title || article?.file?.name || "대화";
+  const title = article?.title || conversation.title || article?.file?.name || "대화";
 
   return (
     <div className={`history-item ${selected ? "active" : ""}`}>

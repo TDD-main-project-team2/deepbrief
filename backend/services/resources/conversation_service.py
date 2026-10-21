@@ -35,7 +35,7 @@ async def create_conversation(file, title, article_visibility, current_user_id, 
     )
 
     conversation = conversation_repository.create_conversation(
-        title,
+        article.title,
         current_user_id,
         article.id,
     )
