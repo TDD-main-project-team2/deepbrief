@@ -11,7 +11,7 @@ from backend.models.template import Template
 from backend.schemas.organization import OrgGuidelineRequest, OrgTemplateRequest
 from backend.repositories import admin_repository, article_repository
 from backend.app.dependencies import ensure_organization_article
-from backend.services.resources import conversation_service
+from backend.schemas.user import UserUpdate
 
 def get_org_members(db: Session, current_user):
     return admin_repository.get_org_members(db, current_user.organization_id)
@@ -87,34 +87,34 @@ def update_org_guideline(db: Session, current_user, guideline_id: int, data: Org
     return guideline
 
 
-def update_org_article(db: Session, article_id: int, title: str | None = None, visibility: str | None = None):
+def update_org_article(db: Session, data, article_id: int):
     article = article_repository.get_by_id(db, article_id)
     if not article:
         raise HTTPException(status_code=404, detail="기사를 찾을 수 없습니다.")
-    if title is None and visibility is None:
+    if data.title is None and data.visibility is None:
         raise HTTPException(status_code=400, detail="수정할 기사 제목 또는 공개 범위를 입력해야 합니다.")
-    if title is not None and not title.strip():
+    if data.title is not None and not data.title.strip():
         raise HTTPException(status_code=400, detail="기사 제목은 비워둘 수 없습니다.")
-    if visibility is not None and visibility not in {"private", "public"}:
+    if data.visibility is not None and data.visibility not in {"private", "public"}:
         raise HTTPException(status_code=400, detail="공개 범위는 'private' 또는 'public'이어야 합니다.")
 
-    article_repository.update_article(db, article, title=title, visibility=visibility)
+    article_repository.update_article(db, article, title=data.title, visibility=data.visibility)
     db.commit()
     db.refresh(article)
     return article
 
 
-def update_org_member(db: Session, current_user, member_id: int, nickname: str, role: str | None = None):
-    if role is not None and role not in {"member", "admin"}:
+def update_org_member(db: Session, current_user, member_id: int, data: UserUpdate):
+    if data.role is not None and data.role not in {"member", "admin"}:
         raise HTTPException(status_code=400, detail="역할은 'member' 또는 'admin'이어야 합니다.")
 
     member = admin_repository.get_org_member(db, current_user.organization_id, member_id)
     if not member:
         raise HTTPException(status_code=404, detail="회원을 찾을 수 없습니다.")
-    if member.id == current_user.id and role is not None and role != current_user.role:
+    if member.id == current_user.id and data.role is not None and data.role != current_user.role:
         raise HTTPException(status_code=400, detail="본인의 관리자 권한은 변경할 수 없습니다.")
 
-    admin_repository.update_member(db, member, nickname=nickname, role=role)
+    admin_repository.update_member(db, member, nickname=data.nickname, role=data.role)
     db.commit()
     db.refresh(member)
     return member

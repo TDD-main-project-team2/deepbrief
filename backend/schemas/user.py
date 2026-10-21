@@ -29,3 +29,8 @@ class UserResponse(BaseModel):
     email: EmailStr
     nickname: str
     role: str
+
+class UserUpdate(BaseModel):
+    email: EmailStr | None = None
+    nickname: str | None = Field(default=None, min_length=1, max_length=255)
+    role: str | None = None
