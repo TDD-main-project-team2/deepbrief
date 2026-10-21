@@ -8,6 +8,7 @@ from backend.models.organization import Organization
 from backend.models.template import Template
 from backend.models.user import User
 from backend.models.conversation import Conversation
+from backend.models.message import Message
 from backend.models.article_chunk import ArticleChunk
 from backend.models.refresh_token import RefreshToken
 
@@ -73,7 +74,9 @@ def update_member(db: Session, member: User, nickname: str | None = None, role: 
 
 def delete_record(db: Session, record):
     if isinstance(record, User):
-        db.query(Conversation).filter(Conversation.user_id == record.id).delete()
+        conversation_ids = db.scalars(select(Conversation.id).where(Conversation.user_id == record.id)).all()
+        db.query(Message).filter(Message.conversation_id.in_(conversation_ids)).delete(synchronize_session=False)
+        db.query(Conversation).filter(Conversation.id.in_(conversation_ids)).delete(synchronize_session=False)
 
         private_article_ids = db.scalars(
             select(UserArticle.article_id)
@@ -82,7 +85,9 @@ def delete_record(db: Session, record):
         ).all()
 
         if private_article_ids:
-            db.query(Conversation).filter(Conversation.article_id.in_(private_article_ids)).delete(synchronize_session=False)
+            conversation_ids = db.scalars(select(Conversation.id).where(Conversation.article_id.in_(private_article_ids))).all()
+            db.query(Message).filter(Message.conversation_id.in_(conversation_ids)).delete(synchronize_session=False)
+            db.query(Conversation).filter(Conversation.id.in_(private_article_ids)).delete(synchronize_session=False)
             db.query(ArticleChunk).filter(ArticleChunk.article_id.in_(private_article_ids)).delete(synchronize_session=False)
             db.query(UserArticle).filter(UserArticle.article_id.in_(private_article_ids)).delete(synchronize_session=False)
             db.query(Article).filter(Article.id.in_(private_article_ids)).delete(synchronize_session=False)
