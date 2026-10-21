@@ -24,7 +24,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 22px 24px 0;
+  padding: 18px 24px;
+  background: #faf8f9;
 }
 .admin-modal-heading h2 {
   margin: 0;
@@ -61,8 +62,6 @@
 .admin-modal .admin-form-actions {
   margin: 7px -24px -24px;
   padding: 18px 24px;
-  border-top: 1px solid #ece7e9;
-  background: #faf8f9;
 }
 .admin-modal .admin-form-actions .admin-button {
   min-width: 84px;
@@ -81,7 +80,7 @@
     max-height: calc(100dvh - 32px);
   }
   .admin-modal-heading {
-    padding: 20px 20px 0;
+    padding: 16px 20px;
   }
   .admin-modal > .admin-form {
     padding: 20px;
