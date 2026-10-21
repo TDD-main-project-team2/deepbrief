@@ -1,3 +1,4 @@
+import LoadingNotice from "../common/feedback/LoadingNotice.jsx";
 import { updateOrgArticle, deleteOrgArticle } from "../../api/admin.js";
 import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import { useState } from "react";
@@ -68,7 +69,7 @@ export default function ArticlesContent({ articles, loading, onPerform }) {
 
       <div className="admin-article-list">
         {loading ? (
-          <div className="admin-loading">기사 목록을 불러오는 중...</div>
+          <LoadingNotice>기사 목록을 불러오는 중...</LoadingNotice>
         ) : articles.length ? (
           articles.map((article) => (
             <article className="admin-article-row" key={article.id}>

@@ -1,3 +1,4 @@
+import LoadingNotice from "../common/feedback/LoadingNotice.jsx";
 import { updateOrgMember, deleteOrgMember } from "../../api/admin.js";
 import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import { useState } from "react";
@@ -68,7 +69,7 @@ export default function MembersContent({ members, loading, onPerform, currentUse
 
       <div className="admin-table-wrap">
         {loading ? (
-          <div className="admin-loading">회원 목록을 불러오는 중...</div>
+          <LoadingNotice>회원 목록을 불러오는 중...</LoadingNotice>
         ) : members.length ? (
           <table className="admin-table">
             <thead>

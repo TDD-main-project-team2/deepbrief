@@ -1,3 +1,4 @@
+import LoadingNotice from "../common/feedback/LoadingNotice.jsx";
 import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import { useState } from "react";
 
@@ -82,7 +83,7 @@ export default function TemplateGuidelineContent({
       />
 
       {loading ? (
-        <div className="admin-loading">불러오는 중...</div>
+        <LoadingNotice>불러오는 중...</LoadingNotice>
       ) : items.length ? (
         <div className="admin-resource-grid">
           {items.map((item) => (

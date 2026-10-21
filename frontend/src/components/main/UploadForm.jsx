@@ -54,10 +54,6 @@ export default function UploadForm({ onStartConversationWithFile }) {
   return (
     <>
       <section className="welcome">
-        <div className="welcome-symbol">
-          <Icons type="spark" />
-        </div>
-
         <p className="headingCaption">YOUR EDITORIAL PARTNER</p>
         <h1>검토할 기사를 올려주세요</h1>
 

@@ -51,12 +51,6 @@
 .admin-button-secondary:hover:not(:disabled) {
   background: #f5ecef;
 }
-.admin-loading {
-  padding: 45px 20px;
-  color: #928a8c;
-  font-size: 12px;
-  text-align: center;
-}
 .admin-form {
   display: grid;
   gap: 17px;
