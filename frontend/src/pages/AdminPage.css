@@ -117,12 +117,6 @@
   padding-top: 22px;
   border-top: 1px solid #e8e2e4;
 }
-.admin-profile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 8px 16px;
-}
 .admin-avatar {
   display: inline-grid;
   flex: 0 0 34px;
@@ -135,20 +129,12 @@
   font-size: 13px;
   font-weight: 700;
 }
-.admin-profile strong,
 .admin-member-cell strong {
   display: block;
   font-size: 12px;
   font-weight: 700;
 }
-.admin-profile small {
-  display: block;
-  margin-top: 3px;
-  color: #928a8c;
-  font-size: 11px;
-}
-.admin-back-button,
-.admin-logout-button {
+.admin-back-button {
   width: 100%;
   padding: 10px 9px;
   border: 0;
@@ -160,12 +146,8 @@
   text-align: left;
   cursor: pointer;
 }
-.admin-back-button:hover,
-.admin-logout-button:hover {
+.admin-back-button:hover {
   background: #eee8ea;
-}
-.admin-logout-button {
-  color: #a15a53;
 }
 .admin-main {
   display: flex;
@@ -754,9 +736,8 @@
   }
   .admin-brand > span:last-child,
   .admin-side-label,
-  .admin-profile > span:last-child,
   .admin-back-button,
-  .admin-logout-button {
+  .admin-sidebar-bottom .user-account {
     display: none;
   }
   .admin-nav {
@@ -772,10 +753,6 @@
   }
   .admin-nav-active-mark {
     right: -7px;
-  }
-  .admin-profile {
-    justify-content: center;
-    padding: 0 0 12px;
   }
   .admin-topbar {
     height: 58px;

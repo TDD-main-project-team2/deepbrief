@@ -7,6 +7,7 @@ import brandIcon from "../../assets/svg/icon-gradient.svg";
 import ArchiveMenuItem from "./ArchiveMenuItem.jsx";
 import ConversationMenuItem from "./ConversationMenuItem.jsx";
 import Icons from "../Icons.jsx";
+import UserProfile from "../common/UserProfile.jsx";
 
 export default function SideMenu({
   menuOpen,
@@ -131,23 +132,7 @@ export default function SideMenu({
         </nav>
 
         <div className="sidebar-bottom">
-          <div className="user-profile" aria-label={user ? "로그인 사용자" : "비로그인 사용자"}>
-            <div className="user-details">
-              <strong>{user ? user.nickname : "Guest"}</strong>
-              <small title={user?.email}>{user ? user.email : "로그인 후 이용해 주세요"}</small>
-            </div>
-          </div>
-
-          {user ? (
-            <button className="account-logout" onClick={onLogout}>
-              로그아웃
-            </button>
-          ) : (
-            <div className="guest-actions">
-              <Link to="/login">로그인</Link>
-              <Link to="/signup">회원가입</Link>
-            </div>
-          )}
+          <UserProfile user={user} onLogout={onLogout} />
         </div>
       </aside>
     </>

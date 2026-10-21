@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 
 import "./ChatPanel.css";
 import Icons from "../Icons.jsx";
-import LoadingDots from "../feedback/LoadingDots.jsx";
-import LoadingNotice from "../feedback/LoadingNotice.jsx";
-import ErrorNotice from "../feedback/ErrorNotice.jsx";
+import LoadingDots from "../common/feedback/LoadingDots.jsx";
+import LoadingNotice from "../common/feedback/LoadingNotice.jsx";
+import ErrorNotice from "../common/feedback/ErrorNotice.jsx";
 
 import useArticleTemplates from "../../hooks/useArticleTemplates.js";
 

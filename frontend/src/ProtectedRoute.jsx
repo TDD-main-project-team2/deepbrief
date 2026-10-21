@@ -1,7 +1,9 @@
 import { Navigate } from "react-router";
-import LoadingNotice from "./components/feedback/LoadingNotice.jsx";
+
 import brandIcon from "./assets/svg/icon-gradient.svg";
 import "./ProtectedRoute.css";
+
+import LoadingNotice from "./components/common/feedback/LoadingNotice.jsx";
 
 export default function ProtectedRoute({ user, loading, children }) {
   if (loading) {

@@ -1,9 +1,9 @@
-import LoadingDots from "../feedback/LoadingDots.jsx";
+import LoadingDots from "../common/feedback/LoadingDots.jsx";
 import { useRef, useState } from "react";
 
 import "./UploadForm.css";
 import Icons from "../Icons.jsx";
-import ErrorNotice from "../feedback/ErrorNotice.jsx";
+import ErrorNotice from "../common/feedback/ErrorNotice.jsx";
 
 export default function UploadForm({ onStartConversationWithFile }) {
   const input = useRef(null);

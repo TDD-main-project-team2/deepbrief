@@ -6,7 +6,7 @@ import AdminPage from "./pages/AdminPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
 
-import CompletionNotice from "./components/feedback/CompletionNotice.jsx";
+import CompletionNotice from "./components/common/feedback/CompletionNotice.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import AdminRoute from "./AdminRoute.jsx";
 

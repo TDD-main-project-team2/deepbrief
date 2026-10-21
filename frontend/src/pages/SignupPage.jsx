@@ -5,7 +5,7 @@ import AuthLayout from "../components/auth/AuthLayout.jsx";
 import AuthInput from "../components/auth/AuthInput.jsx";
 import PasswordInput from "../components/auth/PasswordInput.jsx";
 import AuthError from "../components/auth/AuthError.jsx";
-import LoadingDots from "../components/feedback/LoadingDots.jsx";
+import LoadingDots from "../components/common/feedback/LoadingDots.jsx";
 import "./SignupPage.css";
 
 import useAuthValidation, {

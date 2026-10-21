@@ -230,28 +230,6 @@
     top: 50%;
   }
 }
-.user-profile {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-}
-.user-details {
-  min-width: 0;
-}
-.user-details strong {
-  display: block;
-  font-size: 12px;
-  font-weight: 600;
-  color: #59464f;
-}
-.user-details small {
-  font-size: 10px;
-  color: #a38b98;
-  margin-top: 5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .menu-groups {
   margin-top: 24px;
@@ -275,24 +253,6 @@
   color: #ac8c9c;
 }
 
-.guest-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 0 0 47px;
-  font-size: 10px;
-  color: var(--wine);
-}
-.guest-actions > span {
-  color: #beadb6;
-}
-.account-logout {
-  display: block;
-  font-size: 10px;
-  color: var(--wine);
-  padding: 0;
-  margin: 12px 0 0 47px;
-}
 .menu-groups {
   display: flex;
   flex-direction: column;
@@ -320,10 +280,6 @@
   }
 }
 
-.guest-actions,
-.account-logout {
-  margin-left: 0;
-}
 /* Preserve menu item sizes when the viewport is too short for the sidebar. */
 .sidebar {
   overflow: hidden;
