@@ -17,10 +17,6 @@ def get_org_members(db: Session, current_user):
     return admin_repository.get_org_members(db, current_user.organization_id)
 
 
-def get_org_templates(db: Session, current_user):
-    return admin_repository.get_org_templates(db, current_user.organization_id)
-
-
 def get_org_guidelines(db: Session, current_user):
     return admin_repository.get_org_guidelines(db, current_user.organization_id)
 

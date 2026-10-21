@@ -16,10 +16,6 @@ def get_org_members(db: Session, organization_id: int):
     return db.scalars(select(User).where(User.organization_id == organization_id)).all()
 
 
-def get_org_templates(db: Session, organization_id: int):
-    return db.scalars(select(Template).where(Template.organization_id == organization_id)).all()
-
-
 def get_org_guidelines(db: Session, organization_id: int):
     return db.scalars(select(Guideline).where(Guideline.organization_id == organization_id)).all()
 
