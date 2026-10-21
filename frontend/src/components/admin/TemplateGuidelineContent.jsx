@@ -27,8 +27,7 @@ export default function TemplateGuidelineContent({
   const [deleting, setDeleting] = useState(null);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
-  const isGuideline = type === "guidelines";
-  const label = isGuideline ? "작성 지침" : "템플릿";
+  const label = type === "guidelines" ? "작성 지침" : "템플릿";
 
   function removeResource(item) {
     setDeleting(item);
