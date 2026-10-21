@@ -81,7 +81,7 @@ def _layout(page):
     try:
         with _lock:
             if "layout" not in _models:
-                _models["layout"] = _paddleocr().LayoutDetection(model_name="PP-DocLayoutV3", device="cpu")
+                _models["layout"] = _paddleocr().LayoutDetection(model_name="PP-DocLayoutV3")
             res = _models["layout"].predict(np.ascontiguousarray(rgb[:, :, ::-1]), batch_size=1, layout_nms=True)[0]
     except Exception as error:
         raise OcrError(f"레이아웃 모델 실행에 실패했습니다: {error}") from error
@@ -94,7 +94,7 @@ def _ocr(image_path):
     try:
         with _lock:
             if "ocr" not in _models:
-                _models["ocr"] = _paddleocr().PaddleOCRVL(pipeline_version="v1.6", device="cpu")
+                _models["ocr"] = _paddleocr().PaddleOCRVL(pipeline_version="v1.6")
             results = _models["ocr"].predict(str(image_path))
         blocks = [(b["block_label"], (b["block_content"] or "").strip())
                   for res in results for b in res.json["res"]["parsing_res_list"]]
