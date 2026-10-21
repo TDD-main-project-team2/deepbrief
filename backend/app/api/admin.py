@@ -9,7 +9,7 @@ from backend.schemas.organization import (
     OrgTemplateRequest,
     OrgTemplateResponse,
 )
-from backend.schemas.user import UserResponse
+from backend.schemas.user import UserResponse, UserUpdate
 from backend.schemas.article import ArticleResponse, ArticleListResponse
 from backend.services.auth import admin_service
 from backend.services.resources import article_service
@@ -69,9 +69,8 @@ def update_org_article(article_id: int, db: Session = Depends(get_db), current_u
 
 
 @router.patch("/members/{member_id}", response_model=UserResponse)
-def update_org_member(member_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_admin)):
-    return admin_service.update_org_member(db, current_user, member_id)
-
+def update_org_member(member_id: int, data: UserUpdate, db: Session = Depends(get_db), current_user = Depends(get_current_admin)):
+    return admin_service.update_org_member(db, current_user, member_id, data)
 
 @router.delete("/templates/{template_id}", status_code=204)
 def delete_org_template(template_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_admin)):

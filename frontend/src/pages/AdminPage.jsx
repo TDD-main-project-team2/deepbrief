@@ -441,7 +441,6 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
             <span className="admin-avatar">{(user?.nickname || user?.email || "A").slice(0, 1).toUpperCase()}</span>
             <span><strong>{user?.nickname || "관리자"}</strong><small>조직 관리자</small></span>
           </div>
-          <button className="admin-back-button" type="button" onClick={onBackToMain}>← 사용자 화면으로</button>
           <button className="admin-logout-button" type="button" onClick={onLogout}>로그아웃</button>
         </div>
       </aside>
