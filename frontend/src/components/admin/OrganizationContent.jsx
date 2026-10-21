@@ -2,13 +2,13 @@ import { updateOrgCode } from "../../api/admin.js";
 import { useState } from "react";
 
 import "./AdminCommon.css";
-import "./SettingsContent.css";
+import "./OrganizationContent.css";
 
 import ContentHeader from "../common/ContentHeader.jsx";
 import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import ErrorNotice from "../common/feedback/ErrorNotice.jsx";
 
-export default function SettingsContent({ user, onComplete }) {
+export default function OrganizationContent({ user, onComplete }) {
   const [confirmRotate, setConfirmRotate] = useState(false);
   const [error, setError] = useState("");
   const [rotating, setRotating] = useState(false);
@@ -42,7 +42,7 @@ export default function SettingsContent({ user, onComplete }) {
       <div className="admin-settings-card">
         <div>
           <span className="admin-settings-label">조직</span>
-          <h2>{user?.organization_name || user?.organization?.name || "내 조직"}</h2>
+          <h2>{user?.organization_name || "소속 조직 정보 없음"}</h2>
           <p>조직의 템플릿과 작성 지침은 구성원들이 공통으로 사용할 수 있습니다.</p>
         </div>
         <div className="admin-settings-divider" />

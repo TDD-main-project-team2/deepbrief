@@ -79,6 +79,7 @@ export default function MembersContent({ members, loading, onPerform, currentUse
                 <th className="align-right">관리</th>
               </tr>
             </thead>
+
             <tbody>
               {members.map((member) => (
                 <tr key={member.id}>

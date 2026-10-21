@@ -38,7 +38,7 @@ export default function LoginPage({ onLogin }) {
         email: values.email.trim(),
         password: values.password,
       });
-      onLogin(session);
+      await onLogin(session);
       navigate(session.user.role === "admin" ? "/admin" : "/", { replace: true });
     } catch (error) {
       const detail = error.response?.data?.detail;

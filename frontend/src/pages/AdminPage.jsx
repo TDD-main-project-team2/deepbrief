@@ -8,7 +8,7 @@ import MembersContent from "../components/admin/MembersContent.jsx";
 import TemplatesContent from "../components/admin/TemplatesContent.jsx";
 import GuidelinesContent from "../components/admin/GuidelinesContent.jsx";
 import ArticlesContent from "../components/admin/ArticlesContent.jsx";
-import SettingsContent from "../components/admin/SettingsContent.jsx";
+import OrganizationContent from "../components/admin/OrganizationContent.jsx";
 import MenuContent from "../components/admin/MenuContent.jsx";
 import SidebarLayout from "../components/common/side-menu/SidebarLayout.jsx";
 import { getOrgMembers, getOrgTemplates, getOrgGuidelines, getOrgArticles } from "../api/admin.js";
@@ -114,7 +114,7 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
           {activeTab === "articles" && (
             <ArticlesContent articles={articles} loading={loading} onPerform={perform} />
           )}
-          {activeTab === "settings" && <SettingsContent user={user} onComplete={setNotice} />}
+          {activeTab === "settings" && <OrganizationContent user={user} onComplete={setNotice} />}
         </div>
       </main>
     </div>

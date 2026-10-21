@@ -66,14 +66,28 @@ export default function App() {
     return () => window.removeEventListener("auth:expired", handleExpiredSession);
   }, []);
 
-  function handleLogin(session) {
+  async function handleLogin(session) {
     saveTokens({
       accessToken: session.access_token,
       refreshToken: session.refresh_token,
     });
 
-    setSession(session);
-    setRestoringSession(false);
+    const requestSessionVersion = getAuthSessionVersion();
+    try {
+      const user = await getCurrentUser();
+      if (getAuthSessionVersion() !== requestSessionVersion) {
+        throw new Error("로그인 상태가 변경되었습니다. 다시 로그인해 주세요.");
+      }
+      setSession({ ...session, user });
+      setRestoringSession(false);
+    } catch (error) {
+      if (getAuthSessionVersion() === requestSessionVersion) {
+        removeTokens();
+        setSession(null);
+        setRestoringSession(false);
+      }
+      throw error;
+    }
   }
 
   async function handleLogout() {
