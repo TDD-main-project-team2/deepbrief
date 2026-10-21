@@ -4,20 +4,6 @@
   justify-content: space-between;
   background: #fff;
   color: #74616c;
-}
-.panel-heading > span {
-  display: flex;
-  align-items: center;
-}
-.panel-heading svg {
-  width: 16px;
-  height: 16px;
-}
-.panel-heading small {
-  color: #ac97a3;
-}
-
-.panel-heading {
   height: 60px;
   min-height: 60px;
   padding: 0 23px;
@@ -27,20 +13,27 @@
   letter-spacing: -0.2px;
 }
 .panel-heading > span {
+  display: flex;
+  align-items: center;
   gap: 11px;
+}
+.panel-heading svg {
+  width: 16px;
+  height: 16px;
+}
+.panel-heading small {
+  color: #ac97a3;
+  font-size: 9px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  letter-spacing: 0;
 }
 .panel-heading > span > svg {
   width: 32px;
   height: 32px;
   padding: 7px;
   border-radius: 7px;
-}
-.panel-heading small {
-  font-size: 9px;
-  font-weight: 500;
-  padding: 4px 8px;
-  border-radius: 4px;
-  letter-spacing: 0;
 }
 
 @media (max-width: 800px) {

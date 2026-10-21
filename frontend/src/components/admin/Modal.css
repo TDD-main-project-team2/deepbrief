@@ -43,7 +43,7 @@
   border: 1px solid #eadde3;
   border-radius: 8px;
   background: #fff;
-  color: #947b88;
+  color: var(--wine);
   cursor: pointer;
 }
 .admin-icon-button:hover {

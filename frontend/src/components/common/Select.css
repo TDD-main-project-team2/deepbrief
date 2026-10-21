@@ -66,3 +66,8 @@
   color: var(--wine);
   font-weight: 600;
 }
+
+.select-option > .icon {
+  width: 14px;
+  height: 14px;
+}

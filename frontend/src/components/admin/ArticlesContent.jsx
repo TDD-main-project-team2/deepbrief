@@ -68,7 +68,7 @@ export default function ArticlesContent({ articles, loading, onPerform }) {
         actions={<strong className="articles-count">{articles.length}개의 기사</strong>}
       />
 
-      <div className="admin-article-list">
+      <div className={loading || articles.length ? "admin-article-list" : undefined}>
         {loading ? (
           <LoadingNotice>기사 목록을 불러오는 중...</LoadingNotice>
         ) : articles.length ? (

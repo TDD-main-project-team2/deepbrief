@@ -19,7 +19,7 @@
   border-color: var(--wine);
 }
 .upload-icon {
-  color: #ae7a8e;
+  color: var(--wine);
   margin-bottom: 16px;
 }
 .upload-icon svg {

@@ -68,7 +68,7 @@ export default function MembersContent({ members, loading, onPerform, currentUse
         actions={<strong className="members-count">{members.length}명의 사용자</strong>}
       />
 
-      <div className="admin-table-wrap">
+      <div className={loading || members.length ? "admin-table-wrap" : undefined}>
         {loading ? (
           <LoadingNotice>회원 목록을 불러오는 중...</LoadingNotice>
         ) : members.length ? (

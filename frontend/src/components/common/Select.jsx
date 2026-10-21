@@ -82,7 +82,7 @@ export default function Select({ label, value, onChange, options }) {
               onClick={() => choose(index)}
             >
               {option.label}
-              {option.value === value && <span aria-hidden="true">✓</span>}
+              {option.value === value && <Icons type="check" />}
             </div>
           ))}
         </div>

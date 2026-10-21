@@ -138,3 +138,13 @@
     flex-shrink: 0;
   }
 }
+
+.back-archive {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.back-archive > svg {
+  width: 14px;
+  height: 14px;
+}

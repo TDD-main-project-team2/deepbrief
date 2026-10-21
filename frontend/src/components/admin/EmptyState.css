@@ -1,37 +1,31 @@
 .admin-empty {
   display: flex;
-  min-height: 210px;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 28px;
-  border: 1px dashed #e5dddf;
-  border-radius: 12px;
-  background: #fff;
+  flex-direction: column;
   text-align: center;
+  padding: 65px 20px;
+  border-bottom: 1px solid #ece2e8;
 }
-.admin-empty-mark {
-  display: grid;
-  width: 39px;
-  height: 39px;
-  place-items: center;
-  margin-bottom: 12px;
-  border-radius: 50%;
-  background: #f4e9ee;
-  color: #9b8c90;
+.admin-empty > svg {
+  width: 33px;
+  height: 33px;
+  margin-bottom: 22px;
 }
-.admin-empty strong {
-  font-size: 13px;
+.admin-empty h2 {
+  font-size: 17px;
+  font-weight: 500;
 }
 .admin-empty p {
-  max-width: 340px;
-  margin: 8px 0 0;
-  color: #9a9294;
   font-size: 11px;
-  line-height: 1.7;
+  color: #a78d9c;
+  margin-top: 13px;
+  line-height: 1.9;
 }
-
-.admin-empty-mark > svg {
-  width: 20px;
-  height: 20px;
+@media (max-width: 680px) {
+  .admin-empty {
+    padding: 50px 10px;
+  }
+  .admin-empty h2 {
+    font-size: 15px;
+  }
 }

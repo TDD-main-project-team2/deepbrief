@@ -8,7 +8,7 @@
   border-radius: 7px;
   margin-top: 34px;
   padding: 12px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--wine);
   background: #fff;
   flex-shrink: 0;
@@ -32,7 +32,6 @@
     width: 100%;
     margin-top: 30px;
     padding: 12px;
-    font-size: 11px;
   }
 }
 .menu-groups {
@@ -53,7 +52,7 @@
   gap: 9px;
   width: 100%;
   padding: 11px 9px;
-  font-size: 12px;
+  font-size: 13px;
   color: #785565;
   font-weight: 600;
 }

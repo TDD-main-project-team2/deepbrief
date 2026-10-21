@@ -34,9 +34,9 @@
 .admin-table th {
   height: 44px;
   padding: 0 19px;
-  background: #f8f6f7;
+  background: #fdfafb;
   color: #91898b;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
 }
 .admin-table td {
@@ -45,21 +45,13 @@
   border-top: 1px solid #f1edee;
   font-size: 12px;
 }
-.admin-table tbody tr:hover {
-  background: #f5ecef;
-}
 .admin-member-cell {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 10px;
 }
-.admin-member-cell small {
-  display: block;
-  margin-top: 3px;
-  color: #91898b;
-  font-size: 10px;
-}
+
 .admin-muted {
   color: #867d7f;
 }
@@ -104,4 +96,11 @@
 .members-count {
   font-weight: 500;
   color: #795c6c;
+}
+
+.admin-member-cell small {
+  display: block;
+  margin-top: 3px;
+  color: #91898b;
+  font-size: 10px;
 }

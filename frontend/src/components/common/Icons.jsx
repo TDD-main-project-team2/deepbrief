@@ -2,6 +2,11 @@ import "./Icons.css";
 
 export default function Icons({ type = "file" }) {
   const paths = {
+    panel: "M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z M9 4v16",
+    alert: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0 M12 7v6 M12 17h.01",
+    check: "M5 12l4 4L19 6",
+    help: "M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4 M12 18h.01",
+    arrowLeft: "M19 12H5 M12 5l-7 7 7 7",
     users:
       "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M16 3a4 4 0 0 1 0 8 M22 21v-2a4 4 0 0 0-3-3.87 M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
     clipboardCheck: "M9 5H5v16h14V5h-4 M9 3h6v4H9z M8 14l3 3 5-6",

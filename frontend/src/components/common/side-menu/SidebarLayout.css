@@ -80,5 +80,7 @@
 }
 
 .sidebar-toggle > svg {
+  width: 16px;
+  height: 16px;
   color: var(--wine);
 }

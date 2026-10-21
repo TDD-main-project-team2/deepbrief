@@ -1,3 +1,4 @@
+import Icons from "../common/Icons.jsx";
 import "./ArchivePreview.css";
 import FilePreview from "./FilePreview.jsx";
 import formatDateTime from "../../utils/formatDateTime.js";
@@ -17,7 +18,7 @@ export default function ArchivePreview({
     <section className="file-panel" aria-label="보관함 기사 미리보기">
       <div className="upload-record">
         <button className="back-archive" onClick={() => setView(archiveView)}>
-          ← {archiveView === "private" ? "내 기사" : "사내 기사"} 목록
+          <Icons type="arrowLeft" /> {archiveView === "private" ? "내 기사" : "사내 기사"} 목록
         </button>
 
         <div className="document-title-row">

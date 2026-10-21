@@ -19,7 +19,7 @@
 .archive-empty > svg {
   width: 33px;
   height: 33px;
-  color: #b88da1;
+  color: var(--wine);
   margin-bottom: 22px;
 }
 .archive-empty h2 {
