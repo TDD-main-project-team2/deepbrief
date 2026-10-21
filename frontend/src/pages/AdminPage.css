@@ -290,7 +290,6 @@
   height: 35px;
   place-items: center;
   border-radius: 9px;
-  font-size: 17px;
 }
 .admin-resource-icon.template {
   background: #f0e7e9;
@@ -341,7 +340,6 @@
   border-radius: 9px;
   background: #f2ebed;
   color: #745960;
-  font-size: 17px;
 }
 .admin-article-info {
   flex: 1;
@@ -386,7 +384,6 @@
   border-radius: 50%;
   background: #f3edef;
   color: #9b8c90;
-  font-size: 20px;
 }
 .admin-empty strong {
   font-size: 13px;
@@ -473,7 +470,6 @@
   border-radius: 7px;
   background: #f5f2f3;
   color: #706669;
-  font-size: 22px;
   cursor: pointer;
 }
 .admin-form {
@@ -645,4 +641,24 @@
   .admin-footer {
     padding: 0 15px 16px;
   }
+}
+
+.admin-resource-icon > svg {
+  width: 17px;
+  height: 17px;
+}
+
+.admin-article-symbol > svg {
+  width: 17px;
+  height: 17px;
+}
+
+.admin-empty-mark > svg {
+  width: 20px;
+  height: 20px;
+}
+
+.admin-icon-button > svg {
+  width: 22px;
+  height: 22px;
 }

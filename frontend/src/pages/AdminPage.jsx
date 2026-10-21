@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import "./AdminPage.css";
+import Icons from "../components/common/Icons.jsx";
 import MenuContent from "../components/admin/MenuContent.jsx";
 import SidebarLayout from "../components/common/side-menu/SidebarLayout.jsx";
 import {
@@ -27,7 +28,9 @@ function getErrorMessage(error, fallback) {
 function EmptyState({ title, description }) {
   return (
     <div className="admin-empty">
-      <span className="admin-empty-mark">—</span>
+      <span className="admin-empty-mark">
+        <Icons type="minus" />
+      </span>
       <strong>{title}</strong>
       <p>{description}</p>
     </div>
@@ -46,7 +49,7 @@ function Modal({ title, onClose, children }) {
         <div className="admin-modal-heading">
           <h2>{title}</h2>
           <button className="admin-icon-button" type="button" onClick={onClose} aria-label="닫기">
-            ×
+            <Icons type="close" />
           </button>
         </div>
         {children}
@@ -134,7 +137,7 @@ function ResourceSection({ type, title, description, items, loading, onCreate, o
           type="button"
           onClick={() => setEditing({})}
         >
-          <span aria-hidden="true">＋</span> 새로 만들기
+          <Icons type="plus" /> 새로 만들기
         </button>
       </div>
       {loading ? (
@@ -145,7 +148,7 @@ function ResourceSection({ type, title, description, items, loading, onCreate, o
             <article className="admin-resource-card" key={item.id}>
               <div className="admin-resource-card-top">
                 <span className={`admin-resource-icon ${isGuideline ? "guideline" : "template"}`}>
-                  {isGuideline ? "✓" : "▤"}
+                  <Icons type={isGuideline ? "clipboardCheck" : "file"} />
                 </span>
                 <div className="admin-resource-actions">
                   <button
@@ -379,7 +382,9 @@ function ArticlesSection({ articles, loading, onUpdate, onDelete }) {
         ) : articles.length ? (
           articles.map((article) => (
             <article className="admin-article-row" key={article.id}>
-              <div className="admin-article-symbol">▤</div>
+              <div className="admin-article-symbol">
+                <Icons type="newspaper" />
+              </div>
               <div className="admin-article-info">
                 <h3>{article.title || "제목 없는 기사"}</h3>
                 <p>
