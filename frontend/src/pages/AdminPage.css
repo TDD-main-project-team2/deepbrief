@@ -401,34 +401,6 @@
   font-size: 12px;
   text-align: center;
 }
-.admin-feedback {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin: 0 0 18px;
-  padding: 12px 14px;
-  border: 1px solid;
-  border-radius: 8px;
-  font-size: 12px;
-}
-.admin-feedback button {
-  border: 0;
-  background: transparent;
-  font: inherit;
-  cursor: pointer;
-  text-decoration: underline;
-}
-.admin-feedback.error {
-  border-color: #f0d6d2;
-  background: #fff7f5;
-  color: #a24f46;
-}
-.admin-feedback.success {
-  border-color: #d8e7d7;
-  background: #f3f8f1;
-  color: #426b49;
-}
 .admin-modal-backdrop {
   position: fixed;
   z-index: 1000;
@@ -520,12 +492,6 @@
   font-size: 11px;
   line-height: 1.6;
 }
-.admin-confirm-body p {
-  margin: 0 0 22px;
-  color: #786f71;
-  font-size: 13px;
-  line-height: 1.8;
-}
 .admin-settings-card {
   max-width: 760px;
   padding: 25px;
@@ -571,24 +537,12 @@
   font-size: 14px;
   letter-spacing: 1.5px;
 }
-.admin-footer {
-  padding: 0 42px 22px;
-  color: #a8a0a2;
-  font-size: 10px;
-  letter-spacing: 0.2px;
-}
-.admin-footer span {
-  padding: 0 5px;
-}
 @media (max-width: 900px) {
   .admin-topbar {
     padding: 0 25px;
   }
   .admin-page-content {
     padding: 32px 25px;
-  }
-  .admin-footer {
-    padding: 0 25px 18px;
   }
 }
 @media (max-width: 680px) {
@@ -637,9 +591,6 @@
   .admin-code-row {
     align-items: flex-start;
     flex-direction: column;
-  }
-  .admin-footer {
-    padding: 0 15px 16px;
   }
 }
 
