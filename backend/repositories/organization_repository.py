@@ -26,13 +26,10 @@ def find_article_template_by_id(organization_id: int, template_id: int, db: Sess
         )
     )
 
-def find_org_guideline_by_id(organization_id: int, guideline_id: int, db: Session) -> Guideline | None:
+def find_org_guideline(organization_id: int, db: Session) -> Guideline | None:
     """조직에 속한 특정 평가 가이드라인을 조회한다."""
     return db.scalar(
-        select(Guideline).where(
-            Guideline.id == guideline_id,
-            Guideline.organization_id == organization_id,
-        )
+        select(Guideline).where(Guideline.organization_id == organization_id)
     )
 
 def find_all_article_templates(organization_id: int, db: Session) -> list[Template]:
