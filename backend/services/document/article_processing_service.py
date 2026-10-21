@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from backend.database.vector.vector_db import vector_db
 from backend.models.article import Article
+from backend.models.file import File
 from backend.models.article_chunk import ArticleChunk
 from backend.services.ai.embedding_service import embed_documents
 from backend.services.ai.model_service import generate_article_metadata, generate_category
@@ -73,6 +74,7 @@ def _embed_and_save_document_chunks(
 def process_article(
     file_bytes: bytes,
     filename: str,
+    mime_type: str,
     article_visibility: str,
     db: Session,
     reprocess: bool = False,
@@ -105,6 +107,10 @@ def process_article(
     if not document.text or not document.chunks:
         raise ValueError("저장할 기사 본문 또는 청크가 없습니다.")
 
+    file_title = filename.strip()
+    if not file_title:
+        raise ValueError("파일 이름이 필요합니다.")
+
     content_hash = sha256(document.text.encode("utf-8")).hexdigest()
     article = article_repository.get_by_content_hash(db, content_hash)
 
@@ -112,16 +118,22 @@ def process_article(
         title = (document.title or Path(filename).stem).strip()
         if not title:
             raise ValueError("기사 제목 또는 파일 이름이 필요합니다.")
-        article = Article(
-            title=title[:255],
-            body=document.text,
-            content_hash=content_hash,
-            **_article_metadata(document),
-            visibility=article_visibility
-        )
-        article_repository.create(db, article)
-
         try:
+            article = Article(
+                title=title[:255],
+                body=document.text,
+                content_hash=content_hash,
+                **_article_metadata(document),
+                visibility=article_visibility
+            )
+            article_repository.create(db, article)
+            file = File(
+                article_id=article.id,
+                title=file_title,
+                mime_type=mime_type,
+                size_bytes=len(file_bytes),
+            )       
+            article_repository.save_file(db, file)
             db.commit()
         except Exception:
             db.rollback()
