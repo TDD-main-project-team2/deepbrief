@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+import "./AdminCommon.css";
+import "./SettingsContent.css";
+
 import ContentHeader from "../common/ContentHeader.jsx";
 import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import ErrorNotice from "../common/feedback/ErrorNotice.jsx";

@@ -1,3 +1,5 @@
+import "./AdminCommon.css";
+import "./Modal.css";
 import Icons from "../common/Icons.jsx";
 
 export default function Modal({ title, onClose, children }) {

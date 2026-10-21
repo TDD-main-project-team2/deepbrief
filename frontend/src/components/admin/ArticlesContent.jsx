@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+import "./AdminCommon.css";
+import "./ArticlesContent.css";
+
 import ContentHeader from "../common/ContentHeader.jsx";
 import Icons from "../common/Icons.jsx";
 import EmptyState from "./EmptyState.jsx";
@@ -35,7 +38,7 @@ export default function ArticlesContent({ articles, loading, onUpdate, onDelete 
         caption="ORGANIZATION WORKSPACE"
         title="기사 관리"
         description="조직에서 접근할 수 있는 기사를 확인하고 공개 범위를 관리합니다."
-        actions={<strong>{articles.length}개의 기사</strong>}
+        actions={<strong className="articles-count">{articles.length}개의 기사</strong>}
       />
 
       <div className="admin-article-list">

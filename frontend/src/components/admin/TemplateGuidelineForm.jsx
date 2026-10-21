@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import "./AdminCommon.css";
+
 export default function TemplateGuidelineForm({
   initialValue,
   resourceLabel,

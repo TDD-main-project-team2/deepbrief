@@ -43,3 +43,12 @@
     padding: 50px 10px;
   }
 }
+
+.archive-count {
+  font-weight: 500;
+  color: #795c6c;
+}
+.archive-scope {
+  font-size: 9px;
+  color: #ae96a4;
+}

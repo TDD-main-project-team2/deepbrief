@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+import "./AdminCommon.css";
+import "./TemplateGuidelineContent.css";
+
 import Icons from "../common/Icons.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";

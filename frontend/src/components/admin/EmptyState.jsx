@@ -1,3 +1,5 @@
+import "./AdminCommon.css";
+import "./EmptyState.css";
 import Icons from "../common/Icons.jsx";
 
 export default function EmptyState({ title, description }) {

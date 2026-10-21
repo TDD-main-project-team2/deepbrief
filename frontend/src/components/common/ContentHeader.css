@@ -35,14 +35,6 @@
   margin-top: 20px;
   font-size: 11px;
 }
-.content-header-actions > strong {
-  font-weight: 500;
-  color: #795c6c;
-}
-.content-header-actions > span {
-  font-size: 9px;
-  color: #ae96a4;
-}
 @media (max-width: 680px) {
   .content-header-title {
     font-size: 23px;

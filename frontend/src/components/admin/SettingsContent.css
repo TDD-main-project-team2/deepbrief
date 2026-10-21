@@ -1,0 +1,51 @@
+.admin-settings-card {
+  max-width: 760px;
+  padding: 25px;
+  border: 1px solid var(--admin-line);
+  border-radius: 12px;
+  background: #fdfafb;
+}
+.admin-settings-label {
+  color: #93898c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+.admin-settings-card h2 {
+  margin: 9px 0;
+  font-size: 19px;
+}
+.admin-settings-card p {
+  margin: 0;
+  color: #897f82;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.admin-settings-divider {
+  height: 1px;
+  margin: 25px 0;
+  background: #e9dfe5;
+}
+.admin-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.admin-new-code {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 11px;
+  border: 1px dashed #c9b7bc;
+  border-radius: 7px;
+  background: #f3e6ec;
+  color: var(--wine);
+  font-size: 14px;
+  letter-spacing: 1.5px;
+}
+@media (max-width: 680px) {
+  .admin-code-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

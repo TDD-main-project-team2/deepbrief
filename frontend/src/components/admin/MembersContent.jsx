@@ -1,5 +1,8 @@
 import { useState } from "react";
 
+import "./AdminCommon.css";
+import "./MembersContent.css";
+
 import ContentHeader from "../common/ContentHeader.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
@@ -34,7 +37,7 @@ export default function MembersContent({ members, loading, onUpdate, onDelete, c
         caption="ORGANIZATION WORKSPACE"
         title="회원 관리"
         description="조직 구성원의 계정 정보와 권한을 관리합니다."
-        actions={<strong>{members.length}명의 사용자</strong>}
+        actions={<strong className="members-count">{members.length}명의 사용자</strong>}
       />
 
       <div className="admin-table-wrap">

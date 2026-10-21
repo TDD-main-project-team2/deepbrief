@@ -19,16 +19,11 @@ export default function Archive({ view, articles, openArticle, onDeleteArticle }
           }
           actions={
             <>
-          <strong>
-            {articles.length}
-            개의 기사
-          </strong>
-          <span>{isPublic ? "공용 아카이브" : "내 아카이브"}</span>
+              <strong className="archive-count">{articles.length}개의 기사</strong>
+              <span className="archive-scope">{isPublic ? "공용 아카이브" : "내 아카이브"}</span>
             </>
           }
         />
-
-
 
         {articles.length ? (
           <div className="archive-list">
