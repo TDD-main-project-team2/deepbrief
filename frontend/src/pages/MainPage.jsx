@@ -11,6 +11,7 @@ import Archive from "../components/main/Archive.jsx";
 import ArchivePreview from "../components/main/ArchivePreview.jsx";
 import ErrorNotice from "../components/feedback/ErrorNotice.jsx";
 import LoadingNotice from "../components/feedback/LoadingNotice.jsx";
+import CompletionNotice from "../components/feedback/CompletionNotice.jsx";
 
 import useFilePreview from "../hooks/useFilePreview.js";
 import useConversationWithFile from "../hooks/useConversationWithFile.js";
@@ -30,7 +31,7 @@ import {
 import { getAuthSessionVersion } from "../utils/tokenStorage.js";
 import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
 
-export default function MainPage({ user, onLogout }) {
+export default function MainPage({ user, onLogout, onComplete }) {
   const viewVersion = useRef(0); // 업로드를 기다리는 동안 사용자가 다른 화면으로 이동했는지 확인하는 값
   const deleting = useRef(false);
   const historyVersion = useRef(0);
@@ -49,6 +50,7 @@ export default function MainPage({ user, onLogout }) {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState("");
   const [deleteError, setDeleteError] = useState("");
+  const [articleToDelete, setArticleToDelete] = useState(null);
   const [historyReload, setHistoryReload] = useState(0);
 
   useEffect(() => {
@@ -244,6 +246,7 @@ export default function MainPage({ user, onLogout }) {
       historyVersion.current += 1;
       setHistoryReload((value) => value + 1);
       setConversations((items) => items.filter((item) => item.id !== conversation.id));
+      onComplete("대화가 삭제되었습니다.");
       const stayedOnView = version === viewVersion.current;
       viewVersion.current += 1;
       if (stayedOnView && activeConversationId === conversation.id) {
@@ -260,11 +263,8 @@ export default function MainPage({ user, onLogout }) {
   }
 
   async function deleteArticle(article) {
-    const confirmation =
-      article.visibility === "public"
-        ? "내 보관함에서 이 기사와 연결된 대화를 삭제할까요? 공개 기사 본문은 유지됩니다."
-        : "이 기사를 삭제할까요? 연결된 대화 기록도 함께 삭제됩니다.";
-    if (deleting.current || !window.confirm(confirmation)) return;
+    if (deleting.current) return;
+    setArticleToDelete(null);
     const requestSessionVersion = getAuthSessionVersion();
     const version = viewVersion.current;
     deleting.current = true;
@@ -277,6 +277,11 @@ export default function MainPage({ user, onLogout }) {
       historyVersion.current += 1;
       setHistoryReload((value) => value + 1);
       setArticles((items) => items.filter((item) => item.id !== article.id));
+      const completionMessage =
+        article.visibility === "public"
+          ? "내 보관함에서 기사와 연결된 대화가 삭제되었습니다."
+          : "기사와 연결된 대화가 삭제되었습니다.";
+      onComplete(completionMessage);
       setConversations((items) => items.filter((item) => item.articleId !== article.id));
 
       const stayedOnView = version === viewVersion.current;
@@ -336,6 +341,19 @@ export default function MainPage({ user, onLogout }) {
 
   return (
     <div className={`shell ${menuOpen ? "menu-open" : "menu-closed"}`}>
+      <CompletionNotice
+        title="기사를 삭제할까요?"
+        message={
+          articleToDelete
+            ? articleToDelete.visibility === "public"
+              ? "내 보관함의 기사와 연결된 대화가 삭제됩니다.\n공개 기사는 유지됩니다."
+              : "연결된 대화 기록이 함께 삭제됩니다."
+            : ""
+        }
+        onClose={() => setArticleToDelete(null)}
+        onConfirm={() => deleteArticle(articleToDelete)}
+        confirmLabel="삭제"
+      />
       <SideMenu {...sideMenuProps} />
 
       <div className="main">
@@ -364,7 +382,7 @@ export default function MainPage({ user, onLogout }) {
               view={view}
               articles={view === "public" ? publicArticles : articles}
               openArticle={openArticle}
-              onDeleteArticle={deleteArticle}
+              onDeleteArticle={setArticleToDelete}
             />
           </main>
         )}
