@@ -7,10 +7,13 @@ pdf            글자 정보가 있는 쪽은 레이아웃 모델로 영역·순
                글자 정보가 없는 쪽(스캔본)은 PaddleOCR-VL로 읽는다.
 png, jpg, jpeg PaddleOCR-VL로 읽는다.
 txt, md        그대로 읽는다.
+
+환경 변수(.env) OCR_DEVICE(cpu, gpu:0 등)로 레이아웃·OCR 모델의 장치를 정할 수 있다.
 """
 from __future__ import annotations
 
 import html
+import os
 import re
 import tempfile
 import threading
@@ -19,6 +22,9 @@ from pathlib import Path
 
 import numpy as np
 import pymupdf
+from dotenv import load_dotenv
+
+load_dotenv()
 
 IMAGE_EXT = {".png", ".jpg", ".jpeg"}
 TEXT_EXT = {".txt", ".md"}
@@ -74,6 +80,15 @@ def _paddleocr():
     return paddleocr
 
 
+def _device():
+    """
+    레이아웃·OCR 모델의 장치. 
+    환경 변수(.env) OCR_DEVICE(cpu, gpu:0 등)로 정한다.
+    비어 있으면 None을 넘겨 Paddle이 고르게 한다 (GPU 0번 우선, 없으면 CPU).
+    """
+    return os.getenv("OCR_DEVICE") or None
+
+
 def _layout(page):
     """쪽의 영역 목록 [{label, order, rect, lines}]. 글자는 읽지 않고 영역과 순서만 잡는다."""
     pix = page.get_pixmap(matrix=pymupdf.Matrix(SCALE, SCALE), alpha=False)
@@ -81,7 +96,7 @@ def _layout(page):
     try:
         with _lock:
             if "layout" not in _models:
-                _models["layout"] = _paddleocr().LayoutDetection(model_name="PP-DocLayoutV3")
+                _models["layout"] = _paddleocr().LayoutDetection(model_name="PP-DocLayoutV3", device=_device())
             res = _models["layout"].predict(np.ascontiguousarray(rgb[:, :, ::-1]), batch_size=1, layout_nms=True)[0]
     except Exception as error:
         raise OcrError(f"레이아웃 모델 실행에 실패했습니다: {error}") from error
@@ -94,7 +109,7 @@ def _ocr(image_path):
     try:
         with _lock:
             if "ocr" not in _models:
-                _models["ocr"] = _paddleocr().PaddleOCRVL(pipeline_version="v1.6")
+                _models["ocr"] = _paddleocr().PaddleOCRVL(pipeline_version="v1.6", device=_device())
             results = _models["ocr"].predict(str(image_path))
         blocks = [(b["block_label"], (b["block_content"] or "").strip())
                   for res in results for b in res.json["res"]["parsing_res_list"]]
