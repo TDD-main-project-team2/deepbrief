@@ -8,7 +8,6 @@ import SignupPage from "./pages/SignupPage.jsx";
 
 import CompletionNotice from "./components/common/feedback/CompletionNotice.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
-import AdminRoute from "./AdminRoute.jsx";
 
 import { getCurrentUser } from "./api/users.js";
 import { logoutUser } from "./api/auth.js";
@@ -114,9 +113,9 @@ export default function App() {
         <Route
           path="/admin"
           element={
-            <AdminRoute user={session?.user} loading={restoringSession}>
+            <ProtectedRoute user={session?.user} loading={restoringSession} requiredRole="admin">
               <AdminPage key={session?.user?.id} user={session?.user} onLogout={handleLogout} />
-            </AdminRoute>
+            </ProtectedRoute>
           }
         />
         <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />

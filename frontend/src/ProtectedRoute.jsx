@@ -5,7 +5,7 @@ import "./ProtectedRoute.css";
 
 import LoadingNotice from "./components/common/feedback/LoadingNotice.jsx";
 
-export default function ProtectedRoute({ user, loading, children }) {
+export default function ProtectedRoute({ user, loading, requiredRole, children }) {
   if (loading) {
     return (
       <div className="session-loading-page">
@@ -28,6 +28,7 @@ export default function ProtectedRoute({ user, loading, children }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  if (requiredRole && user.role !== requiredRole) return <Navigate to="/" replace />;
 
   return children;
 }
