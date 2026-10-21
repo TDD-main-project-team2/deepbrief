@@ -9,7 +9,6 @@ import pymupdf
 TEST_FILES = Path(__file__).parent / "test_files"
 TEST_RESULTS = Path(__file__).parent / "test_results"
 
-@pytest.mark.skip
 def test_extract_pdf():
     path = TEST_FILES / "sample.pdf"
     result = ocr_service.extract_document(
@@ -21,7 +20,6 @@ def test_extract_pdf():
 
     assert result.ocr_used is False
 
-@pytest.mark.skip
 def test_extract_scanned_pdf():
     path = TEST_FILES / "scan_pdf_news.pdf"
     result = ocr_service.extract_document(
@@ -32,7 +30,6 @@ def test_extract_scanned_pdf():
     output_path.write_text(result.text, encoding="utf-8")
     assert result.ocr_used is True
 
-@pytest.mark.skip
 def test_extract_txt():
     path = TEST_FILES / "note.txt"
     result = ocr_service.extract_document(
@@ -44,7 +41,6 @@ def test_extract_txt():
 
     assert result.ocr_used is False
 
-@pytest.mark.skip
 def test_extract_scan_png():
     path = TEST_FILES / "news_scan.png"
     result = ocr_service.extract_document(
@@ -127,7 +123,8 @@ def test_split():
 
     result = SimpleNamespace(
         title="",
-        excluded_text=[]
+        excluded_text=[],
+        meta_text=[],
     )
 
     body = ocr_service._split(blocks, result)
