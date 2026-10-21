@@ -3,14 +3,17 @@ import { useEffect, useRef, useState } from "react";
 import "./ChatPanel.css";
 import Icons from "../Icons.jsx";
 import LoadingDots from "../feedback/LoadingDots.jsx";
+import LoadingNotice from "../feedback/LoadingNotice.jsx";
+import ErrorNotice from "../feedback/ErrorNotice.jsx";
+
+import useArticleTemplates from "../../hooks/useArticleTemplates.js";
 
 const toolButtonLabels = {
-  Edit: ["템플릿에 맞춰 다듬기"],
+  Edit: [],
   Review: ["중복·유사 기사 검사", "회사 지침으로 평가"],
   Recommend: ["키워드·태그", "제목·부제목", "헤드라인 추출", "후속 기사 아이디어"],
 };
 
-const editActions = { "템플릿에 맞춰 다듬기": "format" };
 const reviewActions = { "중복·유사 기사 검사": "duplicate", "회사 지침으로 평가": "evaluation" };
 const recommendActions = {
   "키워드·태그": "keywords",
@@ -22,16 +25,29 @@ const recommendActions = {
 export default function ChatPanel({ messages, onSendMessage, isSending = false }) {
   const [text, setText] = useState("");
   const [tool, setTool] = useState("Edit");
+  const { templates, loadingTemplates, templateError, retryTemplates } = useArticleTemplates();
 
-  function sendMessage(messageText = text, action) {
+  function sendMessage(messageText = text, action, templateId) {
     if (!messageText.trim() || isSending) return;
-    onSendMessage(messageText, action);
+    onSendMessage(messageText, action, templateId);
     setText("");
   }
 
   const messageArea = useRef(null);
   const toolNames = Object.keys(toolButtonLabels);
-  const suggestions = toolButtonLabels[tool] || toolButtonLabels.Edit;
+  const suggestions =
+    tool === "Edit"
+      ? templates.map((template) => ({
+          id: template.id,
+          label: template.title,
+          action: "format",
+          templateId: template.id,
+        }))
+      : toolButtonLabels[tool].map((label) => ({
+          id: label,
+          label,
+          action: tool === "Review" ? reviewActions[label] : recommendActions[label],
+        }));
 
   useEffect(() => {
     const area = messageArea.current;
@@ -112,23 +128,32 @@ export default function ChatPanel({ messages, onSendMessage, isSending = false }
               ))}
             </div>
 
+            {tool === "Edit" && (
+              <>
+                {loadingTemplates && (
+                  <LoadingNotice>
+                    <LoadingDots>템플릿을 불러오는 중</LoadingDots>
+                  </LoadingNotice>
+                )}
+
+                <ErrorNotice onRetry={retryTemplates}>{templateError}</ErrorNotice>
+
+                {!loadingTemplates && !templateError && !templates.length && (
+                  <p>등록된 템플릿이 없습니다.</p>
+                )}
+              </>
+            )}
+
             <div className="quick-actions">
               {suggestions.map((suggestion) => (
                 <button
-                  key={suggestion}
+                  key={suggestion.id}
                   disabled={isSending}
                   onClick={() =>
-                    sendMessage(
-                      suggestion,
-                      tool === "Edit"
-                        ? editActions[suggestion]
-                        : tool === "Review"
-                          ? reviewActions[suggestion]
-                          : recommendActions[suggestion],
-                    )
+                    sendMessage(suggestion.label, suggestion.action, suggestion.templateId)
                   }
                 >
-                  {suggestion}
+                  {suggestion.label}
                   <span>↗</span>
                 </button>
               ))}
