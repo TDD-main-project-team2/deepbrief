@@ -11,7 +11,6 @@ const TABS = [
 export default function MenuContent({ activeTab, onSelect }) {
   return (
     <>
-      <div className="admin-side-label">ADMINISTRATION</div>
       <nav className="admin-nav" aria-label="관리자 메뉴">
         {TABS.map((tab) => (
           <button

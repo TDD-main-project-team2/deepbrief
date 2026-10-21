@@ -1,5 +1,5 @@
 import "./DeleteButton.css";
-import Icons from "../Icons.jsx";
+import Icons from "./Icons.jsx";
 
 export default function DeleteButton({ label, onClick }) {
   return (

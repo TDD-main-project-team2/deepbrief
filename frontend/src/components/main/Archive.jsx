@@ -1,6 +1,6 @@
 import "./Archive.css";
 import ArchiveItem from "./ArchiveItem.jsx";
-import Icons from "../Icons.jsx";
+import Icons from "../common/Icons.jsx";
 
 export default function Archive({ view, articles, openArticle, onDeleteArticle }) {
   const isPublic = view === "public";

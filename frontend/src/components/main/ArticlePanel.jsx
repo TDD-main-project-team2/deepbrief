@@ -1,6 +1,6 @@
 import "./ArticlePanel.css";
 
-import Icons from "../Icons.jsx";
+import Icons from "../common/Icons.jsx";
 import FilePreview from "./FilePreview.jsx";
 
 export default function ArticlePanel({

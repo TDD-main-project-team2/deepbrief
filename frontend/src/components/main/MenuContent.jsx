@@ -4,7 +4,7 @@ import "./MenuContent.css";
 
 import ArchiveMenuItem from "./ArchiveMenuItem.jsx";
 import ConversationMenuItem from "./ConversationMenuItem.jsx";
-import Icons from "../Icons.jsx";
+import Icons from "../common/Icons.jsx";
 
 export default function MenuContent({
   onStartNewConversation,
