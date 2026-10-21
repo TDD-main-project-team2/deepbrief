@@ -9,7 +9,7 @@ export default function GuidelinesContent(props) {
       onEdit={updateOrgGuideline}
       onDelete={deleteOrgGuideline}
       type="guidelines"
-      title="작성 지침 관리"
+      title="지침 관리"
       description="기사 검토와 평가에 적용할 조직의 작성 기준을 관리합니다."
     />
   );

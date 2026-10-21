@@ -3,72 +3,13 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 15px;
 }
-.admin-resource-card {
-  min-width: 0;
-  padding: 21px;
-  border: 1px solid var(--admin-line);
-  border-radius: 12px;
-  background: #fdfafb;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
-}
-.admin-resource-card:hover {
-  border-color: #e0d5d8;
-  box-shadow: 0 5px 18px rgba(136, 53, 75, 0.04);
-}
-.admin-resource-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.admin-resource-icon {
-  display: inline-grid;
-  width: 35px;
-  height: 35px;
-  place-items: center;
-  border-radius: 9px;
-}
-.admin-resource-icon.template {
-  background: #f3e6ec;
-  color: #694750;
-}
-.admin-resource-icon.guideline {
-  background: #f3e6ec;
-  color: #9a7b3c;
-}
-.admin-resource-actions {
-  display: flex;
-  gap: 2px;
-}
-.admin-resource-card h3 {
-  margin: 19px 0 8px;
-  font-size: 15px;
-  letter-spacing: -0.3px;
-}
-.admin-resource-preview {
-  display: -webkit-box;
-  overflow: hidden;
-  min-height: 44px;
-  margin: 0;
-  color: #877e80;
-  font-size: 12px;
-  line-height: 1.8;
-  overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
 @media (max-width: 680px) {
   .admin-resource-grid {
     grid-template-columns: 1fr;
   }
 }
 
-.admin-resource-icon > svg {
-  width: 17px;
-  height: 17px;
-}
+
 
 .admin-resource-count {
   font-weight: 500;

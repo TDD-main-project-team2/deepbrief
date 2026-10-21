@@ -5,12 +5,11 @@ import "./AdminCommon.css";
 import "./TemplateGuidelineContent.css";
 
 import Icons from "../common/Icons.jsx";
-import EditButton from "../common/buttons/EditButton.jsx";
-import DeleteButton from "../common/buttons/DeleteButton.jsx";
 import ContentHeader from "../common/ContentHeader.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
 import TemplateGuidelineForm from "./TemplateGuidelineForm.jsx";
+import TemplateGuidelineItem from "./TemplateGuidelineItem.jsx";
 
 export default function TemplateGuidelineContent({
   type,
@@ -86,25 +85,13 @@ export default function TemplateGuidelineContent({
       ) : items.length ? (
         <div className="admin-resource-grid">
           {items.map((item) => (
-            <article className="admin-resource-card" key={item.id}>
-              <div className="admin-resource-card-top">
-                <span className={`admin-resource-icon ${isGuideline ? "guideline" : "template"}`}>
-                  <Icons type={isGuideline ? "clipboardCheck" : "file"} />
-                </span>
-                <div className="admin-resource-actions">
-                  <EditButton
-                    label={`${item.title || "제목 없음"} 항목 수정`}
-                    onClick={() => setEditing(item)}
-                  />
-                  <DeleteButton
-                    label={`${item.title || "제목 없음"} 항목 삭제`}
-                    onClick={() => removeResource(item)}
-                  />
-                </div>
-              </div>
-              <h3>{item.title}</h3>
-              <p className="admin-resource-preview">{item.content}</p>
-            </article>
+            <TemplateGuidelineItem
+              key={item.id}
+              item={item}
+              type={type}
+              onEdit={setEditing}
+              onDelete={removeResource}
+            />
           ))}
         </div>
       ) : (

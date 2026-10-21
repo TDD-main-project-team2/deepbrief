@@ -32,6 +32,7 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
+
     try {
       if (activeTab === "members") setMembers(await getOrgMembers());
       else if (activeTab === "templates") setTemplates(await getOrgTemplates());
@@ -42,6 +43,7 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
         void onLogout?.();
         return;
       }
+
       setError(getErrorMessage(err, "데이터를 불러오지 못했습니다."));
     } finally {
       setLoading(false);
@@ -55,13 +57,16 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
   async function perform(action, successMessage) {
     setError("");
     setNotice("");
+
     try {
       await action();
       setNotice(successMessage);
       setReloadKey((value) => value + 1);
+
       return true;
     } catch (err) {
       setError(getErrorMessage(err, "요청을 처리하지 못했습니다."));
+
       return false;
     }
   }
