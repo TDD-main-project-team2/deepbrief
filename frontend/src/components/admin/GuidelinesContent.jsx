@@ -5,6 +5,7 @@ export default function GuidelinesContent(props) {
   return (
     <TemplateGuidelineContent
       {...props}
+      caption="GUIDELINE MANAGEMENT"
       onCreate={createOrgGuideline}
       onEdit={updateOrgGuideline}
       onDelete={deleteOrgGuideline}

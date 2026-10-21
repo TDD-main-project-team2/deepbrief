@@ -1,3 +1,5 @@
+import "./Icons.css";
+
 export default function Icons({ type = "file" }) {
   const paths = {
     users:
@@ -22,6 +24,7 @@ export default function Icons({ type = "file" }) {
 
   return (
     <svg
+      className="icon"
       width="20"
       height="20"
       viewBox="0 0 24 24"

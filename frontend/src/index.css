@@ -192,3 +192,7 @@ h1 {
   flex-shrink: 0;
   object-fit: contain;
 }
+
+.primary .icon {
+  color: inherit;
+}

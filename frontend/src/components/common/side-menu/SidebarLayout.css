@@ -78,3 +78,7 @@
 @media (prefers-reduced-motion: reduce) {
   .sidebar-layout, .sidebar-toggle { transition: none; }
 }
+
+.sidebar-toggle > svg {
+  color: var(--wine);
+}

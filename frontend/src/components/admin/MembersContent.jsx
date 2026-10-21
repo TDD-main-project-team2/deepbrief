@@ -60,7 +60,7 @@ export default function MembersContent({ members, loading, onPerform, currentUse
       />
 
       <ContentHeader
-        caption="ORGANIZATION WORKSPACE"
+        caption="MEMBER MANAGEMENT"
         title="회원 관리"
         description="조직 구성원의 계정 정보와 권한을 관리합니다."
         actions={<strong className="members-count">{members.length}명의 사용자</strong>}
@@ -76,7 +76,7 @@ export default function MembersContent({ members, loading, onPerform, currentUse
                 <th>회원</th>
                 <th>이메일</th>
                 <th>권한</th>
-                <th className="align-right">관리</th>
+                <th>관리</th>
               </tr>
             </thead>
 
@@ -102,7 +102,7 @@ export default function MembersContent({ members, loading, onPerform, currentUse
                       {member.role === "admin" ? "관리자" : "일반 회원"}
                     </span>
                   </td>
-                  <td className="align-right">
+                  <td className="admin-member-actions">
                     <EditButton
                       label={`${member.nickname || member.email} 회원 수정`}
                       onClick={() => startEdit(member)}

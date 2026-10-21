@@ -103,3 +103,7 @@
 .admin-content-section > .content-header {
   margin-bottom: 18px;
 }
+
+.admin-button-primary .icon {
+  color: inherit;
+}

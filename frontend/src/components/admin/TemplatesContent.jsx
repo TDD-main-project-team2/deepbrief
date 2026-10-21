@@ -5,6 +5,7 @@ export default function TemplatesContent(props) {
   return (
     <TemplateGuidelineContent
       {...props}
+      caption="TEMPLATE MANAGEMENT"
       onCreate={createOrgTemplate}
       onEdit={updateOrgTemplate}
       onDelete={deleteOrgTemplate}

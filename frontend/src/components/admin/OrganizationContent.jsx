@@ -32,7 +32,7 @@ export default function OrganizationContent({ user, onComplete }) {
   return (
     <section className="admin-content-section">
       <ContentHeader
-        caption="ORGANIZATION WORKSPACE"
+        caption="ORGANIZATION SETTINGS"
         title="조직 설정"
         description="조직 정보와 회원 초대 코드를 관리합니다."
       />

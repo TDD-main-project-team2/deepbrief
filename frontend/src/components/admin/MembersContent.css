@@ -24,7 +24,12 @@
 .admin-table {
   width: 100%;
   border-collapse: collapse;
-  text-align: left;
+  text-align: center;
+}
+.admin-table th,
+.admin-table td {
+  text-align: center;
+  vertical-align: middle;
 }
 .admin-table th {
   height: 44px;
@@ -45,6 +50,7 @@
 }
 .admin-member-cell {
   display: flex;
+  justify-content: center;
   align-items: center;
   gap: 10px;
 }
@@ -57,8 +63,7 @@
 .admin-muted {
   color: #867d7f;
 }
-.align-right {
-  text-align: right !important;
+.admin-member-actions {
   white-space: nowrap;
 }
 .admin-role-pill {

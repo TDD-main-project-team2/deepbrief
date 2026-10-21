@@ -13,6 +13,7 @@ import TemplateGuidelineItem from "./TemplateGuidelineItem.jsx";
 
 export default function TemplateGuidelineContent({
   type,
+  caption,
   title,
   description,
   items,
@@ -61,7 +62,7 @@ export default function TemplateGuidelineContent({
       />
 
       <ContentHeader
-        caption="ORGANIZATION WORKSPACE"
+        caption={caption}
         title={title}
         description={description}
         actions={

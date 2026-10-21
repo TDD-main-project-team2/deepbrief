@@ -6,7 +6,7 @@
   height: 30px;
   padding: 6px;
   border-radius: 5px;
-  color: #a98c99;
+  color: var(--wine);
 }
 .delete-button svg {
   width: 16px;
@@ -15,4 +15,8 @@
 .delete-button:hover:not(:disabled) {
   background: #f5dfe7;
   color: #a12e50;
+}
+
+.delete-button:hover:not(:disabled) .icon {
+  color: inherit;
 }
