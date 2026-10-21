@@ -5,6 +5,8 @@ import MainPage from "./pages/MainPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import SignupPage from "./pages/SignupPage.jsx";
+
+import CompletionNotice from "./components/feedback/CompletionNotice.jsx";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import AdminRoute from "./AdminRoute.jsx";
 
@@ -20,6 +22,7 @@ import {
 
 export default function App() {
   const [session, setSession] = useState(null);
+  const [completionMessage, setCompletionMessage] = useState("");
   const [restoringSession, setRestoringSession] = useState(() => Boolean(getAccessToken())); // 새로고침 후 저장된 토큰으로 로그인 상태를 확인 중인지 나타내는 값
 
   useEffect(() => {
@@ -80,6 +83,7 @@ export default function App() {
     removeTokens();
     setSession(null);
     setRestoringSession(false);
+    setCompletionMessage("로그아웃 되었습니다.");
 
     if (refreshToken) {
       try {
@@ -91,25 +95,33 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute user={session?.user} loading={restoringSession}>
-            <MainPage key={session?.user?.id} user={session?.user} onLogout={handleLogout} />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin"
-        element={
-          <AdminRoute user={session?.user} loading={restoringSession}>
-            <AdminPage key={session?.user?.id} user={session?.user} onLogout={handleLogout} />
-          </AdminRoute>
-        }
-      />
-      <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-      <Route path="/signup" element={<SignupPage />} />
-    </Routes>
+    <>
+      <CompletionNotice message={completionMessage} onClose={() => setCompletionMessage("")} />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute user={session?.user} loading={restoringSession}>
+              <MainPage
+                key={session?.user?.id}
+                user={session?.user}
+                onLogout={handleLogout}
+                onComplete={setCompletionMessage}
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute user={session?.user} loading={restoringSession}>
+              <AdminPage key={session?.user?.id} user={session?.user} onLogout={handleLogout} />
+            </AdminRoute>
+          }
+        />
+        <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+        <Route path="/signup" element={<SignupPage />} />
+      </Routes>
+    </>
   );
 }
