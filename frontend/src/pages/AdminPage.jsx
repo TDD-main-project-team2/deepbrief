@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import "./AdminPage.css";
-import UserProfile from "../components/common/UserProfile.jsx";
-import SidebarHeader from "../components/common/SidebarHeader.jsx";
+import MenuContent from "../components/admin/MenuContent.jsx";
+import SidebarLayout from "../components/common/side-menu/SidebarLayout.jsx";
 import {
   getOrgMembers,
   updateOrgMember,
@@ -19,14 +19,6 @@ import {
   deleteOrgArticle,
   updateOrgCode,
 } from "../api/admin.js";
-
-const TABS = [
-  { id: "members", label: "회원 관리", icon: "users" },
-  { id: "templates", label: "템플릿 관리", icon: "file-text" },
-  { id: "guidelines", label: "작성 지침", icon: "clipboard-check" },
-  { id: "articles", label: "기사 관리", icon: "newspaper" },
-  { id: "settings", label: "조직 설정", icon: "settings" },
-];
 
 function getErrorMessage(error, fallback) {
   return error?.response?.data?.detail || error?.message || fallback;
@@ -543,6 +535,8 @@ function SettingsSection({ user, onRotateCode }) {
 }
 
 export default function AdminPage({ user, onLogout, onBackToMain }) {
+  const [menuOpen, setMenuOpen] = useState(true);
+  const [tabTitle, setTabTitle] = useState("회원 관리");
   const [activeTab, setActiveTab] = useState("members");
   const [members, setMembers] = useState([]);
   const [templates, setTemplates] = useState([]);
@@ -611,47 +605,28 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
     return result;
   }
 
-  const tabTitle = TABS.find((tab) => tab.id === activeTab)?.label || "관리자";
-
   return (
-    <div className="admin-shell">
-      <aside className="admin-sidebar">
-        <SidebarHeader onClick={onBackToMain} />
-        <div className="admin-side-label">ADMINISTRATION</div>
-        <nav className="admin-nav" aria-label="관리자 메뉴">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={`admin-nav-item ${activeTab === tab.id ? "active" : ""}`}
-              onClick={() => {
-                setActiveTab(tab.id);
-                setError("");
-                setNotice("");
-              }}
-            >
-              <span className="admin-nav-icon" aria-hidden="true">
-                {
-                  {
-                    users: "♙",
-                    "file-text": "▤",
-                    "clipboard-check": "✓",
-                    newspaper: "▥",
-                    settings: "⚙",
-                  }[tab.icon]
-                }
-              </span>
-              {tab.label}
-              {activeTab === tab.id && <span className="admin-nav-active-mark" />}
-            </button>
-          ))}
-        </nav>
-        <div className="admin-sidebar-bottom">
-          <UserProfile user={user} onLogout={onLogout} />
-        </div>
-      </aside>
+    <div className={`shell admin-shell ${menuOpen ? "menu-open" : "menu-closed"}`}>
+      <SidebarLayout
+        id="admin-menu"
+        menuOpen={menuOpen}
+        onToggle={() => setMenuOpen((open) => !open)}
+        user={user}
+        onLogout={onLogout}
+        onHeaderClick={onBackToMain}
+      >
+        <MenuContent
+          activeTab={activeTab}
+          onSelect={(tab) => {
+            setActiveTab(tab.id);
+            setTabTitle(tab.label);
+            setError("");
+            setNotice("");
+          }}
+        />
+      </SidebarLayout>
 
-      <main className="admin-main">
+      <main className="main admin-main">
         <header className="admin-topbar">
           <div>
             <span>관리자</span>

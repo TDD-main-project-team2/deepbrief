@@ -1,0 +1,55 @@
+.admin-side-label {
+  margin-top: 34px;
+  padding: 0 11px 12px;
+  color: #a19a9c;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+}
+.admin-nav {
+  display: grid;
+  gap: 5px;
+}
+.admin-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #71696b;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.admin-nav-item:hover {
+  background: #eee8ea;
+  color: var(--admin-ink);
+}
+.admin-nav-item.active {
+  background: #ece4e6;
+  color: var(--admin-wine-dark);
+  font-weight: 700;
+}
+.admin-nav-icon {
+  display: inline-grid;
+  width: 20px;
+  place-items: center;
+  font-size: 18px;
+}
+.admin-nav-active-mark {
+  position: absolute;
+  right: 0;
+  top: 11px;
+  bottom: 11px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--admin-wine);
+}

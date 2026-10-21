@@ -65,38 +65,8 @@ small {
   font-weight: 800;
   letter-spacing: -1.3px;
 }
-.logo {
-  position: relative;
-  display: grid;
-  place-items: center;
-  background: var(--wine);
-  color: #fff;
-  width: 32px;
-  height: 35px;
-  border-radius: 8px 8px 8px 2px;
-  font: bold 29px Georgia;
-  margin-right: 9px;
-}
-.logo > span {
-  position: absolute;
-  right: 1px;
-  top: 1px;
-  font: 15px sans-serif;
-}
 .brand-dot {
   color: var(--wine);
-}
-.sidebar-bottom p {
-  font-size: 11px;
-  line-height: 1.9;
-  color: #a2929a;
-}
-.preview {
-  display: block;
-  font-size: 8px;
-  color: #b3a4ac;
-  letter-spacing: 1.3px;
-  margin-top: 17px;
 }
 header {
   height: 68px;
@@ -164,27 +134,16 @@ h1 {
   .brand {
     font-size: 21px;
   }
-  .logo {
-    width: 28px;
-    height: 31px;
-    font-size: 26px;
-  }
   h1 {
     font-size: 27px;
   }
 }
 
 @media (max-width: 580px) {
-  .sidebar-bottom {
-    display: none;
-  }
   .brand {
-    font-size: 22px;
     padding: 0;
   }
   header {
-    height: 46px;
-    padding: 0 20px;
     font-size: 11px;
   }
   .welcome-symbol {
@@ -196,9 +155,6 @@ h1 {
 }
 
 @media (max-width: 680px) {
-  .sidebar-bottom {
-    display: block;
-  }
   .brand {
     font-size: 23px;
   }
@@ -206,12 +162,6 @@ h1 {
     height: 68px;
     padding: 0 16px;
   }
-}
-.sidebar-bottom {
-  padding: 18px 5px 0;
-  border-top: 1px solid #e9dfe5;
-  margin-top: auto;
-  flex-shrink: 0;
 }
 * {
   scrollbar-width: thin;

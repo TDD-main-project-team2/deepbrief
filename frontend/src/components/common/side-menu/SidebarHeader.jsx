@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import brandIcon from "../../assets/svg/icon-gradient.svg";
+import brandIcon from "../../../assets/svg/icon-gradient.svg";
 import "./SidebarHeader.css";
 
 export default function SidebarHeader({ onClick }) {

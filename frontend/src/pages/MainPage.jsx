@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import "./MainPage.css";
 import "../components/main/MainCommon.css";
 
-import SideMenu from "../components/main/SideMenu.jsx";
+import MenuContent from "../components/main/MenuContent.jsx";
+import SidebarLayout from "../components/common/side-menu/SidebarLayout.jsx";
 import UploadForm from "../components/main/UploadForm.jsx";
 import ArticlePanel from "../components/main/ArticlePanel.jsx";
 import ChatPanel from "../components/main/ChatPanel.jsx";
@@ -311,9 +312,7 @@ export default function MainPage({ user, onLogout, onComplete }) {
     setView(nextView);
   }
 
-  const sideMenuProps = {
-    menuOpen,
-    setMenuOpen,
+  const menuContentProps = {
     onStartNewConversation: startNewConversation,
     articles,
     publicArticleCount: publicArticles.length,
@@ -323,8 +322,6 @@ export default function MainPage({ user, onLogout, onComplete }) {
     openChat,
     onDeleteConversation: deleteConversation,
     setView: changeView,
-    user,
-    onLogout,
   };
 
   const previewProps = {
@@ -354,7 +351,16 @@ export default function MainPage({ user, onLogout, onComplete }) {
         onConfirm={() => deleteArticle(articleToDelete)}
         confirmLabel="삭제"
       />
-      <SideMenu {...sideMenuProps} />
+      <SidebarLayout
+        id="main-menu"
+        user={user}
+        onLogout={onLogout}
+        onHeaderClick={startNewConversation}
+        menuOpen={menuOpen}
+        onToggle={() => setMenuOpen((open) => !open)}
+      >
+        <MenuContent {...menuContentProps} />
+      </SidebarLayout>
 
       <div className="main">
         <ErrorNotice className="history-feedback">{deleteError}</ErrorNotice>

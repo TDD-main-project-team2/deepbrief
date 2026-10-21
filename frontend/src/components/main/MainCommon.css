@@ -17,11 +17,6 @@
   color: #ac97a3;
 }
 
-@media (max-width: 800px) {
-  .panel-heading {
-    padding: 0 15px;
-  }
-}
 .panel-heading {
   height: 60px;
   min-height: 60px;

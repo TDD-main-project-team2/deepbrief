@@ -6,12 +6,6 @@
 .auth-brand {
   padding: 0;
 }
-.auth-story > p:not(.headingCaption) {
-  font-size: 13px;
-  line-height: 2.1;
-  color: #a07d8a;
-  margin-top: 23px;
-}
 .auth-main {
   position: relative;
   display: flex;
