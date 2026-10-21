@@ -35,7 +35,6 @@ function getErrorMessage(error, fallback) {
 
 export default function AdminPage({ user, onLogout, onBackToMain }) {
   const [menuOpen, setMenuOpen] = useState(true);
-  const [tabTitle, setTabTitle] = useState("회원 관리");
   const [activeTab, setActiveTab] = useState("members");
   const [members, setMembers] = useState([]);
   const [templates, setTemplates] = useState([]);
@@ -146,7 +145,6 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
           activeTab={activeTab}
           onSelect={(tab) => {
             setActiveTab(tab.id);
-            setTabTitle(tab.label);
             setError("");
             setNotice("");
           }}
@@ -154,21 +152,8 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
       </SidebarLayout>
 
       <main className="main admin-main">
-        <header className="admin-topbar">
-          <div>
-            <span>관리자</span>
-            <span className="admin-breadcrumb-separator">/</span>
-            <strong>{tabTitle}</strong>
-          </div>
-          <div className="admin-topbar-user">
-            <span className="admin-status-dot" /> 관리자 모드
-          </div>
-        </header>
-
         <div className="admin-page-content">
-          <ErrorNotice onRetry={() => setReloadKey((value) => value + 1)}>
-            {error}
-          </ErrorNotice>
+          <ErrorNotice onRetry={() => setReloadKey((value) => value + 1)}>{error}</ErrorNotice>
 
           {activeTab === "members" && (
             <MembersContent

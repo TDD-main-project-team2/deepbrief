@@ -1,4 +1,6 @@
 import { useState } from "react";
+
+import ContentHeader from "../common/ContentHeader.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
 
@@ -28,14 +30,12 @@ export default function MembersContent({ members, loading, onUpdate, onDelete, c
 
   return (
     <section className="admin-content-section">
-      <div className="admin-section-heading">
-        <div>
-          <p className="admin-eyebrow">ORGANIZATION WORKSPACE</p>
-          <h1>회원 관리</h1>
-          <p className="admin-section-description">조직 구성원의 계정 정보와 권한을 관리합니다.</p>
-        </div>
-        <span className="admin-count">{members.length}명</span>
-      </div>
+      <ContentHeader
+        caption="ORGANIZATION WORKSPACE"
+        title="회원 관리"
+        description="조직 구성원의 계정 정보와 권한을 관리합니다."
+        actions={<strong>{members.length}명의 사용자</strong>}
+      />
 
       <div className="admin-table-wrap">
         {loading ? (

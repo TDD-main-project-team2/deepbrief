@@ -1,7 +1,9 @@
 import { useState } from "react";
+
 import Icons from "../common/Icons.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
+import ContentHeader from "../common/ContentHeader.jsx";
 import TemplateGuidelineForm from "./TemplateGuidelineForm.jsx";
 
 export default function TemplateGuidelineContent({
@@ -31,20 +33,20 @@ export default function TemplateGuidelineContent({
 
   return (
     <section className="admin-content-section">
-      <div className="admin-section-heading">
-        <div>
-          <p className="admin-eyebrow">ORGANIZATION WORKSPACE</p>
-          <h1>{title}</h1>
-          <p className="admin-section-description">{description}</p>
-        </div>
-        <button
-          className="admin-button admin-button-primary"
-          type="button"
-          onClick={() => setEditing({})}
-        >
-          <Icons type="plus" /> 새로 만들기
-        </button>
-      </div>
+      <ContentHeader
+        caption="ORGANIZATION WORKSPACE"
+        title={title}
+        description={description}
+        actions={
+          <button
+            className="admin-button admin-button-primary"
+            type="button"
+            onClick={() => setEditing({})}
+          >
+            <Icons type="plus" /> 새로 만들기
+          </button>
+        }
+      />
 
       {loading ? (
         <div className="admin-loading">불러오는 중...</div>

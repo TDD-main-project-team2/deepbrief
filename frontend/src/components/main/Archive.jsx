@@ -1,4 +1,5 @@
 import "./Archive.css";
+import ContentHeader from "../common/ContentHeader.jsx";
 import ArchiveItem from "./ArchiveItem.jsx";
 import Icons from "../common/Icons.jsx";
 
@@ -8,21 +9,26 @@ export default function Archive({ view, articles, openArticle, onDeleteArticle }
   return (
     <>
       <section className="archive-page">
-        <p className="headingCaption">ARTICLE ARCHIVE</p>
-        <h1>{isPublic ? "사내 기사" : "내 기사"}</h1>
-        <p className="archive-description">
-          {isPublic
-            ? "우리 조직에서 공개한 기사를 모아볼 수 있어요."
-            : "내가 올린 기사를 모아볼 수 있어요."}
-        </p>
-
-        <div className="archive-summary">
+        <ContentHeader
+          caption="ARTICLE ARCHIVE"
+          title={isPublic ? "사내 기사" : "내 기사"}
+          description={
+            isPublic
+              ? "우리 조직에서 공개한 기사를 모아볼 수 있어요."
+              : "내가 올린 기사를 모아볼 수 있어요."
+          }
+          actions={
+            <>
           <strong>
             {articles.length}
             개의 기사
           </strong>
           <span>{isPublic ? "공용 아카이브" : "내 아카이브"}</span>
-        </div>
+            </>
+          }
+        />
+
+
 
         {articles.length ? (
           <div className="archive-list">

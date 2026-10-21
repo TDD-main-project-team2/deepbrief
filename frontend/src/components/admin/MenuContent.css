@@ -23,11 +23,11 @@
     color 0.15s;
 }
 .admin-nav-item:hover {
-  background: #eee8ea;
+  background: #f5ecef;
   color: var(--admin-ink);
 }
 .admin-nav-item.active {
-  background: #ece4e6;
+  background: #efe3e9;
   color: var(--admin-wine-dark);
   font-weight: 700;
 }

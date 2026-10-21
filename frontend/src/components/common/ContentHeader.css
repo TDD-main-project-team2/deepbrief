@@ -1,0 +1,50 @@
+.content-header {
+  color: #332d32;
+  font-family: "Noto Sans KR", sans-serif;
+}
+.content-header-text {
+  min-width: 0;
+}
+.content-header-caption {
+  margin: 0 0 15px;
+  color: var(--wine);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 1.6px;
+}
+.content-header-title {
+  margin: 0;
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -1.4px;
+  line-height: 1.55;
+}
+.content-header-description {
+  margin: 12px 0 0;
+  color: #a58e9c;
+  font-size: 12px;
+  line-height: 1.9;
+}
+.content-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #e9dfe5;
+  padding: 24px 0 15px;
+  margin-top: 20px;
+  font-size: 11px;
+}
+.content-header-actions > strong {
+  font-weight: 500;
+  color: #795c6c;
+}
+.content-header-actions > span {
+  font-size: 9px;
+  color: #ae96a4;
+}
+@media (max-width: 680px) {
+  .content-header-title {
+    font-size: 23px;
+  }
+}

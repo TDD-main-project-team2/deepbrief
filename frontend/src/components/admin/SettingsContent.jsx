@@ -1,4 +1,6 @@
 import { useState } from "react";
+
+import ContentHeader from "../common/ContentHeader.jsx";
 import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import ErrorNotice from "../common/feedback/ErrorNotice.jsx";
 
@@ -24,13 +26,11 @@ export default function SettingsContent({ user, onRotateCode }) {
 
   return (
     <section className="admin-content-section">
-      <div className="admin-section-heading">
-        <div>
-          <p className="admin-eyebrow">ORGANIZATION WORKSPACE</p>
-          <h1>조직 설정</h1>
-          <p className="admin-section-description">조직 정보와 회원 초대 코드를 관리합니다.</p>
-        </div>
-      </div>
+      <ContentHeader
+        caption="ORGANIZATION WORKSPACE"
+        title="조직 설정"
+        description="조직 정보와 회원 초대 코드를 관리합니다."
+      />
 
       <ErrorNotice>{error}</ErrorNotice>
 

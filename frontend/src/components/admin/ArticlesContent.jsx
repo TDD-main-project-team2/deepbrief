@@ -1,4 +1,6 @@
 import { useState } from "react";
+
+import ContentHeader from "../common/ContentHeader.jsx";
 import Icons from "../common/Icons.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
@@ -29,16 +31,12 @@ export default function ArticlesContent({ articles, loading, onUpdate, onDelete 
 
   return (
     <section className="admin-content-section">
-      <div className="admin-section-heading">
-        <div>
-          <p className="admin-eyebrow">ORGANIZATION WORKSPACE</p>
-          <h1>기사 관리</h1>
-          <p className="admin-section-description">
-            조직에서 접근할 수 있는 기사를 확인하고 공개 범위를 관리합니다.
-          </p>
-        </div>
-        <span className="admin-count">{articles.length}개</span>
-      </div>
+      <ContentHeader
+        caption="ORGANIZATION WORKSPACE"
+        title="기사 관리"
+        description="조직에서 접근할 수 있는 기사를 확인하고 공개 범위를 관리합니다."
+        actions={<strong>{articles.length}개의 기사</strong>}
+      />
 
       <div className="admin-article-list">
         {loading ? (
