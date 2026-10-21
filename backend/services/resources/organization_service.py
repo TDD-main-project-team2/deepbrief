@@ -1,8 +1,21 @@
 from sqlalchemy.orm import Session
 
 from backend.app.dependencies import _not_found, ensure_organization_member
-from backend.repositories import organization_repository
+from backend.repositories import organization_repository, user_repository
+from backend.schemas.user import UserResponse
+from backend.models.user import User
 
+
+def get_user_profile(db: Session, user: User) -> UserResponse:
+    organization_name = user_repository.get_organization_name(db, user.organization_id)
+
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        nickname=user.nickname,
+        role=user.role,
+        organization_name=organization_name,
+    )
 
 def get_organization_by_user_id(user_id: int, db: Session):
     organization = organization_repository.find_organization_by_user_id(

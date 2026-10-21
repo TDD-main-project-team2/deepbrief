@@ -26,6 +26,10 @@ def get_organization_by_code(db: Session, code: str) -> Organization | None:
     return db.scalar(select(Organization).where(Organization.code == code))
 
 
+def get_organization_name(db: Session, organization_id: int) -> str | None:
+    return db.scalar(select(Organization.name).where(Organization.id == organization_id))
+
+
 def create(db: Session, user: User) -> User:
     db.add(user)
     db.flush()
