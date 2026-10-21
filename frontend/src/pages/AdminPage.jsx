@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import "./AdminPage.css";
 
@@ -19,40 +19,54 @@ function getErrorMessage(error, fallback) {
 
 export default function AdminPage({ user, onLogout, onBackToMain }) {
   const [menuOpen, setMenuOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState("members");
+  const [query, setQuery] = useState({ tab: "members", version: 0 });
+  const [completedQuery, setCompletedQuery] = useState(null);
+  const activeTab = query.tab;
   const [members, setMembers] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [guidelines, setGuidelines] = useState([]);
   const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const loading = activeTab !== "settings" && completedQuery !== query;
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [reloadKey, setReloadKey] = useState(0);
-
-  const load = useCallback(async () => {
-    setLoading(true);
+  function reload() {
     setError("");
-
-    try {
-      if (activeTab === "members") setMembers(await getOrgMembers());
-      else if (activeTab === "templates") setTemplates(await getOrgTemplates());
-      else if (activeTab === "guidelines") setGuidelines(await getOrgGuidelines());
-      else if (activeTab === "articles") setArticles(await getOrgArticles());
-    } catch (err) {
-      if (err?.response?.status === 401) {
-        void onLogout?.();
-        return;
-      }
-
-      setError(getErrorMessage(err, "데이터를 불러오지 못했습니다."));
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab, onLogout, reloadKey]);
+    setQuery((current) => ({ ...current, version: current.version + 1 }));
+  }
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false;
+    const loaders = {
+      members: { fetch: getOrgMembers, update: setMembers },
+      templates: { fetch: getOrgTemplates, update: setTemplates },
+      guidelines: { fetch: getOrgGuidelines, update: setGuidelines },
+      articles: { fetch: getOrgArticles, update: setArticles },
+    };
+    const loader = loaders[query.tab];
+    if (!loader) return;
+
+    async function load() {
+      try {
+        const data = await loader.fetch();
+        if (!cancelled) loader.update(data);
+      } catch (err) {
+        if (cancelled) return;
+        if (err?.response?.status === 401) {
+          void onLogout?.();
+          return;
+        }
+        setError(getErrorMessage(err, "데이터를 불러오지 못했습니다."));
+      } finally {
+        if (!cancelled) setCompletedQuery(query);
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [query, onLogout]);
 
   async function perform(action, successMessage) {
     setError("");
@@ -61,7 +75,7 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
     try {
       await action();
       setNotice(successMessage);
-      setReloadKey((value) => value + 1);
+      reload();
 
       return true;
     } catch (err) {
@@ -86,7 +100,9 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
         <MenuContent
           activeTab={activeTab}
           onSelect={(tab) => {
-            setActiveTab(tab.id);
+            setQuery((current) =>
+              current.tab === tab.id ? current : { tab: tab.id, version: current.version + 1 },
+            );
             setError("");
             setNotice("");
           }}
@@ -95,7 +111,7 @@ export default function AdminPage({ user, onLogout, onBackToMain }) {
 
       <main className="main admin-main">
         <div className="admin-page-content">
-          <ErrorNotice onRetry={() => setReloadKey((value) => value + 1)}>{error}</ErrorNotice>
+          <ErrorNotice onRetry={reload}>{error}</ErrorNotice>
 
           {activeTab === "members" && (
             <MembersContent
