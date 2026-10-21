@@ -9,6 +9,7 @@ from backend.models.template import Template
 from backend.models.user import User
 from backend.models.conversation import Conversation
 from backend.models.article_chunk import ArticleChunk
+from backend.models.refresh_token import RefreshToken
 
 
 def get_org_members(db: Session, organization_id: int):
@@ -89,8 +90,8 @@ def delete_record(db: Session, record):
             db.query(ArticleChunk).filter(ArticleChunk.article_id.in_(private_article_ids)).delete(synchronize_session=False)
             db.query(UserArticle).filter(UserArticle.article_id.in_(private_article_ids)).delete(synchronize_session=False)
             db.query(Article).filter(Article.id.in_(private_article_ids)).delete(synchronize_session=False)
-
         db.query(UserArticle).filter(UserArticle.user_id == record.id).delete(synchronize_session=False)
-    
+        db.query(RefreshToken).filter(RefreshToken.user_id == record.id).delete(synchronize_session=False)
+
     db.delete(record)
     db.flush()
