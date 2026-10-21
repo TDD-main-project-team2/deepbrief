@@ -69,3 +69,19 @@
   width: 17px;
   height: 17px;
 }
+
+.admin-resource-count {
+  font-weight: 500;
+  color: #795c6c;
+}
+.admin-resource-create {
+  min-height: 30px;
+  padding: 0 10px;
+  gap: 5px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+.admin-resource-create > svg {
+  width: 14px;
+  height: 14px;
+}

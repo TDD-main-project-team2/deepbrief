@@ -4,6 +4,8 @@ import "./AdminCommon.css";
 import "./MembersContent.css";
 
 import ContentHeader from "../common/ContentHeader.jsx";
+import EditButton from "../common/buttons/EditButton.jsx";
+import DeleteButton from "../common/buttons/DeleteButton.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
 
@@ -76,21 +78,15 @@ export default function MembersContent({ members, loading, onUpdate, onDelete, c
                     </span>
                   </td>
                   <td className="align-right">
-                    <button
-                      className="admin-text-button"
-                      type="button"
+                    <EditButton
+                      label={`${member.nickname || member.email} 회원 수정`}
                       onClick={() => startEdit(member)}
-                    >
-                      수정
-                    </button>
-                    <button
-                      className="admin-text-button danger"
-                      type="button"
+                    />
+                    <DeleteButton
+                      label={`${member.nickname || member.email} 회원 삭제`}
                       disabled={member.id === currentUser?.id}
                       onClick={() => onDelete(member)}
-                    >
-                      삭제
-                    </button>
+                    />
                   </td>
                 </tr>
               ))}

@@ -8,6 +8,7 @@ export default function Icons({ type = "file" }) {
       "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M9 2h6l.5 3 2 1 2.5-1 3 5-2.5 2v2L23 16l-3 5-2.5-1-2 1-.5 2H9l-.5-2-2-1L4 21l-3-5 2.5-2v-2L1 10l3-5 2.5 1 2-1z",
     close: "M6 6l12 12 M6 18L18 6",
     minus: "M5 12h14",
+    edit: "M16 3l5 5 M4 20l4-1 13-13a2.12 2.12 0 0 0-3-3L5 16z",
     trash: "M3 6h18 M9 6V3h6v3 M5 6l1 15h12l1-15 M10 10v7 M14 10v7",
     chevronDown: "M6 9l6 6 6-6",
     chevronRight: "M9 6l6 6-6 6",

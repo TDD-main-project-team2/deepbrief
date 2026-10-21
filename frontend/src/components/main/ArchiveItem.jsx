@@ -1,4 +1,4 @@
-import DeleteButton from "../common/DeleteButton.jsx";
+import DeleteButton from "../common/buttons/DeleteButton.jsx";
 import "./ArchiveItem.css";
 import Icons from "../common/Icons.jsx";
 import formatDateTime from "../../utils/formatDateTime.js";

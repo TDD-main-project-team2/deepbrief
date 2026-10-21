@@ -38,7 +38,7 @@
 }
 .admin-nav-active-mark {
   position: absolute;
-  right: 0;
+  left: 0;
   top: 11px;
   bottom: 11px;
   width: 3px;

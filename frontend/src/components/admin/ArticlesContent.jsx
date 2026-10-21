@@ -4,6 +4,8 @@ import "./AdminCommon.css";
 import "./ArticlesContent.css";
 
 import ContentHeader from "../common/ContentHeader.jsx";
+import EditButton from "../common/buttons/EditButton.jsx";
+import DeleteButton from "../common/buttons/DeleteButton.jsx";
 import Icons from "../common/Icons.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
@@ -63,20 +65,14 @@ export default function ArticlesContent({ articles, loading, onUpdate, onDelete 
                 {article.visibility === "public" ? "조직 공개" : "비공개"}
               </span>
               <div className="admin-article-actions">
-                <button
-                  className="admin-text-button"
-                  type="button"
+                <EditButton
+                  label={`${article.title || "제목 없음"} 기사 수정`}
                   onClick={() => startEdit(article)}
-                >
-                  수정
-                </button>
-                <button
-                  className="admin-text-button danger"
-                  type="button"
+                />
+                <DeleteButton
+                  label={`${article.title || "제목 없음"} 기사 삭제`}
                   onClick={() => onDelete(article)}
-                >
-                  삭제
-                </button>
+                />
               </div>
             </article>
           ))

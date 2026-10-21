@@ -4,9 +4,11 @@ import "./AdminCommon.css";
 import "./TemplateGuidelineContent.css";
 
 import Icons from "../common/Icons.jsx";
+import EditButton from "../common/buttons/EditButton.jsx";
+import DeleteButton from "../common/buttons/DeleteButton.jsx";
+import ContentHeader from "../common/ContentHeader.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
-import ContentHeader from "../common/ContentHeader.jsx";
 import TemplateGuidelineForm from "./TemplateGuidelineForm.jsx";
 
 export default function TemplateGuidelineContent({
@@ -41,13 +43,18 @@ export default function TemplateGuidelineContent({
         title={title}
         description={description}
         actions={
-          <button
-            className="admin-button admin-button-primary"
-            type="button"
-            onClick={() => setEditing({})}
-          >
-            <Icons type="plus" /> 새로 만들기
-          </button>
+          <>
+            <strong className="admin-resource-count">
+              {items.length}개의 {label}
+            </strong>
+            <button
+              className="admin-button admin-button-primary admin-resource-create"
+              type="button"
+              onClick={() => setEditing({})}
+            >
+              <Icons type="plus" /> 새로 만들기
+            </button>
+          </>
         }
       />
 
@@ -62,20 +69,14 @@ export default function TemplateGuidelineContent({
                   <Icons type={isGuideline ? "clipboardCheck" : "file"} />
                 </span>
                 <div className="admin-resource-actions">
-                  <button
-                    className="admin-text-button"
-                    type="button"
+                  <EditButton
+                    label={`${item.title || "제목 없음"} 항목 수정`}
                     onClick={() => setEditing(item)}
-                  >
-                    수정
-                  </button>
-                  <button
-                    className="admin-text-button danger"
-                    type="button"
+                  />
+                  <DeleteButton
+                    label={`${item.title || "제목 없음"} 항목 삭제`}
                     onClick={() => onDelete(item)}
-                  >
-                    삭제
-                  </button>
+                  />
                 </div>
               </div>
               <h3>{item.title}</h3>

@@ -51,29 +51,6 @@
 .admin-button-secondary:hover:not(:disabled) {
   background: #f5ecef;
 }
-.admin-text-button {
-  padding: 5px 7px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: #664850;
-  font: inherit;
-  font-size: 11px;
-  cursor: pointer;
-}
-.admin-text-button:hover {
-  background: #f5ecef;
-}
-.admin-text-button.danger {
-  color: #b05c54;
-}
-.admin-text-button.danger:hover {
-  background: #fff0ee;
-}
-.admin-text-button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
 .admin-loading {
   padding: 45px 20px;
   color: #928a8c;

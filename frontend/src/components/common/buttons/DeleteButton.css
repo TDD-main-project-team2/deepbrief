@@ -1,5 +1,5 @@
 .delete-button {
-  display: grid;
+  display: inline-grid;
   place-items: center;
   flex-shrink: 0;
   width: 30px;
@@ -12,7 +12,7 @@
   width: 16px;
   height: 16px;
 }
-.delete-button:hover {
+.delete-button:hover:not(:disabled) {
   background: #f5dfe7;
   color: #a12e50;
 }
