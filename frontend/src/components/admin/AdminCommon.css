@@ -58,30 +58,32 @@
 .admin-form label {
   display: grid;
   gap: 8px;
-  color: #64595c;
+  color: #725261;
   font-size: 12px;
   font-weight: 600;
 }
 .admin-form input,
-.admin-form textarea,
-.admin-form select {
+.admin-form textarea {
   width: 100%;
   min-width: 0;
   padding: 11px 12px;
-  border: 1px solid #e5dee0;
+  border: 1px solid #e1d5da;
   border-radius: 8px;
   outline: none;
   background: #fff;
-  color: #2d2527;
+  color: #59434e;
   font: inherit;
   font-size: 12px;
   font-weight: 400;
 }
 .admin-form input:focus,
-.admin-form textarea:focus,
-.admin-form select:focus {
-  border-color: #a68b92;
+.admin-form textarea:focus {
+  border-color: var(--wine);
   box-shadow: 0 0 0 3px rgba(136, 53, 75, 0.1);
+}
+.admin-form input::placeholder,
+.admin-form textarea::placeholder {
+  color: #b09aa5;
 }
 .admin-form textarea {
   resize: vertical;

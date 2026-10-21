@@ -1,16 +1,17 @@
-import LoadingNotice from "../common/feedback/LoadingNotice.jsx";
-import { updateOrgMember, deleteOrgMember } from "../../api/admin.js";
-import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import { useState } from "react";
 
 import "./AdminCommon.css";
 import "./MembersContent.css";
 
+import Select from "../common/Select.jsx";
+import LoadingNotice from "../common/feedback/LoadingNotice.jsx";
+import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import ContentHeader from "../common/ContentHeader.jsx";
 import EditButton from "../common/buttons/EditButton.jsx";
 import DeleteButton from "../common/buttons/DeleteButton.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
+import { updateOrgMember, deleteOrgMember } from "../../api/admin.js";
 
 export default function MembersContent({ members, loading, onPerform, currentUser }) {
   const [deleting, setDeleting] = useState(null);
@@ -138,13 +139,15 @@ export default function MembersContent({ members, loading, onPerform, currentUse
                 maxLength={100}
               />
             </label>
-            <label>
-              권한
-              <select value={role} onChange={(event) => setRole(event.target.value)}>
-                <option value="member">일반 회원</option>
-                <option value="admin">관리자</option>
-              </select>
-            </label>
+            <Select
+              label="권한"
+              value={role}
+              onChange={setRole}
+              options={[
+                { value: "member", label: "일반 회원" },
+                { value: "admin", label: "관리자" },
+              ]}
+            />
             {editing.id === currentUser?.id && role !== currentUser?.role && (
               <p className="admin-inline-note">
                 본인의 관리자 권한 변경은 서버에서 거부될 수 있습니다.

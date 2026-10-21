@@ -1,6 +1,3 @@
-import LoadingNotice from "../common/feedback/LoadingNotice.jsx";
-import { updateOrgArticle, deleteOrgArticle } from "../../api/admin.js";
-import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import { useState } from "react";
 
 import "./AdminCommon.css";
@@ -10,8 +7,12 @@ import ContentHeader from "../common/ContentHeader.jsx";
 import EditButton from "../common/buttons/EditButton.jsx";
 import DeleteButton from "../common/buttons/DeleteButton.jsx";
 import Icons from "../common/Icons.jsx";
+import Select from "../common/Select.jsx";
+import LoadingNotice from "../common/feedback/LoadingNotice.jsx";
+import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
+import { updateOrgArticle, deleteOrgArticle } from "../../api/admin.js";
 
 export default function ArticlesContent({ articles, loading, onPerform }) {
   const [deleting, setDeleting] = useState(null);
@@ -120,13 +121,15 @@ export default function ArticlesContent({ articles, loading, onPerform }) {
                 maxLength={255}
               />
             </label>
-            <label>
-              공개 범위
-              <select value={visibility} onChange={(event) => setVisibility(event.target.value)}>
-                <option value="private">비공개</option>
-                <option value="public">조직 공개</option>
-              </select>
-            </label>
+            <Select
+              label="공개 범위"
+              value={visibility}
+              onChange={setVisibility}
+              options={[
+                { value: "private", label: "비공개" },
+                { value: "public", label: "조직 공개" },
+              ]}
+            />
             <div className="admin-form-actions">
               <button
                 className="admin-button admin-button-secondary"
