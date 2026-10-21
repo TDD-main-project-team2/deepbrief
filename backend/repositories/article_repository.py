@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from backend.database.rdb.rdb import SessionLocal
 from backend.models.user import User
 from backend.models.article import Article
+from backend.models.file import File
 from backend.models.message import Message
 from backend.models.conversation import Conversation
 from backend.models.user_article import UserArticle
@@ -14,11 +15,18 @@ from backend.models.article_chunk import ArticleChunk
 def get_by_content_hash(db: Session, content_hash: str) -> Article | None:
     return db.query(Article).filter(Article.content_hash == content_hash).first()
 
+
 def create(db: Session, article: Article) -> Article:
     db.add(article)
-    db.commit()
-    db.refresh(article)
+    db.flush()
     return article
+
+
+def save_file(db: Session, file: File) -> File:
+    db.add(file)
+    db.flush()
+    return file
+
 
 def find_article_by_id(article_id: int) -> Article | None:
     """기사 ID로 기사를 조회한다."""

@@ -18,10 +18,12 @@ def _conversation_response(conversation, messages):
 async def create_conversation(file, title, article_visibility, current_user_id, rdb):
     file_bytes = await file.read()
     filename = file.filename
+    mime_type = file.content_type
 
     article = article_processing_service.process_article(
         file_bytes,
         filename,
+        mime_type,
         article_visibility,
         rdb,
         reprocess=False,
