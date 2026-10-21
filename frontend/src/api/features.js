@@ -73,7 +73,7 @@ export const recommendIdeas = async ({ conversationId, content }, accessToken) =
 
 export const getTemplateList = async (accessToken) => {
   const response = await apiClient.get(API_PATH.features.templates, authConfig(accessToken));
-  return response.data;
+  return response.data || [];
 };
 
 export const extractHeadline = async ({ conversationId, content }, accessToken) => {
