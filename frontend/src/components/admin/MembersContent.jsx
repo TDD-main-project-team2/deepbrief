@@ -1,3 +1,5 @@
+import { updateOrgMember, deleteOrgMember } from "../../api/admin.js";
+import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import { useState } from "react";
 
 import "./AdminCommon.css";
@@ -9,7 +11,8 @@ import DeleteButton from "../common/buttons/DeleteButton.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
 
-export default function MembersContent({ members, loading, onUpdate, onDelete, currentUser }) {
+export default function MembersContent({ members, loading, onPerform, currentUser }) {
+  const [deleting, setDeleting] = useState(null);
   const [editing, setEditing] = useState(null);
   const [nickname, setNickname] = useState("");
   const [role, setRole] = useState("member");
@@ -21,12 +24,20 @@ export default function MembersContent({ members, loading, onUpdate, onDelete, c
     setRole(member.role || "member");
   }
 
+  function removeMember(member) {
+    if (member.id === currentUser?.id) return;
+    setDeleting(member);
+  }
+
   async function submit(event) {
     event.preventDefault();
     if (!nickname.trim()) return;
     setSaving(true);
     try {
-      const saved = await onUpdate(editing.id, { nickname: nickname.trim(), role });
+      const saved = await onPerform(
+        () => updateOrgMember(editing.id, { nickname: nickname.trim(), role }),
+        "회원 정보를 수정했습니다.",
+      );
       if (saved !== false) setEditing(null);
     } finally {
       setSaving(false);
@@ -35,6 +46,19 @@ export default function MembersContent({ members, loading, onUpdate, onDelete, c
 
   return (
     <section className="admin-content-section">
+      <CompletionNotice
+        title="회원을 삭제할까요?"
+        message={deleting ? `${deleting.nickname || deleting.email} 회원을 삭제합니다.` : ""}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => {
+          if (!deleting) return;
+          const id = deleting.id;
+          setDeleting(null);
+          void onPerform(() => deleteOrgMember(id), "회원을 삭제했습니다.");
+        }}
+        confirmLabel="삭제"
+      />
+
       <ContentHeader
         caption="ORGANIZATION WORKSPACE"
         title="회원 관리"
@@ -85,7 +109,7 @@ export default function MembersContent({ members, loading, onUpdate, onDelete, c
                     <DeleteButton
                       label={`${member.nickname || member.email} 회원 삭제`}
                       disabled={member.id === currentUser?.id}
-                      onClick={() => onDelete(member)}
+                      onClick={() => removeMember(member)}
                     />
                   </td>
                 </tr>

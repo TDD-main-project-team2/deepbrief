@@ -1,3 +1,5 @@
+import { updateOrgArticle, deleteOrgArticle } from "../../api/admin.js";
+import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import { useState } from "react";
 
 import "./AdminCommon.css";
@@ -10,7 +12,8 @@ import Icons from "../common/Icons.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
 
-export default function ArticlesContent({ articles, loading, onUpdate, onDelete }) {
+export default function ArticlesContent({ articles, loading, onPerform }) {
+  const [deleting, setDeleting] = useState(null);
   const [editing, setEditing] = useState(null);
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState("private");
@@ -22,12 +25,19 @@ export default function ArticlesContent({ articles, loading, onUpdate, onDelete 
     setVisibility(article.visibility || "private");
   }
 
+  function removeArticle(article) {
+    setDeleting(article);
+  }
+
   async function submit(event) {
     event.preventDefault();
     if (!title.trim()) return;
     setSaving(true);
     try {
-      const saved = await onUpdate(editing.id, { title: title.trim(), visibility });
+      const saved = await onPerform(
+        () => updateOrgArticle(editing.id, { title: title.trim(), visibility }),
+        "기사 정보를 수정했습니다.",
+      );
       if (saved !== false) setEditing(null);
     } finally {
       setSaving(false);
@@ -36,6 +46,19 @@ export default function ArticlesContent({ articles, loading, onUpdate, onDelete 
 
   return (
     <section className="admin-content-section">
+      <CompletionNotice
+        title="기사를 삭제할까요?"
+        message={deleting ? `'${deleting.title || "제목 없는 기사"}' 기사를 삭제합니다.` : ""}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => {
+          if (!deleting) return;
+          const id = deleting.id;
+          setDeleting(null);
+          void onPerform(() => deleteOrgArticle(id), "기사를 삭제했습니다.");
+        }}
+        confirmLabel="삭제"
+      />
+
       <ContentHeader
         caption="ORGANIZATION WORKSPACE"
         title="기사 관리"
@@ -71,7 +94,7 @@ export default function ArticlesContent({ articles, loading, onUpdate, onDelete 
                 />
                 <DeleteButton
                   label={`${article.title || "제목 없음"} 기사 삭제`}
-                  onClick={() => onDelete(article)}
+                  onClick={() => removeArticle(article)}
                 />
               </div>
             </article>

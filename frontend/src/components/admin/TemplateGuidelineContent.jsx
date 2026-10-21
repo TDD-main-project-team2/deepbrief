@@ -1,3 +1,4 @@
+import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import { useState } from "react";
 
 import "./AdminCommon.css";
@@ -17,19 +18,28 @@ export default function TemplateGuidelineContent({
   description,
   items,
   loading,
+  onPerform,
   onCreate,
   onEdit,
   onDelete,
 }) {
+  const [deleting, setDeleting] = useState(null);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
   const isGuideline = type === "guidelines";
   const label = isGuideline ? "작성 지침" : "템플릿";
 
+  function removeResource(item) {
+    setDeleting(item);
+  }
+
   async function submit(data) {
     setSaving(true);
     try {
-      const saved = editing?.id ? await onEdit(editing.id, data) : await onCreate(data);
+      const saved = await onPerform(
+        () => (editing?.id ? onEdit(editing.id, data) : onCreate(data)),
+        editing?.id ? `${label}을 수정했습니다.` : `${label}을 만들었습니다.`,
+      );
       if (saved !== false) setEditing(null);
     } finally {
       setSaving(false);
@@ -38,6 +48,19 @@ export default function TemplateGuidelineContent({
 
   return (
     <section className="admin-content-section">
+      <CompletionNotice
+        title="항목을 삭제할까요?"
+        message={deleting ? `'${deleting.title}' 항목을 삭제합니다.` : ""}
+        onClose={() => setDeleting(null)}
+        onConfirm={() => {
+          if (!deleting) return;
+          const id = deleting.id;
+          setDeleting(null);
+          void onPerform(() => onDelete(id), "삭제했습니다.");
+        }}
+        confirmLabel="삭제"
+      />
+
       <ContentHeader
         caption="ORGANIZATION WORKSPACE"
         title={title}
@@ -75,7 +98,7 @@ export default function TemplateGuidelineContent({
                   />
                   <DeleteButton
                     label={`${item.title || "제목 없음"} 항목 삭제`}
-                    onClick={() => onDelete(item)}
+                    onClick={() => removeResource(item)}
                   />
                 </div>
               </div>

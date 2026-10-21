@@ -1,3 +1,4 @@
+import { updateOrgCode } from "../../api/admin.js";
 import { useState } from "react";
 
 import "./AdminCommon.css";
@@ -7,7 +8,7 @@ import ContentHeader from "../common/ContentHeader.jsx";
 import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import ErrorNotice from "../common/feedback/ErrorNotice.jsx";
 
-export default function SettingsContent({ user, onRotateCode }) {
+export default function SettingsContent({ user, onComplete }) {
   const [confirmRotate, setConfirmRotate] = useState(false);
   const [error, setError] = useState("");
   const [rotating, setRotating] = useState(false);
@@ -18,8 +19,9 @@ export default function SettingsContent({ user, onRotateCode }) {
     setError("");
     setRotating(true);
     try {
-      const result = await onRotateCode();
+      const result = await updateOrgCode();
       setNewCode(result?.code || result?.organization?.code || "");
+      onComplete("초대 코드를 재발급했습니다.");
     } catch (err) {
       setError(err?.response?.data?.detail || err?.message || "초대 코드를 재발급하지 못했습니다.");
     } finally {
