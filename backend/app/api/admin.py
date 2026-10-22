@@ -38,6 +38,11 @@ def get_org_articles(db: Session = Depends(get_db), current_user=Depends(get_cur
     return article_service.get_all_articles_by_org_id(db, current_user)
 
 
+@router.get("/articles/{article_id}", response_model=ArticleResponse)
+def get_article(article_id: int, current_user=Depends(get_current_admin), db: Session = Depends(get_db)):
+    return article_service.get_article_by_id(article_id, current_user.id, db)
+
+
 @router.post("/templates", response_model=OrgTemplateResponse)
 def add_org_template(data: OrgTemplateRequest, db: Session = Depends(get_db), current_user=Depends(get_current_admin)):
     return admin_service.add_org_template(db, current_user, data)

@@ -66,6 +66,11 @@ def ensure_article_access(article_id: int, user_id: int, db: Session) -> None:
     기사가 지금 사용자의 목록(user_articles)에 없으면 404.
     기사는 여러 사용자가 공유하므로 주인 대신 (사용자 ID, 기사 ID) 연결이 있는지 본다.
     """
+    user = user_repository.get_by_id(db, user_id)
+    if user is None:
+        raise _not_found()
+    ensure_organization_article(article_id, user.organization_id, db)
+
     if not article_repository.user_has_access(db, user_id, article_id):
         raise _not_found()
 
@@ -94,7 +99,7 @@ def get_current_admin(current_user=Depends(get_current_user)):
     ensure_organization_admin(current_user.organization_id, current_user)
     return current_user
 
-def ensure_organization_article(article_id: int, organization_id: int, db: Session = Depends(get_db)):
+def ensure_organization_article(article_id: int, organization_id: int, db: Session):
     article_user = user_repository.get_by_article_id(db, article_id)
-    if article_user.organization_id != organization_id:
-        raise _unauthorized("관리자 권한 없습니다.")
+    if article_user is None or article_user.organization_id != organization_id:
+        raise _not_found()

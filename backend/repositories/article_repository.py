@@ -150,4 +150,12 @@ def add_article_to_user(user_id: int, article_id: int) -> None:
         db.commit()
 
 def user_has_access(db: Session, user_id: int, article_id: int) -> bool:
+    user = db.get(User, user_id)
+
+    if user is None:
+        return False
+
+    if user.role == "admin":
+        return True
+
     return db.get(UserArticle, (user_id, article_id)) is not None
