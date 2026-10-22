@@ -1,5 +1,6 @@
 .file-panel {
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--border);
@@ -15,11 +16,12 @@
   }
 }
 .file-panel > .panel-heading {
+  flex-shrink: 0;
   background: #ece9ed;
   color: #5c5561;
 }
 .file-panel > .panel-heading > span > svg {
-  background: #f3e6ec;
+  background: transparent;
   color: var(--wine);
 }
 .file-panel > .panel-heading small {
@@ -54,5 +56,3 @@
   flex-shrink: 0;
   margin-left: 12px;
 }
-.file-panel{min-height:0}
-.file-panel>.panel-heading{flex-shrink:0}

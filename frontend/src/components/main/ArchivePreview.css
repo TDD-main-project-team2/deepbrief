@@ -19,6 +19,9 @@
   border-bottom: 1px solid var(--border);
 }
 .back-archive {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 10px;
   color: var(--wine);
   padding: 0;
@@ -26,6 +29,7 @@
 }
 .upload-record h1 {
   font-size: 20px;
+  overflow-wrap: anywhere;
 }
 .upload-record dl {
   display: flex;
@@ -59,9 +63,6 @@
   .article-detail-main .preview-canvas {
     padding: 20px;
   }
-}
-.upload-record h1 {
-  overflow-wrap: anywhere;
 }
 .document-title-row {
   display: flex;
@@ -139,11 +140,6 @@
   }
 }
 
-.back-archive {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
 .back-archive > svg {
   width: 14px;
   height: 14px;
