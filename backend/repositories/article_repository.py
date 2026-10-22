@@ -124,6 +124,17 @@ def delete_article_associations(article_id: int, db: Session) -> bool:
     deleted = db.query(Article).filter(Article.id == article_id).delete(synchronize_session=False)
     return deleted > 0
 
+def update_article(db: Session, article: Article, title: str | None = None, visibility: str | None = None) -> Article:
+    """기사 제목 및 공개 범위를 수정한다."""
+    if title is not None:
+        article.title = title
+
+    if visibility is not None:
+        article.visibility = visibility
+
+    db.flush()
+    return article
+
 
 def update_category(article_id: int, category: str) -> None:
     """기사의 카테고리를 갱신한다."""
