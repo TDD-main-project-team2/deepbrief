@@ -1,5 +1,8 @@
 .preview-canvas {
+  flex: 1 1 0;
+  min-height: 0;
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 27px 25px;
 }
 .text-paper {
@@ -129,10 +132,4 @@
   color: #9d8190;
   margin: auto;
   text-align: center;
-}
-.preview-canvas {
-  flex: 1 1 0;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
