@@ -20,6 +20,7 @@ from backend.models.template import Template
 from backend.models.user import User
 from backend.models.user_article import UserArticle
 from backend.repositories import (
+    admin_repository,
     article_repository,
     conversation_repository,
     message_repository,
@@ -87,13 +88,18 @@ def count(db, model, *conditions):
     return db.scalar(select(func.count()).select_from(model).where(*conditions))
 
 
-def make_organization(db, code=None):
-    return save(db, Organization(name="새봄신문", code=code or unique("ORG")))
+def make_organization(db, code=None, admin_code=None):
+    return save(db, Organization(
+        name="새봄신문",
+        code=code or unique("ORG"),
+        admin_code=admin_code or unique("ADMIN"),
+    ))
 
 
-def make_user(db, organization, email=None):
+def make_user(db, organization, email=None, role="member"):
     return save(db, User(
         organization_id=organization.id,
+        role=role,
         nickname="김바다",
         email=email or f"{unique('reporter')}@example.com",
         password_hash="hashed-password",
@@ -173,6 +179,20 @@ def test_organization_duplicate_code(db):
         make_organization(db, code=organization.code)
 
 
+def test_organization_duplicate_admin_code(db):
+    """같은 관리자 코드로 조직을 두 번 저장할 수 없다."""
+    organization = make_organization(db)
+
+    with pytest.raises(IntegrityError):
+        make_organization(db, admin_code=organization.admin_code)
+
+
+def test_organization_blank_admin_code(db):
+    """공백뿐인 관리자 코드는 저장할 수 없다."""
+    with pytest.raises(IntegrityError):
+        make_organization(db, admin_code="   ")
+
+
 def test_message_invalid_role(db):
     """메시지 role은 user, assistant만 저장할 수 있다."""
     organization = make_organization(db)
@@ -180,6 +200,15 @@ def test_message_invalid_role(db):
 
     with pytest.raises(IntegrityError):
         save(db, Message(conversation_id=conversation.id, role="system", content="안녕하세요"))
+
+
+def test_user_invalid_role(db):
+    """사용자 role은 member, admin만 저장할 수 있다."""
+    organization = make_organization(db)
+    make_user(db, organization, role="admin")
+
+    with pytest.raises(IntegrityError):
+        make_user(db, organization, role="owner")
 
 
 def test_article_chunk_duplicate_index(db):
@@ -237,16 +266,87 @@ def test_add_article_to_user_ignores_duplicate(db):
     assert count(db, UserArticle, UserArticle.user_id == user.id) == 1
 
 
-def test_delete_article_removes_only_link(db):
-    """기사 삭제는 사용자와의 연결만 지우고 기사는 남기며, 연결이 없으면 False를 반환한다."""
-    user = make_user(db, make_organization(db))
-    article = make_article(db)
+def test_delete_article_association_removes_user_data(db):
+    """한 사용자의 연결·대화·메시지만 지우고 기사와 다른 사용자 것은 남기며, 연결이 없으면 False."""
+    organization = make_organization(db)
+    user = make_user(db, organization)
+    other = make_user(db, organization)
+    article = make_article(db, visibility="public")
     link(db, user, article)
+    link(db, other, article)
+    mine = make_conversation(db, user, article)
+    theirs = make_conversation(db, other, article)
+    save(db, Message(conversation_id=mine.id, role="user", content="질문"))
+    save(db, Message(conversation_id=theirs.id, role="user", content="질문"))
 
-    assert article_repository.delete_article(article.id, user.id) is True
-    assert count(db, UserArticle, UserArticle.article_id == article.id) == 0
+    assert article_repository.delete_article_association(article.id, user.id, db) is True
+    db.flush()   # 서비스가 commit하는 자리
+
+    assert count(db, UserArticle, UserArticle.article_id == article.id) == 1
+    assert count(db, Conversation, Conversation.id == mine.id) == 0
+    assert count(db, Message, Message.conversation_id == mine.id) == 0
+    assert count(db, Message, Message.conversation_id == theirs.id) == 1
     assert count(db, Article, Article.id == article.id) == 1
-    assert article_repository.delete_article(article.id, user.id) is False
+    assert article_repository.delete_article_association(article.id, user.id, db) is False
+
+
+def test_delete_article_associations_removes_article(db):
+    """기사의 메시지·대화·연결·청크와 기사를 모두 지우고, 없는 기사면 False를 반환한다."""
+    organization = make_organization(db)
+    first = make_user(db, organization)
+    second = make_user(db, organization)
+    article = make_article(db)
+    other = make_article(db)
+    link(db, first, article)
+    link(db, second, article)
+    link(db, first, other)
+    conversations = [make_conversation(db, first, article), make_conversation(db, second, article)]
+    for conversation in conversations:
+        save(db, Message(conversation_id=conversation.id, role="user", content="질문"))
+    save(db, make_chunk(article, 0, "삭제할 기사 조각"))
+    save(db, make_chunk(other, 0, "남을 기사 조각"))
+
+    assert article_repository.delete_article_associations(article.id, db) is True
+    db.flush()
+
+    ids = [conversation.id for conversation in conversations]
+    assert count(db, Message, Message.conversation_id.in_(ids)) == 0
+    assert count(db, Conversation, Conversation.article_id == article.id) == 0
+    assert count(db, UserArticle, UserArticle.article_id == article.id) == 0
+    assert count(db, ArticleChunk, ArticleChunk.article_id == article.id) == 0
+    assert count(db, Article, Article.id == article.id) == 0
+    assert count(db, ArticleChunk, ArticleChunk.article_id == other.id) == 1
+    assert count(db, UserArticle, UserArticle.article_id == other.id) == 1
+    assert article_repository.delete_article_associations(article.id, db) is False
+
+
+def test_find_all_by_org_shared_article_once(db):
+    """조직 구성원이 가진 기사를 한 번씩만 조회하고, 다른 조직의 기사는 제외한다."""
+    own = make_organization(db)
+    first = make_user(db, own)
+    second = make_user(db, own)
+    shared = make_article(db)
+    single = make_article(db)
+    link(db, first, shared)
+    link(db, second, shared)
+    link(db, second, single)
+    link(db, make_user(db, make_organization(db)), make_article(db))
+
+    articles = article_repository.find_all_by_org(db, own.id)
+
+    assert sorted(article.id for article in articles) == sorted([shared.id, single.id])
+
+
+def test_find_all_public_by_org(db):
+    """조직 구성원이 가진 기사 중 공개 기사만 조회한다."""
+    user = make_user(db, make_organization(db))
+    public = make_article(db, visibility="public")
+    link(db, user, public)
+    link(db, user, make_article(db, visibility="private"))
+
+    articles = article_repository.find_all_public_by_org(db, user.organization_id)
+
+    assert [article.id for article in articles] == [public.id]
 
 
 def test_find_all_by_user_returns_linked_articles(db):
@@ -321,6 +421,18 @@ def test_conversation_create_and_find_by_id(db):
     assert (found.user_id, found.article_id, found.title) == (user.id, article.id, "전기버스 질문")
 
 
+def test_create_conversation_returns_existing(db):
+    """같은 사용자와 기사로 다시 만들면 기존 대화를 돌려주고 대화는 하나만 남는다."""
+    user = make_user(db, make_organization(db))
+    article = make_article(db)
+
+    first = conversation_repository.create_conversation("전기버스 질문", user.id, article.id)
+    second = conversation_repository.create_conversation("다른 제목", user.id, article.id)
+
+    assert second.id == first.id
+    assert count(db, Conversation, Conversation.user_id == user.id) == 1
+
+
 def test_find_all_conversations_by_user(db):
     """사용자의 대화만 id 순서로 조회한다."""
     organization = make_organization(db)
@@ -332,6 +444,16 @@ def test_find_all_conversations_by_user(db):
     conversations = conversation_repository.find_all_by_user(user.id)
 
     assert [conversation.id for conversation in conversations] == [first.id, second.id]
+
+
+def test_find_conversation_by_article_id(db):
+    """기사 id로 대화를 찾고, 대화가 없는 기사면 None을 반환한다."""
+    article = make_article(db)
+    conversation = make_conversation(db, make_user(db, make_organization(db)), article)
+
+    found = conversation_repository.find_conversation_by_article_id(article.id)
+    assert found.id == conversation.id
+    assert conversation_repository.find_conversation_by_article_id(make_article(db).id) is None
 
 
 def test_delete_conversation_removes_messages(db):
@@ -368,6 +490,20 @@ def test_message_create_find_and_delete(db):
     assert message_repository.find_message_by_id(message.id) is None
 
 
+def test_find_messages_by_conversation_id_order(db):
+    """그 대화의 메시지만 id 순서로 조회한다."""
+    user = make_user(db, make_organization(db))
+    conversation = make_conversation(db, user, make_article(db))
+    other = make_conversation(db, user, make_article(db))
+    save(db, Message(conversation_id=conversation.id, role="user", content="질문"))
+    save(db, Message(conversation_id=conversation.id, role="assistant", content="답변"))
+    save(db, Message(conversation_id=other.id, role="user", content="다른 대화 질문"))
+
+    messages = message_repository.find_messages_by_conversation_id(conversation.id)
+
+    assert [message.content for message in messages] == ["질문", "답변"]
+
+
 def test_find_organization_by_user_id(db):
     """사용자의 소속 조직을 찾는다."""
     organization = make_organization(db)
@@ -400,15 +536,15 @@ def test_find_article_template_by_id_other_organization(db):
     assert found.id == template.id
 
 
-def test_find_org_guideline_by_id_other_organization(db):
-    """다른 조직의 가이드라인은 조회되지 않는다."""
+def test_find_org_guideline_other_organization(db):
+    """자기 조직의 가이드라인을 찾고, 다른 조직 것은 제외하며, 없으면 None을 반환한다."""
     own = make_organization(db)
     other = make_organization(db)
-    guideline = save(db, Guideline(organization_id=other.id, title="표기 원칙", content="숫자 표기"))
+    guideline = save(db, Guideline(organization_id=own.id, title="표기 원칙", content="숫자 표기"))
+    save(db, Guideline(organization_id=other.id, title="다른 조직 지침", content="내용"))
 
-    assert organization_repository.find_org_guideline_by_id(own.id, guideline.id, db) is None
-    found = organization_repository.find_org_guideline_by_id(other.id, guideline.id, db)
-    assert found.id == guideline.id
+    assert organization_repository.find_org_guideline(own.id, db).id == guideline.id
+    assert organization_repository.find_org_guideline(make_organization(db).id, db) is None
 
 
 def test_user_create_and_get_by_id(db):
@@ -441,6 +577,16 @@ def test_get_organization_by_code(db):
 
     assert user_repository.get_organization_by_code(db, organization.code).id == organization.id
     assert user_repository.get_organization_by_code(db, unique("ORG")) is None
+
+
+def test_get_by_article_id(db):
+    """기사와 연결된 사용자를 찾고, 연결이 없는 기사면 None을 반환한다."""
+    user = make_user(db, make_organization(db))
+    article = make_article(db)
+    link(db, user, article)
+
+    assert user_repository.get_by_article_id(db, article.id).id == user.id
+    assert user_repository.get_by_article_id(db, make_article(db).id) is None
 
 
 def test_refresh_token_create_stores_hash(db):
@@ -562,6 +708,18 @@ def test_search_organization_chunks_without_organization(db):
         vector_db.search_organization_chunks(embedding(1.0, 0.0), article.id)
 
 
+def test_get_article_chunks_order(db):
+    """그 기사의 청크만 chunk_index 순서로 조회한다."""
+    article = make_article(db)
+    save(db, make_chunk(article, 1, "두 번째 조각"))
+    save(db, make_chunk(article, 0, "첫 번째 조각"))
+    save(db, make_chunk(make_article(db), 0, "다른 기사 조각"))
+
+    chunks = vector_db.get_article_chunks(article.id)
+
+    assert [chunk.content for chunk in chunks] == ["첫 번째 조각", "두 번째 조각"]
+
+
 # 사내 데이터 조회 SQL (services/agent/tools.py)
 # 안쪽 조회 함수는 session을 인자로 받으므로 db를 그대로 넘긴다. LLM이 도구를 고르는 부분은 다루지 않는다.
 
@@ -668,3 +826,124 @@ def test_list_templates_guidelines_and_count_members(db):
     assert tools._list_templates(db, own.id) == ["보도자료"]
     assert tools._list_guidelines(db, own.id) == ["표기 원칙"]
     assert tools._count_members(db, own.id) == 2
+
+
+# 관리자 기능 (repositories/admin_repository.py)
+# 함수가 db를 인자로 받으므로 db를 그대로 넘긴다. commit은 서비스가 하므로 flush된 결과로 확인한다.
+
+
+def test_admin_get_organization_and_members(db):
+    """조직을 id로 찾고, 구성원은 자기 조직만 조회하며 다른 조직 구성원은 None을 반환한다."""
+    own = make_organization(db)
+    first = make_user(db, own)
+    second = make_user(db, own)
+    outsider = make_user(db, make_organization(db))
+
+    assert admin_repository.get_organization(db, own.id).code == own.code
+    members = admin_repository.get_org_members(db, own.id)
+    assert sorted(member.id for member in members) == sorted([first.id, second.id])
+    assert admin_repository.get_org_member(db, own.id, first.id).id == first.id
+    assert admin_repository.get_org_member(db, own.id, outsider.id) is None
+
+
+def test_admin_get_template_guideline_other_organization(db):
+    """다른 조직의 템플릿·지침은 조회되지 않고, 지침 목록은 자기 조직 것만 반환한다."""
+    own = make_organization(db)
+    other = make_organization(db)
+    own_guideline = save(db, Guideline(organization_id=own.id, title="표기 원칙", content="숫자 표기"))
+    other_guideline = save(db, Guideline(organization_id=other.id, title="다른 조직 지침", content="내용"))
+    other_template = make_template(db, other)
+
+    assert admin_repository.get_org_template(db, own.id, other_template.id) is None
+    found = admin_repository.get_org_template(db, other.id, other_template.id)
+    assert found.id == other_template.id
+    assert admin_repository.get_org_guideline(db, own.id, other_guideline.id) is None
+    guidelines = admin_repository.get_org_guidelines(db, own.id)
+    assert [guideline.id for guideline in guidelines] == [own_guideline.id]
+
+
+def test_admin_add_and_update_template_guideline(db):
+    """템플릿·지침을 추가하면 id가 생기고, 제목과 내용을 수정할 수 있다."""
+    organization = make_organization(db)
+    template = admin_repository.add_template(
+        db, Template(organization_id=organization.id, title="보도자료", content="제목과 본문"))
+    guideline = admin_repository.add_guideline(
+        db, Guideline(organization_id=organization.id, title="표기 원칙", content="숫자 표기"))
+    assert template.id is not None
+    assert guideline.id is not None
+
+    admin_repository.update_template(db, template, "인터뷰", "질문과 답변")
+    admin_repository.update_guideline(db, guideline, "인용 원칙", "실명으로 인용")
+    db.expunge_all()   # 세션 캐시가 아니라 DB에서 다시 읽게 한다
+
+    found_template = db.get(Template, template.id)
+    found_guideline = db.get(Guideline, guideline.id)
+    assert (found_template.title, found_template.content) == ("인터뷰", "질문과 답변")
+    assert (found_guideline.title, found_guideline.content) == ("인용 원칙", "실명으로 인용")
+
+
+def test_admin_update_member(db):
+    """구성원의 닉네임과 role을 따로 바꿀 수 있고, 넘기지 않은 값은 그대로 둔다."""
+    member = make_user(db, make_organization(db))
+
+    admin_repository.update_member(db, member, nickname="이하늘")
+    admin_repository.update_member(db, member, role="admin")
+    db.expunge_all()
+
+    found = db.get(User, member.id)
+    assert (found.nickname, found.role) == ("이하늘", "admin")
+
+
+def test_admin_delete_record_template_guideline(db):
+    """템플릿과 지침을 삭제한다."""
+    organization = make_organization(db)
+    template = make_template(db, organization)
+    guideline = save(db, Guideline(organization_id=organization.id, title="표기 원칙", content="숫자 표기"))
+
+    admin_repository.delete_record(db, template)
+    admin_repository.delete_record(db, guideline)
+
+    assert count(db, Template, Template.id == template.id) == 0
+    assert count(db, Guideline, Guideline.id == guideline.id) == 0
+
+
+def test_admin_delete_record_user_removes_private_articles(db):
+    """구성원을 지우면 그의 대화·비공개 기사·연결·토큰이 지워지고, 공개 기사와 동료의 연결은 남는다."""
+    organization = make_organization(db)
+    member = make_user(db, organization)
+    colleague = make_user(db, organization)
+    private = make_article(db, visibility="private")
+    public = make_article(db, visibility="public")
+    link(db, member, private)
+    link(db, member, public)
+    link(db, colleague, public)
+    save(db, make_chunk(private, 0, "비공개 기사 조각"))
+    make_conversation(db, member, public)
+    token = unique("token")
+    expired_at = datetime.now(timezone.utc) + timedelta(days=7)
+    refresh_token_repository.create(db, member.id, token, expired_at)
+
+    admin_repository.delete_record(db, member)
+
+    assert count(db, User, User.id == member.id) == 0
+    assert count(db, Conversation, Conversation.user_id == member.id) == 0
+    assert count(db, Article, Article.id == private.id) == 0
+    assert count(db, ArticleChunk, ArticleChunk.article_id == private.id) == 0
+    assert count(db, UserArticle, UserArticle.user_id == member.id) == 0
+    assert refresh_token_repository.get_by_token(db, token) is None
+    assert count(db, Article, Article.id == public.id) == 1
+    assert count(db, UserArticle, UserArticle.user_id == colleague.id) == 1
+
+
+def test_admin_delete_record_user_with_messages(db):
+    """메시지가 있는 대화를 가진 구성원도 대화·메시지와 함께 삭제된다."""
+    member = make_user(db, make_organization(db))
+    article = make_article(db, visibility="public")
+    link(db, member, article)
+    conversation = make_conversation(db, member, article)
+    save(db, Message(conversation_id=conversation.id, role="user", content="질문"))
+
+    admin_repository.delete_record(db, member)
+
+    assert count(db, User, User.id == member.id) == 0
+    assert count(db, Message, Message.conversation_id == conversation.id) == 0

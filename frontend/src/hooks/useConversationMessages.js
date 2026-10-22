@@ -14,7 +14,7 @@ export default function useConversationMessages({
 }) {
   const pendingFeatures = useRef(new Set());
 
-  async function sendMessage(messageText, action) {
+  async function sendMessage(messageText, action, templateId) {
     const { api: featureApi, pendingText } = chatFeatureConfig[action] ?? chatFeatureConfig.qa;
 
     if (pendingFeatures.current.has(activeConversation?.id)) return;
@@ -43,7 +43,10 @@ export default function useConversationMessages({
       );
 
       try {
-        const response = await featureApi({ conversationId, content: messageText.trim() }, token);
+        const response = await featureApi(
+          { conversationId, content: messageText.trim(), templateId },
+          token,
+        );
 
         if (getAuthSessionVersion() !== requestSessionVersion) return;
         if (typeof response?.content !== "string" || !response.content.trim()) {

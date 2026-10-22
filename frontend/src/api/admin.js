@@ -4,7 +4,7 @@ import { API_PATH } from "./config/paths.js";
 // Members
 export const getOrgMembers = async () => {
   const response = await apiClient.get(API_PATH.admin.members);
-  return response.data;
+  return response.data || [];
 };
 
 export const updateOrgMember = async (memberId, data) => {
@@ -19,7 +19,7 @@ export const deleteOrgMember = async (memberId) => {
 // Templates
 export const getOrgTemplates = async () => {
   const response = await apiClient.get(API_PATH.admin.templates);
-  return response.data;
+  return response.data || [];
 };
 
 export const createOrgTemplate = async (data) => {
@@ -39,7 +39,7 @@ export const deleteOrgTemplate = async (templateId) => {
 // Guidelines
 export const getOrgGuidelines = async () => {
   const response = await apiClient.get(API_PATH.admin.guidelines);
-  return response.data;
+  return response.data || [];
 };
 
 export const createOrgGuideline = async (data) => {
@@ -59,7 +59,7 @@ export const deleteOrgGuideline = async (guidelineId) => {
 // Articles
 export const getOrgArticles = async () => {
   const response = await apiClient.get(API_PATH.admin.articles);
-  return response.data.articles;
+  return response.data?.articles || [];
 };
 
 export const updateOrgArticle = async (articleId, data) => {

@@ -3,7 +3,7 @@ import { API_PATH } from "./config/paths.js";
 
 export const getConversationList = async (accessToken) => {
   const response = await apiClient.get(API_PATH.conversations.default, authConfig(accessToken));
-  return response.data;
+  return response.data || [];
 };
 
 export const getConversation = async ({ conversationId }, accessToken) => {
