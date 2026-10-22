@@ -52,6 +52,7 @@ export default function MainPage({ user, onLogout, onComplete }) {
   const [historyError, setHistoryError] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [articleToDelete, setArticleToDelete] = useState(null);
+  const [conversationToDelete, setConversationToDelete] = useState(null);
   const [historyReload, setHistoryReload] = useState(0);
 
   useEffect(() => {
@@ -228,11 +229,8 @@ export default function MainPage({ user, onLogout, onComplete }) {
   }
 
   async function deleteConversation(conversation) {
-    if (
-      deleting.current ||
-      !window.confirm("이 대화를 삭제할까요? 기사 파일은 보관함에 유지됩니다.")
-    )
-      return;
+    if (deleting.current) return;
+    setConversationToDelete(null);
 
     const requestSessionVersion = getAuthSessionVersion();
     const version = viewVersion.current;
@@ -320,7 +318,7 @@ export default function MainPage({ user, onLogout, onComplete }) {
     activeConversationId,
     conversations,
     openChat,
-    onDeleteConversation: deleteConversation,
+    onDeleteConversation: setConversationToDelete,
     setView: changeView,
   };
 
@@ -339,6 +337,15 @@ export default function MainPage({ user, onLogout, onComplete }) {
   return (
     <div className={`shell ${menuOpen ? "menu-open" : "menu-closed"}`}>
       <CompletionNotice
+        title="대화를 삭제할까요?"
+        message={
+          conversationToDelete ? "대화 기록이 삭제됩니다. 기사 파일은 보관함에 유지됩니다." : ""
+        }
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={() => deleteConversation(conversationToDelete)}
+        confirmLabel="삭제"
+      />
+      <CompletionNotice
         title="기사를 삭제할까요?"
         message={
           articleToDelete
@@ -351,6 +358,7 @@ export default function MainPage({ user, onLogout, onComplete }) {
         onConfirm={() => deleteArticle(articleToDelete)}
         confirmLabel="삭제"
       />
+
       <SidebarLayout
         id="main-menu"
         user={user}

@@ -19,7 +19,7 @@
   color: #5c5561;
 }
 .file-panel > .panel-heading > span > svg {
-  background: #f3e6ec;
+  background: transparent;
   color: var(--wine);
 }
 .file-panel > .panel-heading small {
