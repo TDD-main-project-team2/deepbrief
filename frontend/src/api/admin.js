@@ -62,6 +62,11 @@ export const getOrgArticles = async () => {
   return response.data?.articles || [];
 };
 
+export const getOrgArticle = async (articleId) => {
+  const response = await apiClient.get(API_PATH.admin.article(articleId));
+  return response.data;
+};
+
 export const updateOrgArticle = async (articleId, data) => {
   const response = await apiClient.patch(API_PATH.admin.article(articleId), data);
   return response.data;

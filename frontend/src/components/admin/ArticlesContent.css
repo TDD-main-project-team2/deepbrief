@@ -1,9 +1,3 @@
-.admin-article-list {
-  overflow: hidden;
-  border: 1px solid var(--admin-line);
-  border-radius: 12px;
-  background: #fdfafb;
-}
 .admin-visibility-pill {
   display: inline-flex;
   align-items: center;
@@ -19,77 +13,6 @@
   background: #efe3e9;
   color: var(--wine);
 }
-.admin-article-row {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  min-height: 81px;
-  padding: 15px 20px;
-  border-bottom: 1px solid #f1edee;
-}
-.admin-article-row:last-child {
-  border-bottom: 0;
-}
-.admin-article-symbol {
-  display: grid;
-  flex: 0 0 38px;
-  width: 38px;
-  height: 38px;
-  place-items: center;
-  border-radius: 9px;
-  background: #f3e6ec;
-  color: #745960;
-}
-.admin-article-info {
-  flex: 1;
-  min-width: 0;
-}
-.admin-article-info h3 {
-  overflow: hidden;
-  margin: 0 0 6px;
-  font-size: 13px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.admin-article-info p {
-  margin: 0;
-  color: #938b8d;
-  font-size: 11px;
-}
-.admin-article-actions {
-  display: flex;
-  align-items: center;
-  gap: 1px;
-}
-@media (max-width: 680px) {
-  .admin-article-row {
-    flex-wrap: wrap;
-    gap: 10px;
-    padding: 14px;
-  }
-}
-@media (max-width: 680px) {
-  .admin-article-info {
-    flex-basis: calc(100% - 55px);
-  }
-}
-@media (max-width: 680px) {
-  .admin-article-row > .admin-visibility-pill {
-    margin-left: 48px;
-  }
-}
-@media (max-width: 680px) {
-  .admin-article-actions {
-    margin-left: auto;
-  }
-}
-
-.admin-article-symbol > svg {
-  width: 17px;
-  height: 17px;
-}
-
 .articles-count {
   font-weight: 500;
   color: #795c6c;
