@@ -115,6 +115,7 @@ def delete_article_associations(article_id: int, db: Session) -> bool:
 
     db.query(UserArticle).filter(UserArticle.article_id == article_id).delete(synchronize_session=False)
     db.query(ArticleChunk).filter(ArticleChunk.article_id == article_id).delete(synchronize_session=False)
+    db.query(File).filter(File.article_id == article_id).delete(synchronize_session=False)
 
     deleted = db.query(Article).filter(Article.id == article_id).delete(synchronize_session=False)
     return deleted > 0
