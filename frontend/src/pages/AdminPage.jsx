@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
 import "./AdminPage.css";
-import "../components/main/ArticlePanel.css";
 
 import CompletionNotice from "../components/common/feedback/CompletionNotice.jsx";
 import ErrorNotice from "../components/common/feedback/ErrorNotice.jsx";
@@ -9,7 +8,7 @@ import MembersContent from "../components/admin/MembersContent.jsx";
 import TemplatesContent from "../components/admin/TemplatesContent.jsx";
 import GuidelinesContent from "../components/admin/GuidelinesContent.jsx";
 import ArticlesContent from "../components/admin/ArticlesContent.jsx";
-import ArchivePreview from "../components/main/ArchivePreview.jsx";
+import ArticleDetail from "../components/common/articles/ArticleDetail.jsx";
 import OrganizationContent from "../components/admin/OrganizationContent.jsx";
 import MenuContent from "../components/admin/MenuContent.jsx";
 import SidebarLayout from "../components/common/side-menu/SidebarLayout.jsx";
@@ -114,16 +113,11 @@ export default function AdminPage({ user, onLogout }) {
 
       <main className="main admin-main">
         {activeTab === "articles" && selectedArticle ? (
-          <div className="article-detail-main split-main">
-            <ArchivePreview
-              article={selectedArticle}
-              file={selectedArticle.file}
-              visibility={selectedArticle.visibility}
-              previewText={selectedArticle.body}
-              onBack={() => setSelectedArticle(null)}
-              backLabel="조직 기사 목록"
-            />
-          </div>
+          <ArticleDetail
+            article={selectedArticle}
+            onBack={() => setSelectedArticle(null)}
+            backLabel="조직 기사 목록"
+          />
         ) : (
           <div className="admin-page-content">
             <ErrorNotice onRetry={reload}>{error}</ErrorNotice>

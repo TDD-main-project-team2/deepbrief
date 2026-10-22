@@ -6,8 +6,6 @@ import formatDateTime from "../../utils/formatDateTime.js";
 export default function ArchivePreview({
   file,
   visibility,
-  archiveView,
-  setView,
   previewUrl,
   previewText,
   previewError,
@@ -19,9 +17,9 @@ export default function ArchivePreview({
   return (
     <section className="file-panel" aria-label="보관함 기사 미리보기">
       <div className="upload-record">
-        <button className="back-archive" onClick={onBack ?? (() => setView(archiveView))}>
+        <button className="back-archive" onClick={onBack}>
           <Icons type="arrowLeft" />{" "}
-          {backLabel ?? `${archiveView === "private" ? "내 기사" : "사내 기사"} 목록`}
+          {backLabel}
         </button>
 
         <div className="document-title-row">

@@ -6,9 +6,12 @@
   background: #fdfafb;
   border: 1px solid #ece0e7;
   border-radius: 8px;
+  padding: 0 12px 0 0;
+  gap: 8px;
 }
 .archive-info {
   min-width: 0;
+  flex: 1;
 }
 .archive-info strong {
   font-size: 12px;
@@ -17,19 +20,17 @@
   overflow-wrap: anywhere;
 }
 .archive-info small {
+  display: block;
   font-size: 9px;
   color: #ac92a1;
   margin-top: 7px;
 }
 .archive-open {
+  flex-shrink: 0;
   margin-left: auto;
   white-space: nowrap;
   font-size: 10px;
   color: var(--wine);
-}
-.archive-article {
-  padding: 0 12px 0 0;
-  gap: 8px;
 }
 .archive-item-open {
   display: flex;
@@ -40,4 +41,58 @@
   text-align: left;
   padding: 18px;
   border-radius: 8px;
+}
+
+.archive-item-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 4px;
+}
+
+.archive-item-details {
+  flex-shrink: 0;
+}
+
+@container (max-width: 520px) {
+  .archive-article {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+  }
+
+  .archive-item-open {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) auto;
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .archive-item-open > .file-icon {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .archive-info {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .archive-item-details {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+  }
+
+  .archive-open {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .archive-item-actions {
+    justify-content: flex-end;
+    padding: 0 12px 10px;
+  }
 }

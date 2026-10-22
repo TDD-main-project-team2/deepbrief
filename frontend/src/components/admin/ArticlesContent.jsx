@@ -56,10 +56,6 @@ export default function ArticlesContent({ articles, loading, onPerform, onOpenAr
     setVisibility(article.visibility || "private");
   }
 
-  function removeArticle(article) {
-    setDeleting(article);
-  }
-
   async function submit(event) {
     event.preventDefault();
     if (!title.trim()) return;
@@ -105,7 +101,7 @@ export default function ArticlesContent({ articles, loading, onPerform, onOpenAr
         articles={articles}
         loading={loading}
         onOpen={openArticle}
-        onDelete={removeArticle}
+        onDelete={setDeleting}
         renderDetails={(article) => (
           <span
             className={`admin-visibility-pill ${article.visibility === "public" ? "public" : ""}`}

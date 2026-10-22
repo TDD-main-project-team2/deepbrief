@@ -9,7 +9,7 @@ import UploadForm from "../components/main/UploadForm.jsx";
 import ArticlePanel from "../components/main/ArticlePanel.jsx";
 import ChatPanel from "../components/main/ChatPanel.jsx";
 import Archive from "../components/main/Archive.jsx";
-import ArchivePreview from "../components/main/ArchivePreview.jsx";
+import ArticleDetail from "../components/common/articles/ArticleDetail.jsx";
 import ErrorNotice from "../components/common/feedback/ErrorNotice.jsx";
 import LoadingNotice from "../components/common/feedback/LoadingNotice.jsx";
 import CompletionNotice from "../components/common/feedback/CompletionNotice.jsx";
@@ -385,9 +385,11 @@ export default function MainPage({ user, onLogout, onComplete }) {
         </ErrorNotice>
 
         {view === "article" && (
-          <main className="article-detail-main split-main">
-            <ArchivePreview {...previewProps} archiveView={archiveView} setView={changeView} />
-          </main>
+          <ArticleDetail
+            {...previewProps}
+            onBack={() => changeView(archiveView)}
+            backLabel={`${archiveView === "private" ? "내 기사" : "사내 기사"} 목록`}
+          />
         )}
 
         {(view === "private" || view === "public") && (
