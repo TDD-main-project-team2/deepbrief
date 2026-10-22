@@ -87,7 +87,7 @@ def update_org_article(db: Session, current_user, data, article_id: int):
     article = article_repository.get_by_id(db, article_id)
     if not article:
         raise HTTPException(status_code=404, detail="기사를 찾을 수 없습니다.")
-    ensure_organization_article(article.id, current_user.organization.id, db)
+    ensure_organization_article(article.id, current_user.organization_id, db)
     if data.title is None and data.visibility is None:
         raise HTTPException(status_code=400, detail="수정할 기사 제목 또는 공개 범위를 입력해야 합니다.")
     if data.title is not None and not data.title.strip():
