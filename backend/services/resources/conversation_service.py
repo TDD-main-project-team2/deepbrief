@@ -1,5 +1,5 @@
 from backend.services.document import article_processing_service
-from backend.repositories import (article_repository, conversation_repository, message_repository)
+from backend.repositories import (article_repository, conversation_repository, message_repository, organization_repository)
 from backend.app.dependencies import ensure_owner, _not_found
 from backend.schemas.conversation import ConversationResponse
 
@@ -15,16 +15,19 @@ def _conversation_response(conversation, messages):
         updated_at=conversation.updated_at,
     )
 
-async def create_conversation(file, title, article_visibility, current_user_id, rdb):
+async def create_conversation(file, article_visibility, current_user_id, rdb):
     file_bytes = await file.read()
     filename = file.filename
     mime_type = file.content_type
+
+    organization = organization_repository.find_organization_by_user_id(current_user_id, rdb)
 
     article = article_processing_service.process_article(
         file_bytes,
         filename,
         mime_type,
         article_visibility,
+        organization.id,
         rdb,
         reprocess=False,
     )
