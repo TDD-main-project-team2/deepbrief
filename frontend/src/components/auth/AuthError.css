@@ -12,9 +12,6 @@
   width: 15px;
   height: 15px;
   margin-top: 2px;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
 }
 .auth-error--field {
   margin-top: 7px;

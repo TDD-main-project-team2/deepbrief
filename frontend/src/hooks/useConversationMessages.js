@@ -69,7 +69,6 @@ export default function useConversationMessages({
       } finally {
         pendingFeatures.current.delete(conversationId);
       }
-      return;
     }
   }
 

@@ -19,12 +19,6 @@ export const loginUser = async ({ email, password }) => {
   return response.data;
 };
 
-export const refreshTokens = async ({ refreshToken }) => {
-  const body = { refresh_token: refreshToken };
-  const response = await apiClient.post(API_PATH.auth.refresh, body);
-  return response.data;
-};
-
 export const logoutUser = async ({ refreshToken }) => {
   const body = { refresh_token: refreshToken };
   await apiClient.post(API_PATH.auth.logout, body);

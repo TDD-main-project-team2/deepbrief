@@ -1,34 +1,22 @@
 .history-item {
-  display: flex;
   text-align: left;
   width: 100%;
-}
-
-.history-item.active {
-  background: #efe3e9;
+  border-radius: 6px;
+  color: #957c89;
+  font-size: 12px;
+  flex-shrink: 0;
+  height: 52px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 5px 0 0;
 }
 
 .history-item svg {
   width: 14px;
   height: 14px;
   margin-top: 2px;
-}
-
-.history-item > span {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.history-item {
-  border-radius: 6px;
-  color: #957c89;
-  font-size: 11px;
-}
-
-.history-item > span {
-  font-size: 11px;
 }
 
 .history-item.active {
@@ -42,16 +30,6 @@
   font-weight: 400;
   margin-top: 5px;
   color: #ad96a3;
-}
-
-.history-item {
-  flex-shrink: 0;
-  height: 52px;
-  min-height: 52px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0 5px 0 0;
 }
 .history-open {
   display: block;
@@ -68,7 +46,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: 12px;
 }
 .history-item .delete-button {
   width: 26px;

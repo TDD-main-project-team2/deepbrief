@@ -1,0 +1,105 @@
+.admin-content-section {
+  animation: admin-appear 0.2s ease-out;
+}
+@keyframes admin-appear {
+  from {
+    opacity: 0.5;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.admin-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 39px;
+  padding: 0 15px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+.admin-button:active {
+  transform: translateY(1px);
+}
+.admin-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.admin-button-primary {
+  background: var(--admin-wine);
+  color: white;
+}
+.admin-button-primary:hover:not(:disabled) {
+  background: var(--admin-wine-dark);
+}
+.admin-button-secondary {
+  border-color: #e5dee0;
+  background: white;
+  color: #5d5255;
+}
+.admin-button-secondary:hover:not(:disabled) {
+  background: #f5ecef;
+}
+.admin-form {
+  display: grid;
+  gap: 17px;
+}
+.admin-form label {
+  display: grid;
+  gap: 8px;
+  color: #725261;
+  font-size: 12px;
+  font-weight: 600;
+}
+.admin-form input,
+.admin-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #e1d5da;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: #59434e;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 400;
+}
+.admin-form input:focus,
+.admin-form textarea:focus {
+  border-color: var(--wine);
+  box-shadow: 0 0 0 3px rgba(136, 53, 75, 0.1);
+}
+.admin-form input::placeholder,
+.admin-form textarea::placeholder {
+  color: #b09aa5;
+}
+.admin-form textarea {
+  resize: vertical;
+  line-height: 1.7;
+}
+.admin-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.admin-content-section > .content-header {
+  margin-bottom: 18px;
+}
+
+.admin-button-primary .icon {
+  color: inherit;
+}

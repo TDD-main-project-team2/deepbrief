@@ -7,7 +7,7 @@ import AuthLayout from "../components/auth/AuthLayout.jsx";
 import AuthInput from "../components/auth/AuthInput.jsx";
 import PasswordInput from "../components/auth/PasswordInput.jsx";
 import AuthError from "../components/auth/AuthError.jsx";
-import LoadingDots from "../components/feedback/LoadingDots.jsx";
+import LoadingDots from "../components/common/feedback/LoadingDots.jsx";
 
 import useAuthValidation, {
   validateEmail,
@@ -38,7 +38,7 @@ export default function LoginPage({ onLogin }) {
         email: values.email.trim(),
         password: values.password,
       });
-      onLogin(session);
+      await onLogin(session);
       navigate(session.user.role === "admin" ? "/admin" : "/", { replace: true });
     } catch (error) {
       const detail = error.response?.data?.detail;

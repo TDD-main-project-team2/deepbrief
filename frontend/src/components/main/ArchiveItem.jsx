@@ -1,6 +1,6 @@
-import DeleteButton from "./DeleteButton.jsx";
+import DeleteButton from "../common/buttons/DeleteButton.jsx";
 import "./ArchiveItem.css";
-import Icons from "../Icons.jsx";
+import Icons from "../common/Icons.jsx";
 import formatDateTime from "../../utils/formatDateTime.js";
 
 export default function ArchiveItem({ article, onOpen, onDelete }) {

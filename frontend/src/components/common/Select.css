@@ -1,0 +1,73 @@
+.select-field {
+  position: relative;
+  display: grid;
+  gap: 8px;
+}
+.select-label {
+  color: #725261;
+  font-size: 12px;
+  font-weight: 600;
+}
+.select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #e1d5da;
+  border-radius: 8px;
+  background: #fff;
+  color: #59434e;
+  font-size: 12px;
+  text-align: left;
+}
+.select-trigger:hover {
+  background: #faf6f8;
+}
+.select-trigger[aria-expanded="true"] {
+  border-color: var(--wine);
+  box-shadow: 0 0 0 3px #88354b1a;
+}
+.select-trigger > svg {
+  width: 16px;
+  height: 16px;
+}
+.select-trigger[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+.select-options {
+  position: absolute;
+  z-index: 1;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  padding: 5px;
+  border: 1px solid #e5cbd6;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 24px #332d321a;
+}
+.select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  border-radius: 6px;
+  color: #725261;
+  font-size: 12px;
+  cursor: pointer;
+}
+.select-option.is-active {
+  background: #faf6f8;
+}
+.select-option[aria-selected="true"] {
+  background: #f3e6ec;
+  color: var(--wine);
+  font-weight: 600;
+}
+
+.select-option > .icon {
+  width: 14px;
+  height: 14px;
+}

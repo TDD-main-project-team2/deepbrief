@@ -1,0 +1,5 @@
+.sidebar-header {
+  flex-shrink: 0;
+  color: #332d32;
+  font-family: "Noto Sans KR", sans-serif;
+}

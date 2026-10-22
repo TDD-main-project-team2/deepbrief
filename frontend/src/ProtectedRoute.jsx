@@ -1,9 +1,11 @@
 import { Navigate } from "react-router";
-import LoadingNotice from "./components/feedback/LoadingNotice.jsx";
+
 import brandIcon from "./assets/svg/icon-gradient.svg";
 import "./ProtectedRoute.css";
 
-export default function ProtectedRoute({ user, loading, children }) {
+import LoadingNotice from "./components/common/feedback/LoadingNotice.jsx";
+
+export default function ProtectedRoute({ user, loading, requiredRole, children }) {
   if (loading) {
     return (
       <div className="session-loading-page">
@@ -26,6 +28,7 @@ export default function ProtectedRoute({ user, loading, children }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  if (requiredRole && user.role !== requiredRole) return <Navigate to="/" replace />;
 
   return children;
 }

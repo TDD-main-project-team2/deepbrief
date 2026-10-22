@@ -17,7 +17,6 @@ export const API_PATH = {
   conversations: {
     default: "/conversations/",
     detail: (conversationId) => `/conversations/${conversationId}`,
-    message: (messageId) => `/conversations/message/${messageId}`,
   },
 
   features: {
@@ -54,6 +53,4 @@ export const API_PATH = {
 
     code: "/admin/code",
   },
-
-  health: "/health",
 };

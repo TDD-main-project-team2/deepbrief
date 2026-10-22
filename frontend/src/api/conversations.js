@@ -31,7 +31,3 @@ export const createConversation = async ({ file, title, visibility }, accessToke
   );
   return response.data;
 };
-
-export const deleteMessage = async ({ messageId }, accessToken) => {
-  await apiClient.delete(API_PATH.conversations.message(messageId), authConfig(accessToken));
-};

@@ -19,9 +19,8 @@
   color: #5c5561;
 }
 .file-panel > .panel-heading > span > svg {
-  background: #fff9;
-  color: #726779;
-  border: 1px solid #ded7e2;
+  background: #f3e6ec;
+  color: var(--wine);
 }
 .file-panel > .panel-heading small {
   background: #ffffff8c;

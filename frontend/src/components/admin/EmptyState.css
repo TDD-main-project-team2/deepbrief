@@ -1,0 +1,31 @@
+.admin-empty {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 65px 20px;
+  border-bottom: 1px solid #ece2e8;
+}
+.admin-empty > svg {
+  width: 33px;
+  height: 33px;
+  margin-bottom: 22px;
+}
+.admin-empty h2 {
+  font-size: 17px;
+  font-weight: 500;
+}
+.admin-empty p {
+  font-size: 11px;
+  color: #a78d9c;
+  margin-top: 13px;
+  line-height: 1.9;
+}
+@media (max-width: 680px) {
+  .admin-empty {
+    padding: 50px 10px;
+  }
+  .admin-empty h2 {
+    font-size: 15px;
+  }
+}

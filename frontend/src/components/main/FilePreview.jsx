@@ -1,5 +1,5 @@
 import "./FilePreview.css";
-import Icons from "../Icons.jsx";
+import Icons from "../common/Icons.jsx";
 
 function PdfContent({ previewUrl }) {
   return (

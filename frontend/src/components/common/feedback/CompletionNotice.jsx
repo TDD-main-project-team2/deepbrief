@@ -1,3 +1,4 @@
+import Icons from "../Icons.jsx";
 import { useEffect, useId, useRef } from "react";
 
 import "./CompletionNotice.css";
@@ -28,7 +29,7 @@ export default function CompletionNotice({
       onClose={onClose}
     >
       <span className="completion-notice-icon" aria-hidden="true">
-        {onConfirm ? "?" : "✓"}
+        <Icons type={onConfirm ? "help" : "check"} />
       </span>
       <h2>{title}</h2>
       <p id={messageId}>{message}</p>

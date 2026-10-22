@@ -1,16 +1,16 @@
-import "./DeleteButton.css";
 import Icons from "../Icons.jsx";
+import "./EditButton.css";
 
-export default function DeleteButton({ label, onClick }) {
+export default function EditButton({ label, onClick }) {
   return (
     <button
       type="button"
-      className="delete-button"
+      className="edit-button"
       aria-label={label}
       title={label}
       onClick={onClick}
     >
-      <Icons type="trash" />
+      <Icons type="edit" />
     </button>
   );
 }

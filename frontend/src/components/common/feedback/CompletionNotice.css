@@ -18,9 +18,8 @@
   height: 40px;
   margin: 0 auto 16px;
   border-radius: 50%;
-  background: #f4e9ee;
+  background: #f3e6ec;
   color: var(--wine);
-  font-size: 22px;
 }
 .completion-notice h2 {
   font-size: 17px;
@@ -33,6 +32,7 @@
   overflow-wrap: anywhere;
 }
 .completion-notice button {
+  font-size: 12px;
   width: 100%;
   padding: 11px 16px;
   border-radius: 8px;
@@ -44,4 +44,9 @@
 .completion-notice-cancel {
   border: 1px solid #e5cbd6;
   background: #faf6f8;
+}
+
+.completion-notice-icon > svg {
+  width: 22px;
+  height: 22px;
 }

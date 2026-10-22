@@ -1,16 +1,8 @@
 .auth-page {
-  display: grid;
-  grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr);
   background: #fff;
 }
 .auth-brand {
   padding: 0;
-}
-.auth-story > p:not(.headingCaption) {
-  font-size: 13px;
-  line-height: 2.1;
-  color: #a07d8a;
-  margin-top: 23px;
 }
 .auth-main {
   position: relative;
@@ -33,14 +25,6 @@
   margin-left: 8px;
 }
 
-@media (max-width: 800px) {
-  .auth-page {
-    grid-template-columns: 1fr;
-  }
-  .auth-main {
-    padding: 60px 28px 35px;
-  }
-}
 .auth-page {
   display: flex;
   flex-direction: column;
@@ -69,9 +53,6 @@
   .auth-header {
     padding: 0 28px;
   }
-  .auth-main {
-    padding: 38px 28px;
-  }
 }
 
 @media (max-width: 580px) {
@@ -79,9 +60,6 @@
     height: 72px;
     min-height: 72px;
     padding: 0 22px;
-  }
-  .auth-main {
-    padding: 32px 24px;
   }
 }
 .auth-main {
