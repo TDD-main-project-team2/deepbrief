@@ -1,25 +1,54 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import "./AdminCommon.css";
 import "./ArticlesContent.css";
 
 import ContentHeader from "../common/ContentHeader.jsx";
 import EditButton from "../common/buttons/EditButton.jsx";
-import DeleteButton from "../common/buttons/DeleteButton.jsx";
-import Icons from "../common/Icons.jsx";
+import ArticleList from "../common/articles/ArticleList.jsx";
+import ErrorNotice from "../common/feedback/ErrorNotice.jsx";
+import { toArticleView } from "../../utils/historyDataAdapters.js";
 import Select from "../common/Select.jsx";
 import LoadingNotice from "../common/feedback/LoadingNotice.jsx";
 import CompletionNotice from "../common/feedback/CompletionNotice.jsx";
 import EmptyState from "./EmptyState.jsx";
 import Modal from "./Modal.jsx";
-import { updateOrgArticle, deleteOrgArticle } from "../../api/admin.js";
+import { getOrgArticle, updateOrgArticle, deleteOrgArticle } from "../../api/admin.js";
 
-export default function ArticlesContent({ articles, loading, onPerform }) {
+export default function ArticlesContent({ articles, loading, onPerform, onOpenArticle }) {
   const [deleting, setDeleting] = useState(null);
   const [editing, setEditing] = useState(null);
   const [title, setTitle] = useState("");
   const [visibility, setVisibility] = useState("private");
   const [saving, setSaving] = useState(false);
+
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
+  const detailRequest = useRef(0);
+
+  useEffect(
+    () => () => {
+      detailRequest.current += 1;
+    },
+    [],
+  );
+
+  async function openArticle(article) {
+    const request = ++detailRequest.current;
+
+    setDetailError("");
+    setDetailLoading(true);
+
+    try {
+      const detail = await getOrgArticle(article.id);
+      if (request === detailRequest.current) onOpenArticle(toArticleView(detail));
+    } catch {
+      if (request === detailRequest.current)
+        setDetailError("기사를 불러오지 못했습니다. 다시 선택해주세요.");
+    } finally {
+      if (request === detailRequest.current) setDetailLoading(false);
+    }
+  }
 
   function startEdit(article) {
     setEditing(article);
@@ -68,46 +97,35 @@ export default function ArticlesContent({ articles, loading, onPerform }) {
         actions={<strong className="articles-count">{articles.length}개의 기사</strong>}
       />
 
-      <div className={loading || articles.length ? "admin-article-list" : undefined}>
-        {loading ? (
-          <LoadingNotice>기사 목록을 불러오는 중...</LoadingNotice>
-        ) : articles.length ? (
-          articles.map((article) => (
-            <article className="admin-article-row" key={article.id}>
-              <div className="admin-article-symbol">
-                <Icons type="newspaper" />
-              </div>
-              <div className="admin-article-info">
-                <h3>{article.title || "제목 없는 기사"}</h3>
-                <p>
-                  {article.author || "작성자 미상"}
-                  {article.category ? ` · ${article.category}` : ""}
-                </p>
-              </div>
-              <span
-                className={`admin-visibility-pill ${article.visibility === "public" ? "public" : ""}`}
-              >
-                {article.visibility === "public" ? "조직 공개" : "비공개"}
-              </span>
-              <div className="admin-article-actions">
-                <EditButton
-                  label={`${article.title || "제목 없음"} 기사 수정`}
-                  onClick={() => startEdit(article)}
-                />
-                <DeleteButton
-                  label={`${article.title || "제목 없음"} 기사 삭제`}
-                  onClick={() => removeArticle(article)}
-                />
-              </div>
-            </article>
-          ))
-        ) : (
+      <ErrorNotice>{detailError}</ErrorNotice>
+
+      {detailLoading && <LoadingNotice>기사를 불러오는 중...</LoadingNotice>}
+
+      <ArticleList
+        articles={articles}
+        loading={loading}
+        onOpen={openArticle}
+        onDelete={removeArticle}
+        renderDetails={(article) => (
+          <span
+            className={`admin-visibility-pill ${article.visibility === "public" ? "public" : ""}`}
+          >
+            {article.visibility === "public" ? "조직 공개" : "비공개"}
+          </span>
+        )}
+        renderActions={(article) => (
+          <EditButton
+            label={`${article.title || "제목 없음"} 기사 수정`}
+            onClick={() => startEdit(article)}
+          />
+        )}
+        emptyState={
           <EmptyState
             title="등록된 기사가 없습니다"
             description="관리 가능한 조직 기사가 여기에 표시됩니다."
           />
-        )}
-      </div>
+        }
+      />
 
       {editing && (
         <Modal title="기사 정보 수정" onClose={() => setEditing(null)}>

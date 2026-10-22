@@ -1,0 +1,20 @@
+.archive-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+.archive-list .file-icon {
+  flex-shrink: 0;
+}
+.archive-list .file-icon > svg {
+  width: 20px;
+  height: 20px;
+}
+@media (max-width: 680px) {
+  .archive-list .archive-article {
+    flex-wrap: wrap;
+  }
+  .archive-list .archive-item-open {
+    flex-basis: 100%;
+  }
+}

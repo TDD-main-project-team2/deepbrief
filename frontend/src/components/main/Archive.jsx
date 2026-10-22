@@ -1,6 +1,6 @@
 import "./Archive.css";
 import ContentHeader from "../common/ContentHeader.jsx";
-import ArchiveItem from "./ArchiveItem.jsx";
+import ArticleList from "../common/articles/ArticleList.jsx";
 import Icons from "../common/Icons.jsx";
 
 export default function Archive({ view, articles, openArticle, onDeleteArticle }) {
@@ -24,24 +24,18 @@ export default function Archive({ view, articles, openArticle, onDeleteArticle }
         }
       />
 
-      {articles.length ? (
-        <div className="archive-list">
-          {articles.map((article) => (
-            <ArchiveItem
-              key={article.id}
-              article={article}
-              onOpen={openArticle}
-              onDelete={isPublic ? undefined : onDeleteArticle}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="archive-empty">
-          <Icons />
-          <h2>{isPublic ? "공개된 사내 기사가 없어요." : "아직 올린 기사가 없어요."}</h2>
-          {!isPublic && <p>새 대화에서 파일을 올리고 공개 범위를 선택해주세요.</p>}
-        </div>
-      )}
+      <ArticleList
+        articles={articles}
+        onOpen={openArticle}
+        onDelete={isPublic ? undefined : onDeleteArticle}
+        emptyState={
+          <div className="archive-empty">
+            <Icons />
+            <h2>{isPublic ? "공개된 사내 기사가 없어요." : "아직 올린 기사가 없어요."}</h2>
+            {!isPublic && <p>새 대화에서 파일을 올리고 공개 범위를 선택해주세요.</p>}
+          </div>
+        }
+      />
     </section>
   );
 }

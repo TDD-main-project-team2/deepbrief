@@ -36,6 +36,7 @@
   flex-wrap: wrap;
   gap: 20px 35px;
   margin: 18px 0 0;
+  font-family: "DM Sans", "Noto Sans KR", sans-serif;
   font-size: 10px;
 }
 .upload-record dl > div {

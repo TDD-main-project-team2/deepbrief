@@ -13,12 +13,15 @@ export default function ArchivePreview({
   previewError,
   setPreviewError,
   article,
+  onBack,
+  backLabel,
 }) {
   return (
     <section className="file-panel" aria-label="보관함 기사 미리보기">
       <div className="upload-record">
-        <button className="back-archive" onClick={() => setView(archiveView)}>
-          <Icons type="arrowLeft" /> {archiveView === "private" ? "내 기사" : "사내 기사"} 목록
+        <button className="back-archive" onClick={onBack ?? (() => setView(archiveView))}>
+          <Icons type="arrowLeft" />{" "}
+          {backLabel ?? `${archiveView === "private" ? "내 기사" : "사내 기사"} 목록`}
         </button>
 
         <div className="document-title-row">

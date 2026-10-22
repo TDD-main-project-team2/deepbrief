@@ -3,11 +3,6 @@
   margin: auto;
   padding: 50px 44px;
 }
-.archive-list {
-  display: grid;
-  gap: 10px;
-  margin-top: 18px;
-}
 .archive-empty {
   display: flex;
   align-items: center;
