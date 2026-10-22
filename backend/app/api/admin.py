@@ -65,7 +65,7 @@ def update_org_guideline(guideline_id: int, data: OrgGuidelineRequest, db: Sessi
 
 @router.patch("/articles/{article_id}", response_model=ArticleResponse)
 def update_org_article(article_id: int, data: ArticleUpdate, db: Session = Depends(get_db), current_user=Depends(get_current_admin)):
-    return admin_service.update_org_article(db, data, article_id)
+    return admin_service.update_org_article(db, current_user, data, article_id)
 
 
 @router.patch("/members/{member_id}", response_model=UserResponse)
