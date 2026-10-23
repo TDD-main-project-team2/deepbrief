@@ -152,8 +152,8 @@ def process_article(
     return article
 
 
-def categorize_article(article_id):
-    article = article_repository.find_article_by_id(article_id)
+def categorize_article(article_id, db: Session):
+    article = article_repository.find_article_by_id(article_id, db)
     source = f"{article.title}\n{article.body.split(chr(10) + chr(10))[0]}"
 
     chunks = rag_service.retrieve_similar_article_chunks(source, article_id, 5)

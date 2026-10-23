@@ -409,7 +409,7 @@ def test_article_create_and_find_by_id(db):
 
     created = article_repository.create(db, article)
 
-    assert article_repository.find_article_by_id(created.id).title == "한빛시 전기버스 도입"
+    assert article_repository.find_article_by_id(created.id, db).title == "한빛시 전기버스 도입"
 
 
 def test_find_article_by_conversation_id(db):

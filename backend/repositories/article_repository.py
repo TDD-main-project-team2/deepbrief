@@ -32,10 +32,9 @@ def save_file(db: Session, file: File) -> File:
     return file
 
 
-def find_article_by_id(article_id: int) -> Article | None:
+def find_article_by_id(article_id: int, db: Session) -> Article | None:
     """기사 ID로 기사를 조회한다."""
-    with SessionLocal() as db:
-        return db.get(Article, article_id)
+    return db.get(Article, article_id)
 
 
 def find_all_by_user(user_id: int) -> list[Article]:
