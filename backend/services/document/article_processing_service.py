@@ -121,6 +121,7 @@ def process_article(
             raise ValueError("기사 제목 또는 파일 이름이 필요합니다.")
         try:
             article = Article(
+                organization_id=org_id,
                 title=title[:255],
                 body=document.text,
                 content_hash=content_hash,

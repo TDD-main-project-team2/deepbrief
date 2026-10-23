@@ -113,6 +113,8 @@ def make_article(db, **fields):
         "body": "한빛시는 내년 3월부터 시내버스 120대를 전기버스로 바꾼다.",
     }
     values.update(fields)
+    if "organization_id" not in values:
+        values["organization_id"] = make_organization(db).id
     return save(db, Article(**values))
 
 
@@ -143,11 +145,18 @@ def make_chunk(article, index, content, vector=None):
 
 
 def test_article_duplicate_content_hash(db):
-    """같은 content_hash로 기사를 두 번 저장할 수 없다."""
+    """같은 조직에서는 같은 content_hash를 두 번 저장할 수 없다."""
     article = make_article(db)
 
     with pytest.raises(IntegrityError):
-        make_article(db, content_hash=article.content_hash)
+        make_article(db, organization_id=article.organization_id, content_hash=article.content_hash)
+
+
+def test_article_same_hash_in_different_organizations(db):
+    first = make_article(db)
+    second = make_article(db, content_hash=first.content_hash)
+    assert first.organization_id != second.organization_id
+    assert first.id != second.id
 
 
 def test_article_blank_title(db):
@@ -379,7 +388,7 @@ def test_get_by_content_hash_and_org_id(db):
     organization = make_organization(db)
     user = make_user(db, organization)
     other_organization = make_organization(db)
-    article = make_article(db)
+    article = make_article(db, organization_id=organization.id)
 
     link(db, user, article)
 
@@ -405,7 +414,7 @@ def test_get_by_content_hash_and_org_id(db):
 
 def test_article_create_and_find_by_id(db):
     """기사를 저장하고 id로 다시 찾는다."""
-    article = Article(content_hash=unique("hash"), title="한빛시 전기버스 도입", body="버스를 바꾼다.")
+    article = Article(organization_id=make_organization(db).id, content_hash=unique("hash"), title="한빛시 전기버스 도입", body="버스를 바꾼다.")
 
     created = article_repository.create(db, article)
 
