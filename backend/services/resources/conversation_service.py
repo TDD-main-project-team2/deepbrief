@@ -32,7 +32,7 @@ async def create_conversation(file, article_visibility, current_user_id, rdb):
         reprocess=False,
     )
 
-    article_processing_service.categorize_article(article.id)
+    article_processing_service.categorize_article(article.id, rdb)
 
     article_repository.add_article_to_user(
         current_user_id,

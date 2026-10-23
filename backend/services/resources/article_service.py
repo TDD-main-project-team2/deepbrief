@@ -4,8 +4,8 @@ from backend.app.dependencies import ensure_article_access, _not_found
 from backend.services.resources import conversation_service
 
 
-def find_article_by_id(article_id):
-    article = article_repository.find_article_by_id(article_id)
+def find_article_by_id(article_id, db):
+    article = article_repository.find_article_by_id(article_id, db)
     if article is None:
         raise _not_found()
     return article
@@ -34,7 +34,7 @@ def get_articles_by_user(current_user_id):
     }
 
 def get_article_by_id(article_id, current_user_id, db):
-    article = find_article_by_id(article_id)
+    article = find_article_by_id(article_id, db)
     if article.visibility == "public":
         return article
     ensure_article_access(article_id, current_user_id, db)
@@ -51,7 +51,7 @@ def get_article_by_conversation_id(conversation_id, current_user_id, db: Session
     return article
 
 def delete_article(article_id, current_user_id, db: Session):
-    article = find_article_by_id(article_id)    
+    article = find_article_by_id(article_id, db)    
     if article.visibility == "private":
         ensure_article_access(article_id, current_user_id, db)
         deleted = article_repository.delete_article_associations(article_id, db)
