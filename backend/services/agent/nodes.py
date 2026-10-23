@@ -2,6 +2,29 @@ from .state import AgentState
 from . import tools
 from backend.services.ai import model_service
 from backend.services.rag import rag_service
+from backend.services.features import review_service, recommend_service, edit_service
+
+def decide_question_type(state: AgentState):
+    type = model_service.classify_question_type(state["question"])
+    return {"question_type": type}
+
+def feature_node(state: AgentState):
+    if state["question_type"] == "title":
+        answer = model_service.generate_title
+    elif state["question_type"] == "keyword":
+        answer = model_service.generate_keyword_tags
+    elif state["question_type"] == "idea":
+        answer = model_service.generate_article_ideas
+    elif state["question_type"] == "headline":
+        answer = model_service.generate_summary
+    elif state["question_type"] == "dupe":
+        answer = review_service.check_duplicates_logic(state["article_id"])
+    elif state["question_type"] == "eval":
+        answer = model_service.generate_article_evaluation
+    
+    return {
+        "answer": answer
+    }
 
 def retrieve_article_context(state: AgentState):
     chunks = rag_service.retrieve_similar_article_chunks(state["question"], state["article_id"])
