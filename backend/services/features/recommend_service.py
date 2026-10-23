@@ -31,3 +31,11 @@ def recommend_article_ideas(conversation_id, request: MessageRequest, current_us
     response = model_service.generate_article_ideas(article)
 
     return conversation_service.save_message(conversation_id, response, current_user_id, "assistant")
+
+def get_headline(conversation_id, request: MessageRequest, current_user_id, db: Session):
+    article = article_service.get_article_by_conversation_id(conversation_id, current_user_id, db)
+    conversation_service.save_message(conversation_id, request.content, current_user_id, "user")
+
+    response = model_service.generate_summary(article)
+
+    return conversation_service.save_message(conversation_id, response, current_user_id, "assistant")

@@ -73,7 +73,7 @@ def request_headline_extraction(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return review_service.summarize_article(conversation_id, request, current_user.id, db)
+    return recommend_service.get_headline(conversation_id, request, current_user.id, db)
 
 
 @router.post("/conversations/{conversation_id}/recommend/ideas")
@@ -104,13 +104,3 @@ def request_article_formatting(
     db: Session = Depends(get_db)
 ):
     return edit_service.format_article_to_template(conversation_id, request, template_id, current_user.id, db)
-
-'''
-@router.post("/conversations/{conversation_id}/review/fact")
-def request_fact_check(
-    conversation_id: int,
-    user=Depends(get_current_user),
-):
-    pass
-
-'''

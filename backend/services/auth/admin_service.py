@@ -84,7 +84,7 @@ def update_org_guideline(db: Session, current_user, guideline_id: int, data: Org
 
 
 def update_org_article(db: Session, current_user, data, article_id: int):
-    article = article_repository.get_by_id(db, article_id)
+    article = article_repository.find_article_by_id(article_id)
     if not article:
         raise HTTPException(status_code=404, detail="기사를 찾을 수 없습니다.")
     ensure_organization_article(article.id, current_user.organization_id, db)
