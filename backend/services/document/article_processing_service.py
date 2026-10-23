@@ -113,7 +113,7 @@ def process_article(
         raise ValueError("파일 이름이 필요합니다.")
 
     content_hash = sha256(document.text.encode("utf-8")).hexdigest()
-    article = article_repository.get_by_content_hash(db, org_id, content_hash)
+    article = article_repository.get_by_content_hash_and_org_id(db, org_id, content_hash)
 
     if article is None:
         title = (document.title or Path(filename).stem).strip()
