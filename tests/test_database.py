@@ -375,12 +375,32 @@ def test_user_has_access(db):
     assert article_repository.user_has_access(db, other.id, article.id) is False
 
 
-def test_get_by_content_hash(db):
-    """content_hash로 기사를 찾고, 없는 값이면 None을 반환한다."""
+def test_get_by_content_hash_and_org_id(db):
+    organization = make_organization(db)
+    user = make_user(db, organization)
+    other_organization = make_organization(db)
     article = make_article(db)
 
-    assert article_repository.get_by_content_hash(db, article.content_hash).id == article.id
-    assert article_repository.get_by_content_hash(db, unique("hash")) is None
+    link(db, user, article)
+
+    # 기사가 연결된 조직에서는 조회된다.
+    found = article_repository.get_by_content_hash_and_org_id(
+        db, organization.id, article.content_hash
+    )
+    assert found is not None
+    assert found.id == article.id
+
+    # 다른 조직에서는 조회되지 않는다.
+    not_found = article_repository.get_by_content_hash_and_org_id(
+        db, other_organization.id, article.content_hash
+    )
+    assert not_found is None
+
+    # 존재하지 않는 해시도 조회되지 않는다.
+    missing = article_repository.get_by_content_hash_and_org_id(
+        db, organization.id, unique("hash")
+    )
+    assert missing is None
 
 
 def test_article_create_and_find_by_id(db):
