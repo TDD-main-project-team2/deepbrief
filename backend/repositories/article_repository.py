@@ -13,10 +13,8 @@ from backend.models.user_article import UserArticle
 from backend.models.article_chunk import ArticleChunk
 
 def get_by_content_hash_and_org_id(db: Session, organization_id: int, content_hash: str) -> Article | None:
-    return db.query(Article).join(UserArticle, Article.id == UserArticle.article_id).join(
-        User, UserArticle.user_id == User.id
-    ).filter(
-        User.organization_id == organization_id,
+    return db.query(Article).filter(
+        Article.organization_id == organization_id,
         Article.content_hash == content_hash,
     ).first()
 

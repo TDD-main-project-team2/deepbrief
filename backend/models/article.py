@@ -1,5 +1,5 @@
 from backend.models.base import Base
-from sqlalchemy import CheckConstraint, String, Text, DateTime
+from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, String, Text, DateTime, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
 
@@ -7,6 +7,7 @@ from datetime import datetime
 class Article(Base):
     __tablename__ = "articles"
     __table_args__ = (
+        UniqueConstraint("organization_id", "content_hash", name="uq_articles_organization_content_hash"),
         CheckConstraint("content_hash = btrim(content_hash) AND content_hash <> ''", name="check_content_hash_not_empty"),
         CheckConstraint("visibility IN ('private', 'public')", name="check_visibility"),
         CheckConstraint("title = btrim(title) AND title <> ''", name="check_title_not_empty"),
@@ -16,7 +17,8 @@ class Article(Base):
         CheckConstraint("category = btrim(category) AND category <> ''", name="check_category_not_empty"),
     )
 
-    content_hash: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    organization_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("organizations.id"), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     visibility: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default="private"
     )
