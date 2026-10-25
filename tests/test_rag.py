@@ -1,62 +1,131 @@
+from types import SimpleNamespace
+
 import pytest
 
+from backend.services.rag import rag_service
+
+ARTICLE_ID = 174  # 전세 사기 관련 기사(홍길동 사용자)
 
 # 1. 문서 검색·컨텍스트(9개 테스트 함수)
 # 저장된 청크 조회, 질문에 맞는 근거 검색, 문서 범위·개수 제한,
 # 검색한 청크를 답변용 문자열로 결합하는 기능을 확인한다.
 
-@pytest.mark.skip(reason="미구현")
 def test_retrieve_article_chunks():
-    """해당 문서의 전체 청크가 누락 없이 인덱스 순서로 반환되는지 확인한다."""
-    pass
+    """청크가 존재하고 문서 ID와 0부터 이어지는 인덱스 순서가 올바른지 확인한다."""
+
+    chunks = rag_service.retrieve_article_chunks(ARTICLE_ID)
+
+    assert chunks
+    assert all(chunk.article_id == ARTICLE_ID for chunk in chunks)
+    assert [chunk.chunk_index for chunk in chunks] == list(range(len(chunks)))
 
 
-@pytest.mark.skip(reason="미구현")
 def test_retrieve_similar_article_chunks():
     """질문으로 검색한 상위 청크에 미리 정한 정답 근거가 포함되는지 확인한다."""
-    pass
+    
+    question = "전세사기 피해자를 위한 임차보증금 최소보장제는 언제 시행되나요?"
+    expected_text = "11월 13일부터 시행한다."
+    top_k = 5
+
+    chunks = rag_service.retrieve_similar_article_chunks(question, ARTICLE_ID, top_k)
+
+    assert chunks
+    assert len(chunks) <= top_k
+    assert all(chunk.article_id == ARTICLE_ID for chunk in chunks)
+    assert any(expected_text in chunk.content for chunk in chunks)
 
 
-@pytest.mark.skip(reason="미구현")
 def test_retrieve_paraphrased_question():
     """표현을 바꾼 같은 의미의 질문에도 정답 근거를 찾는지 확인한다."""
-    pass
+    
+    question = "전세사기로 잃은 보증금을 최소한으로 보장해 주는 제도는 언제부터 시작하나요?"
+    expected_text = "11월 13일부터 시행한다."
+    top_k = 5
+
+    chunks = rag_service.retrieve_similar_article_chunks(question, ARTICLE_ID, top_k)
+
+    assert chunks
+    assert len(chunks) <= top_k
+    assert all(chunk.article_id == ARTICLE_ID for chunk in chunks)
+    assert any(expected_text in chunk.content for chunk in chunks)
 
 
-@pytest.mark.skip(reason="미구현")
 def test_retrieve_multiple_evidence_chunks():
     """여러 청크의 정보가 필요한 질문에 필요한 근거들이 함께 검색되는지 확인한다."""
-    pass
+
+    question = "임차보증금 최소보장제는 언제 시행되며, LH는 신청 후 며칠 이내에 지급 여부와 지급액을 결정해?"
+    expected_start = "최소보장제가 시행되는 11월 13일"
+    expected_deadline = "신청일로부터 90일 이내에 지급 여부와 지급액을 결정해 통지해야 한다."
+    top_k = 5
+
+    chunks = rag_service.retrieve_similar_article_chunks(question, ARTICLE_ID, top_k)
+
+    assert chunks
+    assert len(chunks) <= top_k
+    assert all(chunk.article_id == ARTICLE_ID for chunk in chunks)
+    assert any(
+        expected_start in first.content
+        and expected_deadline in second.content
+        and first.chunk_index != second.chunk_index
+        for first in chunks
+        for second in chunks
+    )
 
 
-@pytest.mark.skip(reason="미구현")
 def test_retrieve_article_scope():
     """비슷한 내용의 다른 문서가 있어도 지정한 문서의 청크만 반환되는지 확인한다."""
-    pass
+
+    question = "전세사기 피해자 지원 제도는 무엇인가요?"
+
+    chunks = rag_service.retrieve_similar_article_chunks(question, ARTICLE_ID, top_k=5)
+
+    assert chunks
+    assert all(chunk.article_id == ARTICLE_ID for chunk in chunks)
 
 
-@pytest.mark.skip(reason="미구현")
 def test_retrieve_top_k():
-    """양수 top_k를 바꿔 검색했을 때 반환 개수가 지정한 개수 이하인지 확인한다."""
-    pass
+    """검색 결과 개수가 top_k와 저장된 청크 수 중 작은 값과 일치하는지 확인한다."""
+
+    question = "임차보증금 최소보장제는 언제 시행되나요?"
+    stored_chunks = rag_service.retrieve_article_chunks(ARTICLE_ID)
+
+    assert stored_chunks
+    for top_k in (1, 3, 5, len(stored_chunks) + 1):
+        chunks = rag_service.retrieve_similar_article_chunks(question, ARTICLE_ID, top_k)
+
+        assert len(chunks) == min(top_k, len(stored_chunks))
 
 
-@pytest.mark.skip(reason="미구현")
 def test_retrieve_article_without_chunks():
-    """청크가 없는 문서의 전체 조회와 유사도 검색이 빈 목록을 반환하는지 확인한다."""
-    pass
+    """존재하지 않는 문서 ID로 조회·검색하면 빈 목록이 반환되는지 확인한다."""
+
+    article_id = -1  # 테스트 DB에 존재하지 않는 문서 ID
+    question = "임차보증금 최소보장제는 언제 시행되나요?"
+
+    assert rag_service.retrieve_article_chunks(article_id) == []
+    assert rag_service.retrieve_similar_article_chunks(question, article_id) == []
 
 
-@pytest.mark.skip(reason="미구현")
 def test_build_context():
     """검색 청크의 본문이 입력 순서대로 '\\n\\n'으로 연결되는지 확인한다."""
-    pass
+
+    chunks = [
+        SimpleNamespace(content="최소보장제는 11월 13일부터 시행한다."),
+        SimpleNamespace(content="LH는 신청일로부터 90일 이내에 지급 여부를 결정한다."),
+    ]
+
+    context = rag_service.build_context(chunks)
+
+    assert context == (
+        "최소보장제는 11월 13일부터 시행한다.\n\n"
+        "LH는 신청일로부터 90일 이내에 지급 여부를 결정한다."
+    )
 
 
-@pytest.mark.skip(reason="미구현")
 def test_build_context_empty():
     """빈 청크 목록을 전달하면 빈 문자열이 반환되는지 확인한다."""
-    pass
+
+    assert rag_service.build_context([]) == ""
 
 
 # 2. 검색 범위 판단(3개 테스트 함수)
