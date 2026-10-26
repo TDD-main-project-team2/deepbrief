@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from backend.services.rag import rag_service
+from backend.services.ai import model_service
 
 ARTICLE_ID = 174  # 전세 사기 관련 기사(홍길동 사용자)
 
@@ -132,22 +133,37 @@ def test_build_context_empty():
 # 질문과 현재 문서의 근거를 보고 current_article, company_data, web 중
 # 알맞은 경로를 선택하는지 확인한다. 현재 자동 판단에는 organization이 없다.
 
-@pytest.mark.skip(reason="미구현")
 def test_classify_current_article():
     """현재 문서의 근거로 답할 수 있는 질문을 current_article로 판단하는지 확인한다."""
-    pass
+
+    question = "임차보증금 최소보장제는 언제 시행되나요?"
+    chunks = rag_service.retrieve_similar_article_chunks(question, ARTICLE_ID)
+    context = rag_service.build_context(chunks)
+
+    assert "11월 13일부터 시행한다." in context
+    assert model_service.classify_retrieval_scope(question, context) == "current_article"
 
 
-@pytest.mark.skip(reason="미구현")
 def test_classify_company_data():
     """사내 기사 수·목록 등 DB 조회가 필요한 질문을 company_data로 판단하는지 확인한다."""
-    pass
+
+    question = "우리 회사의 이번 달 기사 수는 몇 건인가요?"
+    chunks = rag_service.retrieve_similar_article_chunks(question, ARTICLE_ID)
+    context = rag_service.build_context(chunks)
+
+    assert context
+    assert model_service.classify_retrieval_scope(question, context) == "company_data"
 
 
-@pytest.mark.skip(reason="미구현")
 def test_classify_web():
     """사내 조회 질문이 아니고 현재 문서로 답할 수 없으면 web으로 판단하는지 확인한다."""
-    pass
+    
+    question = "식물의 광합성은 어떤 원리로 이루어지나요?"
+    chunks = rag_service.retrieve_similar_article_chunks(question, ARTICLE_ID)
+    context = rag_service.build_context(chunks)
+
+    assert context
+    assert model_service.classify_retrieval_scope(question, context) == "web"
 
 
 # 3. 추가 검색·조회(7개 테스트 함수)
