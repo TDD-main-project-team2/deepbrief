@@ -1,9 +1,19 @@
 from types import SimpleNamespace
+from unittest.mock import patch
+
+import httpx
+from sqlalchemy import distinct, func
 
 import pytest
 
 from backend.services.rag import rag_service
 from backend.services.ai import model_service
+from backend.services.agent import tools
+from backend.database.rdb.rdb import SessionLocal
+from backend.models.article import Article
+from backend.models.article_chunk import ArticleChunk
+from backend.models.user import User
+from backend.models.user_article import UserArticle
 
 ARTICLE_ID = 174  # 전세 사기 관련 기사(홍길동 사용자)
 
@@ -171,46 +181,136 @@ def test_classify_web():
 # 조직 검색은 자동 분류와 별도로 직접 호출해 검증한다.
 # 웹 처리 로직은 고정한 응답으로 검증하고 실제 API 연결 확인은 따로 수행한다.
 
-@pytest.mark.skip(reason="미구현")
-def test_retrieve_org_chunks():
+@pytest.fixture
+def _organization_chunks():
+    """현재 기사와 같은 조직의 다른 문서 청크를 테스트 근거로 준비한다."""
+
+    with SessionLocal() as session:
+        organization_id = (
+            session.query(User.organization_id)
+            .join(UserArticle, UserArticle.user_id == User.id)
+            .filter(UserArticle.article_id == ARTICLE_ID)
+            .distinct().scalar()
+        )
+        assert organization_id is not None, "테스트 기사에 연결된 조직이 필요합니다."
+        chunks = (
+            session.query(ArticleChunk)
+            .join(UserArticle, UserArticle.article_id == ArticleChunk.article_id)
+            .join(User, User.id == UserArticle.user_id)
+            .filter(User.organization_id == organization_id,
+                    ArticleChunk.article_id != ARTICLE_ID)
+            .order_by(ArticleChunk.article_id, ArticleChunk.chunk_index)
+            .all()
+        )
+        assert chunks, "같은 조직의 다른 문서에 저장된 청크가 필요합니다."
+        session.expunge_all()
+        return chunks
+
+
+def test_retrieve_org_chunks(_organization_chunks):
     """같은 조직의 다른 문서에서 검색하고 현재 문서와 다른 조직 문서는 제외하는지 확인한다."""
-    pass
+
+    evidence = _organization_chunks[0]
+    # 다른 문서 원문을 검색어로 사용해 해당 근거를 다시 찾는지 확인한다.
+    chunks = rag_service.retrieve_org_chunks(evidence.content, ARTICLE_ID, top_k=5)
+    allowed = {(chunk.article_id, chunk.chunk_index) for chunk in _organization_chunks}
+
+    assert chunks
+    assert len(chunks) <= 5
+    assert all((chunk.article_id, chunk.chunk_index) in allowed for chunk in chunks)
+    assert any(chunk.content == evidence.content for chunk in chunks)
 
 
-@pytest.mark.skip(reason="미구현")
-def test_retrieve_org_chunks_by_embedding():
+def test_retrieve_org_chunks_by_embedding(_organization_chunks):
     """질문 벡터를 직접 전달해 검색할 때 정답 근거, 조직 범위, top_k 제한을 확인한다."""
-    pass
+
+    evidence = _organization_chunks[0]
+    embedding = rag_service.embed_query(evidence.content)
+    chunks = rag_service.retrieve_org_chunks_by_embedding(embedding, ARTICLE_ID, top_k=3)
+    allowed = {(chunk.article_id, chunk.chunk_index) for chunk in _organization_chunks}
+
+    assert chunks
+    assert len(chunks) <= 3
+    assert all((chunk.article_id, chunk.chunk_index) in allowed for chunk in chunks)
+    assert any(chunk.content == evidence.content for chunk in chunks)
 
 
-@pytest.mark.skip(reason="미구현")
 def test_retrieve_org_chunks_without_organization():
     """문서에 연결된 조직이 없으면 조직 검색에서 ValueError가 발생하는지 확인한다."""
-    pass
+
+    with pytest.raises(ValueError, match="기사에 연결된 조직을 찾을 수 없습니다"):
+        rag_service.retrieve_org_chunks("전세사기 피해자 지원", article_id=-1)
 
 
-@pytest.mark.skip(reason="미구현")
 def test_search_web():
     """유효한 웹 검색 결과의 제목과 내용을 답변용 컨텍스트로 구성하는지 확인한다."""
-    pass
+
+    question = "전세사기 피해자 지원 제도"
+    response = httpx.Response(200, request=httpx.Request("POST", tools.TAVILY_URL), json={
+        "results": [
+            {"title": "지원 안내", "url": "https://example.com/support", "content": "지원 대상 안내"},
+            {"title": "신청 안내", "url": "https://example.com/apply", "content": "신청 방법 안내"},
+            {"title": "내용 없음", "url": "https://example.com/empty", "content": ""},
+        ]
+    })
+    with patch.object(tools.httpx, "post", return_value=response) as post:
+        context = tools.search_web(question)
+
+    assert context == "지원 안내\n지원 대상 안내\n\n신청 안내\n신청 방법 안내"
+    assert post.call_count == 1
+    assert post.call_args.args == (tools.TAVILY_URL,)
+    assert post.call_args.kwargs["json"]["query"] == question
 
 
-@pytest.mark.skip(reason="미구현")
-def test_search_web_failure():
+@pytest.mark.parametrize("failure", ["http_error", "timeout", "invalid_json"])
+def test_search_web_failure(failure):
     """웹 요청 오류·시간 초과·잘못된 JSON 응답 시 빈 컨텍스트를 반환하는지 확인한다."""
-    pass
+
+    request = httpx.Request("POST", tools.TAVILY_URL)
+    if failure == "timeout":
+        with patch.object(tools.httpx, "post", side_effect=httpx.ReadTimeout("timeout")):
+            assert tools.search_web("지원 제도") == ""
+    else:
+        response = (
+            httpx.Response(500, request=request)
+            if failure == "http_error"
+            else httpx.Response(200, request=request, text="invalid json")
+        )
+        with patch.object(tools.httpx, "post", return_value=response):
+            assert tools.search_web("지원 제도") == ""
 
 
-@pytest.mark.skip(reason="미구현")
 def test_query_company_data():
-    """질문에 맞는 조회 도구·인자를 사용하고 해당 조직의 DB 데이터만 조회하는지 확인한다."""
-    pass
+    """선택한 기사 수 조회 도구와 인자를 사용해 해당 조직의 실제 기사 수를 반환하는지 확인한다."""
+
+    question = "우리 회사의 전체 기간 사회 분야 기사 수는 몇 건인가요?"
+    with SessionLocal() as session:
+        organization_id = tools._find_organization_id(session, ARTICLE_ID)
+        assert organization_id is not None
+        expected_count = (
+            session.query(func.count(distinct(Article.id)))
+            .join(UserArticle, UserArticle.article_id == Article.id)
+            .join(User, User.id == UserArticle.user_id)
+            .filter(User.organization_id == organization_id, Article.category == "사회")
+            .scalar()
+        )
+    # 모델 선택 결과를 고정하고 실제 DB 조회·결과 구성은 그대로 실행한다.
+    call = {"name": "count_articles", "arguments": {"period": "all", "category": "사회"}}
+    with patch.object(model_service, "select_company_data_tool", return_value=call) as select:
+        context = tools.query_company_data(question, ARTICLE_ID)
+
+    select.assert_called_once_with(question)
+    assert context == f"전체 기간, 사회 기준 회사 기사는 {expected_count}건입니다."
 
 
-@pytest.mark.skip(reason="미구현")
 def test_query_company_data_failure():
     """연결된 조직이 없거나 DB 조회가 실패하면 빈 문자열을 반환하는지 확인한다."""
-    pass
+
+    question = "우리 회사 기사 수는 몇 건인가요?"
+    assert tools.query_company_data(question, article_id=-1) == ""
+
+    with patch.object(tools, "SessionLocal", side_effect=RuntimeError("DB 조회 실패")):
+        assert tools.query_company_data(question, ARTICLE_ID) == ""
 
 
 # 4. 에이전트 전체 흐름(5개 테스트 함수)
@@ -220,28 +320,33 @@ def test_query_company_data_failure():
 @pytest.mark.skip(reason="미구현")
 def test_answer_from_current_article():
     """현재 문서 경로를 선택하고 검색한 청크에 근거해 정확히 답하는지 확인한다."""
+
     pass
 
 
 @pytest.mark.skip(reason="미구현")
 def test_answer_from_company_data():
     """사내 조회 경로를 선택하고 실제 조회 결과의 수치·내용에 맞게 답하는지 확인한다."""
+
     pass
 
 
 @pytest.mark.skip(reason="미구현")
 def test_answer_from_web():
     """웹 경로를 선택하고 실제 호출된 검색 도구의 반환 내용에 근거해 답하는지 확인한다."""
+
     pass
 
 
 @pytest.mark.skip(reason="미구현")
 def test_answer_with_empty_context():
     """최종 컨텍스트가 비어 있으면 NOT_FOUND_MESSAGE를 반환하는지 확인한다."""
+
     pass
 
 
 @pytest.mark.skip(reason="미구현")
 def test_answer_without_evidence():
     """컨텍스트가 있어도 정답 근거가 없으면 내용을 지어내지 않는지 확인한다."""
+
     pass
