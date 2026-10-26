@@ -1,3 +1,4 @@
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -8,7 +9,7 @@ import pytest
 
 from backend.services.rag import rag_service
 from backend.services.ai import model_service
-from backend.services.agent import tools
+from backend.services.agent import graph, tools
 from backend.database.rdb.rdb import SessionLocal
 from backend.models.article import Article
 from backend.models.article_chunk import ArticleChunk
@@ -317,36 +318,106 @@ def test_query_company_data_failure():
 # 실제 선택 경로, 호출된 검색·조회 도구, 최종 컨텍스트와 답변을 함께 확인한다.
 # 답변이 맞더라도 실제 검색 근거로 뒷받침되지 않으면 성공으로 판단하지 않는다.
 
-@pytest.mark.skip(reason="미구현")
 def test_answer_from_current_article():
     """현재 문서 경로를 선택하고 검색한 청크에 근거해 정확히 답하는지 확인한다."""
 
-    pass
+    question = "임차보증금 최소보장제는 언제 시행되나요?"
+    with patch.object(tools, "search_web") as web, \
+         patch.object(tools, "query_company_data") as company, \
+         patch.object(model_service, "generate_answer", wraps=model_service.generate_answer) as generate:
+        result = asyncio.run(graph.run_agent(question, ARTICLE_ID))
+
+    assert result["retrieval_scope"] == "current_article"
+    assert "11월 13일부터 시행한다." in result["context"]
+    assert "11월13일" in result["answer"].replace(" ", "")
+    generate.assert_called_with(result["context"], question)
+    web.assert_not_called()
+    company.assert_not_called()
 
 
-@pytest.mark.skip(reason="미구현")
 def test_answer_from_company_data():
     """사내 조회 경로를 선택하고 실제 조회 결과의 수치·내용에 맞게 답하는지 확인한다."""
 
-    pass
+    question = "우리 회사의 전체 기간 기사 수는 몇 건인가요?"
+    with SessionLocal() as session:
+        organization_id = tools._find_organization_id(session, ARTICLE_ID)
+        assert organization_id is not None
+        expected_count = (
+            session.query(func.count(distinct(Article.id)))
+            .join(UserArticle, UserArticle.article_id == Article.id)
+            .join(User, User.id == UserArticle.user_id)
+            .filter(User.organization_id == organization_id)
+            .scalar()
+        )
+    with patch.object(tools, "query_company_data", wraps=tools.query_company_data) as company, \
+         patch.object(tools, "search_web") as web, \
+         patch.object(model_service, "generate_answer", wraps=model_service.generate_answer) as generate:
+        result = asyncio.run(graph.run_agent(question, ARTICLE_ID))
+
+    assert result["retrieval_scope"] == "company_data"
+    company.assert_called_once_with(question, ARTICLE_ID)
+    web.assert_not_called()
+    assert result["context"] == f"전체 기간, 전체 분야 기준 회사 기사는 {expected_count}건입니다."
+    assert f"{expected_count}건" in result["answer"].replace(" ", "").replace(",", "")
+    generate.assert_called_with(result["context"], question)
 
 
-@pytest.mark.skip(reason="미구현")
 def test_answer_from_web():
-    """웹 경로를 선택하고 실제 호출된 검색 도구의 반환 내용에 근거해 답하는지 확인한다."""
+    """웹 경로를 선택하고 고정한 웹 응답을 근거로 답하는지 확인한다. 실제 API 연결 테스트는 아니다."""
 
-    pass
+    question = "가상의 해솔탐사선이 수집한 암석 표본은 몇 개인가요?"
+    response = httpx.Response(200, request=httpx.Request("POST", tools.TAVILY_URL), json={
+        "results": [{"title": "해솔탐사선 관측 기록", "url": "https://example.com/haesol",
+                     "content": "가상의 해솔탐사선은 암석 표본 742개를 수집했다."}]
+    })
+    with patch.object(tools.httpx, "post", return_value=response) as post, \
+         patch.object(tools, "search_web", wraps=tools.search_web) as web, \
+         patch.object(tools, "query_company_data") as company, \
+         patch.object(model_service, "generate_answer", wraps=model_service.generate_answer) as generate:
+        result = asyncio.run(graph.run_agent(question, ARTICLE_ID))
+
+    assert result["retrieval_scope"] == "web"
+    web.assert_called_once_with(question)
+    assert post.call_count == 1
+    assert post.call_args.kwargs["json"]["query"] == question
+    company.assert_not_called()
+    assert result["context"] == "해솔탐사선 관측 기록\n가상의 해솔탐사선은 암석 표본 742개를 수집했다."
+    assert "742개" in result["answer"].replace(" ", "")
+    generate.assert_called_with(result["context"], question)
 
 
-@pytest.mark.skip(reason="미구현")
 def test_answer_with_empty_context():
-    """최종 컨텍스트가 비어 있으면 NOT_FOUND_MESSAGE를 반환하는지 확인한다."""
+    """검색 실패 상황을 고정하고 최종 컨텍스트가 비면 답변 생성 없이 안내하는지 확인한다."""
 
-    pass
+    question = "근거를 찾을 수 없는 질문"
+    with patch.object(rag_service, "retrieve_similar_article_chunks", return_value=[]), \
+         patch.object(model_service, "classify_retrieval_scope", return_value="web"), \
+         patch.object(tools, "search_web", return_value="") as web, \
+         patch.object(model_service, "generate_answer") as generate:
+        result = asyncio.run(graph.run_agent(question, ARTICLE_ID))
+
+    web.assert_called_once_with(question)
+    assert result["retrieval_scope"] == "web"
+    assert result["context"] == ""
+    assert result["answer"] == model_service.NOT_FOUND_MESSAGE
+    generate.assert_not_called()
 
 
-@pytest.mark.skip(reason="미구현")
 def test_answer_without_evidence():
-    """컨텍스트가 있어도 정답 근거가 없으면 내용을 지어내지 않는지 확인한다."""
+    """검색 결과에 정답이 없는 상황을 고정하고 실제 모델이 답을 지어내지 않는지 확인한다."""
 
-    pass
+    question = "가상의 해솔탐사선이 수집한 암석 표본은 몇 개인가요?"
+    context = "해솔탐사선은 우주 탐사를 위해 설계되었다."
+    with patch.object(rag_service, "retrieve_similar_article_chunks", return_value=[]), \
+         patch.object(model_service, "classify_retrieval_scope", return_value="web"), \
+         patch.object(tools, "search_web", return_value=context) as web, \
+         patch.object(model_service, "generate_answer", wraps=model_service.generate_answer) as generate:
+        result = asyncio.run(graph.run_agent(question, ARTICLE_ID))
+
+    web.assert_called_once_with(question)
+    assert result["retrieval_scope"] == "web"
+    assert result["context"] == context
+    generate.assert_called_once_with(context, question)
+    assert result["answer"].strip() in (
+        model_service.QA_NO_ANSWER, model_service.NOT_FOUND_MESSAGE
+    )
