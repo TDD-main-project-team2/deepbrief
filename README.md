@@ -15,7 +15,7 @@
 <table>
   <thead>
     <tr>
-      <th align="center" width="25%"><a href="https://github.com/ojm51">오정민</a></th>
+      <th align="center" width="25%"><a href="https://github.com/ojm51">오정민</a> (팀장)</th>
       <th align="center" width="25%"><a href="https://github.com/royonem">명원식</a></th>
       <th align="center" width="25%"><a href="https://github.com/JYJmk2">장영진</a></th>
       <th align="center" width="25%"><a href="https://github.com/jmh0930">황재민</a></th>
