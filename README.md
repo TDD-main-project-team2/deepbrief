@@ -8,6 +8,69 @@
 
 </br>
 
+# 팀원 및 역할
+
+> 개발 기간: 9/18 ~ 10/27
+
+<table>
+  <thead>
+    <tr>
+      <th align="center" width="25%"><a href="https://github.com/ojm51">오정민</a></th>
+      <th align="center" width="25%"><a href="https://github.com/royonem">명원식</a></th>
+      <th align="center" width="25%"><a href="https://github.com/JYJmk2">장영진</a></th>
+      <th align="center" width="25%"><a href="https://github.com/jmh0930">황재민</a></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">
+        <img src="https://github.com/ojm51.png" alt="오정민 프로필 사진" width="120">
+      </td>
+      <td align="center">
+        <img src="https://github.com/royonem.png" alt="명원식 프로필 사진" width="120">
+      </td>
+      <td align="center">
+        <img src="https://github.com/JYJmk2.png" alt="장영진 프로필 사진" width="120">
+      </td>
+      <td align="center">
+        <img src="https://github.com/jmh0930.png" alt="황재민 프로필 사진" width="120">
+      </td>
+    </tr>
+    <tr>
+      <td valign="top">
+        - DB (Relation, Migration)<br>
+        - Fine-Tuning (Summary)<br>
+        - Embedding<br>
+        - Backend (Auth Token)<br>
+        - Frontend (User page, API, Refactoring)
+      </td>
+      <td valign="top">
+        - DB (Vector, Cloud, Supabase)<br>
+        - Fine-Tuning (Summary)<br>
+        - RAG, Agent (Workflow)<br>
+        - Backend (API, Service)<br>
+        - Frontend (Admin page)
+      </td>
+      <td valign="top">
+        - DB (Management)<br>
+        - Fine-Tuning (QA)<br>
+        - DOC (Preprocessing, Chunking)<br>
+        - LLM<br>
+        - Backend (Auth Management, Repository, Schema)
+      </td>
+      <td valign="top">
+        - DB (Data)<br>
+        - Fine-Tuning (QA)<br>
+        - DOC (OCR), Agent (Tool)<br>
+        - Prompt Engineering<br>
+        - Backend (Auth Security)
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+</br>
+
 # 프로젝트 개요
 
 ### 소개
@@ -326,68 +389,5 @@ deepbrief/
 ├── .env.example             # 환경 변수 예시
 └── alembic.ini              # 마이그레이션 설정
 ```
-
-</br>
-
-# 팀원 및 역할
-
-> 개발 기간: 9/18 ~ 10/27
-
-<table>
-  <thead>
-    <tr>
-      <th align="center" width="25%"><a href="https://github.com/ojm51">오정민</a></th>
-      <th align="center" width="25%"><a href="https://github.com/royonem">명원식</a></th>
-      <th align="center" width="25%"><a href="https://github.com/JYJmk2">장영진</a></th>
-      <th align="center" width="25%"><a href="https://github.com/jmh0930">황재민</a></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td align="center">
-        <img src="https://github.com/ojm51.png" alt="오정민 프로필 사진" width="120">
-      </td>
-      <td align="center">
-        <img src="https://github.com/royonem.png" alt="명원식 프로필 사진" width="120">
-      </td>
-      <td align="center">
-        <img src="https://github.com/JYJmk2.png" alt="장영진 프로필 사진" width="120">
-      </td>
-      <td align="center">
-        <img src="https://github.com/jmh0930.png" alt="황재민 프로필 사진" width="120">
-      </td>
-    </tr>
-    <tr>
-      <td valign="top">
-        - DB (Relation, Migration)<br>
-        - Fine-Tuning (Summary)<br>
-        - Embedding<br>
-        - Backend (Auth Token)<br>
-        - Frontend (User page, API, Refactoring)
-      </td>
-      <td valign="top">
-        - DB (Vector, Cloud, Supabase)<br>
-        - Fine-Tuning (Summary)<br>
-        - RAG, Agent (Workflow)<br>
-        - Backend (API, Service)<br>
-        - Frontend (Admin page)
-      </td>
-      <td valign="top">
-        - DB (Management)<br>
-        - Fine-Tuning (QA)<br>
-        - DOC (Preprocessing, Chunking)<br>
-        - LLM<br>
-        - Backend (Auth Management, Repository, Schema)
-      </td>
-      <td valign="top">
-        - DB (Data)<br>
-        - Fine-Tuning (QA)<br>
-        - DOC (OCR), Agent (Tool)<br>
-        - Prompt Engineering<br>
-        - Backend (Auth Security)
-      </td>
-    </tr>
-  </tbody>
-</table>
 
 </br>
