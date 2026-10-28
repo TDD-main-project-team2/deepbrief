@@ -1,0 +1,428 @@
+import { useEffect, useRef, useState } from "react";
+
+import "./MainPage.css";
+import "../components/main/MainCommon.css";
+
+import MenuContent from "../components/main/MenuContent.jsx";
+import SidebarLayout from "../components/common/side-menu/SidebarLayout.jsx";
+import UploadForm from "../components/main/UploadForm.jsx";
+import ArticlePanel from "../components/main/ArticlePanel.jsx";
+import ChatPanel from "../components/main/ChatPanel.jsx";
+import Archive from "../components/main/Archive.jsx";
+import ArticleDetail from "../components/common/articles/ArticleDetail.jsx";
+import ErrorNotice from "../components/common/feedback/ErrorNotice.jsx";
+import LoadingNotice from "../components/common/feedback/LoadingNotice.jsx";
+import CompletionNotice from "../components/common/feedback/CompletionNotice.jsx";
+
+import useFilePreview from "../hooks/useFilePreview.js";
+import useConversationWithFile from "../hooks/useConversationWithFile.js";
+import useConversationMessages from "../hooks/useConversationMessages.js";
+
+import {
+  getConversationList,
+  getConversation,
+  deleteConversation as deleteConversationRequest,
+} from "../api/conversations.js";
+import {
+  getArticle,
+  getArticleList,
+  getPublicArticleList,
+  deleteArticle as deleteArticleRequest,
+} from "../api/articles.js";
+import { getAuthSessionVersion } from "../utils/tokenStorage.js";
+import { toArticleView, toConversationView, mergeHistory } from "../utils/historyDataAdapters.js";
+
+export default function MainPage({ user, onLogout, onComplete }) {
+  const viewVersion = useRef(0); // 업로드를 기다리는 동안 사용자가 다른 화면으로 이동했는지 확인하는 값
+  const deleting = useRef(false);
+  const historyVersion = useRef(0);
+  const createConversationWithFile = useConversationWithFile();
+
+  const [uploadSession, setUploadSession] = useState(0);
+  const [activeConversationId, setActiveConversationId] = useState(null);
+  const [articleId, setArticleId] = useState(null);
+  const [view, setView] = useState("chat");
+  const [archiveView, setArchiveView] = useState("private");
+  const [articles, setArticles] = useState([]);
+  const [publicArticles, setPublicArticles] = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [visibility, setVisibility] = useState("private");
+  const [menuOpen, setMenuOpen] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [historyError, setHistoryError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [articleToDelete, setArticleToDelete] = useState(null);
+  const [conversationToDelete, setConversationToDelete] = useState(null);
+  const [historyReload, setHistoryReload] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const requestSessionVersion = getAuthSessionVersion();
+
+    async function loadHistory() {
+      const version = historyVersion.current;
+      try {
+        const [articleResult, conversationResult, publicResult] = await Promise.all([
+          getArticleList(),
+          getConversationList(),
+          getPublicArticleList(),
+        ]);
+
+        if (
+          cancelled ||
+          version !== historyVersion.current ||
+          getAuthSessionVersion() !== requestSessionVersion
+        )
+          return;
+
+        setArticles((current) =>
+          articleResult.articles.map(
+            (item) => current.find((article) => article.id === item.id) ?? toArticleView(item),
+          ),
+        );
+        setPublicArticles(publicResult.articles.map((item) => toArticleView(item)));
+        setConversations((current) =>
+          conversationResult.map(
+            (item) =>
+              current.find((conversation) => conversation.id === item.id) ??
+              toConversationView(item),
+          ),
+        );
+      } catch (error) {
+        if (
+          cancelled ||
+          version !== historyVersion.current ||
+          getAuthSessionVersion() !== requestSessionVersion
+        )
+          return;
+        if (error.response?.status === 401) void onLogout();
+        else setHistoryError("기사·대화 목록을 불러오지 못했습니다. 다시 시도해주세요.");
+      } finally {
+        if (!cancelled) setLoadingHistory(false);
+      }
+    }
+
+    loadHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, onLogout, historyReload]);
+
+  function retryHistory() {
+    setHistoryError("");
+    setLoadingHistory(true);
+    setHistoryReload((value) => value + 1);
+  }
+
+  const { file, previewUrl, previewText, previewError, setPreviewError, changeFile } =
+    useFilePreview();
+
+  const activeConversation = conversations.find(
+    (conversation) => conversation.id === activeConversationId,
+  );
+  const hasActiveConversation = Boolean(activeConversation);
+  const messages = activeConversation?.messages || [];
+
+  const { sendMessage, isConversationPending } = useConversationMessages({
+    activeConversation,
+    setConversations,
+    onLogout,
+  });
+
+  async function openChat(conversation) {
+    const messagesBeforeLoad = conversation.messages;
+    const version = ++viewVersion.current;
+    const requestSessionVersion = getAuthSessionVersion();
+
+    setHistoryError("");
+
+    try {
+      const detail = await getConversation({ conversationId: conversation.id });
+      const cachedArticle = articles.find((article) => article.id === detail.article_id);
+      const article =
+        cachedArticle ?? toArticleView(await getArticle({ articleId: detail.article_id }));
+
+      if (version !== viewVersion.current || getAuthSessionVersion() !== requestSessionVersion)
+        return;
+      if (!cachedArticle) setArticles((items) => mergeHistory(items, [article]));
+
+      const restored = toConversationView(detail);
+
+      setConversations((items) =>
+        items.map((item) =>
+          item.id === restored.id
+            ? isConversationPending(item.id) || item.messages !== messagesBeforeLoad
+              ? { ...restored, messages: item.messages }
+              : restored
+            : item,
+        ),
+      );
+      setActiveConversationId(restored.id);
+      changeFile(article.file);
+      setVisibility(article.visibility);
+      setView("chat");
+    } catch (error) {
+      if (version !== viewVersion.current || getAuthSessionVersion() !== requestSessionVersion)
+        return;
+      if (error.response?.status === 401) void onLogout();
+      else setHistoryError("대화를 불러오지 못했습니다. 대화를 다시 선택해주세요.");
+    }
+  }
+
+  function openArticle(article) {
+    viewVersion.current += 1;
+    setArchiveView(view === "public" ? "public" : "private");
+    setArticleId(article.id);
+    changeFile(article.file);
+    setVisibility(article.visibility);
+    setView("article");
+  }
+
+  async function startConversationWithFile({ file: uploadedFile, visibility: uploadedVisibility }) {
+    const requestSessionVersion = getAuthSessionVersion();
+    const version = viewVersion.current;
+
+    try {
+      const result = await createConversationWithFile({
+        file: uploadedFile,
+        visibility: uploadedVisibility,
+      });
+      if (!result) return;
+
+      const { article, conversation } = result;
+      historyVersion.current += 1;
+      setHistoryReload((value) => value + 1);
+
+      setArticles((items) => [...items.filter((item) => item.id !== article.id), article]);
+      if (article.visibility === "public") {
+        setPublicArticles((items) => mergeHistory(items, [article]));
+      }
+      setConversations((items) => [
+        ...items.filter((item) => item.id !== conversation.id),
+        conversation,
+      ]);
+
+      if (viewVersion.current !== version) return;
+
+      setActiveConversationId(conversation.id);
+      changeFile(article.file);
+      setVisibility(article.visibility);
+      setView("chat");
+    } catch (error) {
+      if (error.response?.status === 401 && getAuthSessionVersion() === requestSessionVersion) {
+        void onLogout();
+        return;
+      }
+      throw error;
+    }
+  }
+
+  function startNewConversation() {
+    viewVersion.current += 1;
+    setActiveConversationId(null);
+    setArticleId(null);
+    setView("chat");
+    setVisibility("private");
+    changeFile(null);
+    setUploadSession((session) => session + 1);
+  }
+
+  async function deleteConversation(conversation) {
+    if (deleting.current) return;
+    setConversationToDelete(null);
+
+    const requestSessionVersion = getAuthSessionVersion();
+    const version = viewVersion.current;
+
+    deleting.current = true;
+    setDeleteError("");
+
+    try {
+      await deleteConversationRequest({ conversationId: conversation.id });
+      if (getAuthSessionVersion() !== requestSessionVersion) return;
+
+      historyVersion.current += 1;
+      setHistoryReload((value) => value + 1);
+      setConversations((items) => items.filter((item) => item.id !== conversation.id));
+      onComplete("대화가 삭제되었습니다.");
+      const stayedOnView = version === viewVersion.current;
+      viewVersion.current += 1;
+      if (stayedOnView && activeConversationId === conversation.id) {
+        if (view === "chat") startNewConversation();
+        else setActiveConversationId(null);
+      }
+    } catch (error) {
+      if (getAuthSessionVersion() !== requestSessionVersion) return;
+      if (error.response?.status === 401) void onLogout();
+      else setDeleteError("대화를 삭제하지 못했습니다. 다시 시도해주세요.");
+    } finally {
+      deleting.current = false;
+    }
+  }
+
+  async function deleteArticle(article) {
+    if (deleting.current) return;
+    setArticleToDelete(null);
+    const requestSessionVersion = getAuthSessionVersion();
+    const version = viewVersion.current;
+    deleting.current = true;
+    setDeleteError("");
+
+    try {
+      await deleteArticleRequest({ articleId: article.id });
+      if (getAuthSessionVersion() !== requestSessionVersion) return;
+
+      historyVersion.current += 1;
+      setHistoryReload((value) => value + 1);
+      setArticles((items) => items.filter((item) => item.id !== article.id));
+      const completionMessage =
+        article.visibility === "public"
+          ? "내 보관함에서 기사와 연결된 대화가 삭제되었습니다."
+          : "기사와 연결된 대화가 삭제되었습니다.";
+      onComplete(completionMessage);
+      setConversations((items) => items.filter((item) => item.articleId !== article.id));
+
+      const stayedOnView = version === viewVersion.current;
+      viewVersion.current += 1;
+      if (!stayedOnView) return;
+
+      const deletesActiveConversation = activeConversation?.articleId === article.id;
+      const deletesOpenArticle = view === "article" && articleId === article.id;
+      if (deletesOpenArticle || (view === "chat" && deletesActiveConversation)) {
+        startNewConversation();
+        if (deletesOpenArticle) setView(archiveView);
+      } else {
+        if (deletesActiveConversation) setActiveConversationId(null);
+        if (articleId === article.id) setArticleId(null);
+      }
+    } catch (error) {
+      if (getAuthSessionVersion() !== requestSessionVersion) return;
+      if (error.response?.status === 401) void onLogout();
+      else setDeleteError("기사를 삭제하지 못했습니다. 다시 시도해주세요.");
+    } finally {
+      deleting.current = false;
+    }
+  }
+
+  function changeView(nextView) {
+    viewVersion.current += 1;
+    setView(nextView);
+  }
+
+  const menuContentProps = {
+    onStartNewConversation: startNewConversation,
+    articles,
+    publicArticleCount: publicArticles.length,
+    view,
+    activeConversationId,
+    conversations,
+    openChat,
+    onDeleteConversation: setConversationToDelete,
+    setView: changeView,
+  };
+
+  const previewProps = {
+    file,
+    visibility,
+    previewUrl,
+    previewText,
+    previewError,
+    setPreviewError,
+    article: (view === "article" && archiveView === "public" ? publicArticles : articles).find(
+      (article) => article.id === (view === "article" ? articleId : activeConversation?.articleId),
+    ),
+  };
+
+  return (
+    <div className={`shell ${menuOpen ? "menu-open" : "menu-closed"}`}>
+      <CompletionNotice
+        title="대화를 삭제할까요?"
+        message={
+          conversationToDelete ? "대화 기록이 삭제됩니다. 기사 파일은 보관함에 유지됩니다." : ""
+        }
+        onClose={() => setConversationToDelete(null)}
+        onConfirm={() => deleteConversation(conversationToDelete)}
+        confirmLabel="삭제"
+      />
+      <CompletionNotice
+        title="기사를 삭제할까요?"
+        message={
+          articleToDelete
+            ? articleToDelete.visibility === "public"
+              ? "내 보관함의 기사와 연결된 대화가 삭제됩니다.\n공개 기사는 유지됩니다."
+              : "연결된 대화 기록이 함께 삭제됩니다."
+            : ""
+        }
+        onClose={() => setArticleToDelete(null)}
+        onConfirm={() => deleteArticle(articleToDelete)}
+        confirmLabel="삭제"
+      />
+
+      <SidebarLayout
+        id="main-menu"
+        user={user}
+        onLogout={onLogout}
+        onHeaderClick={startNewConversation}
+        menuOpen={menuOpen}
+        onToggle={() => setMenuOpen((open) => !open)}
+      >
+        <MenuContent {...menuContentProps} />
+      </SidebarLayout>
+
+      <div className="main">
+        <ErrorNotice className="history-feedback">{deleteError}</ErrorNotice>
+        {loadingHistory && !historyError && (
+          <LoadingNotice className="history-feedback">목록을 불러오는 중...</LoadingNotice>
+        )}
+
+        <ErrorNotice
+          className="history-feedback"
+          onRetry={retryHistory}
+          retryLabel="목록 다시 불러오기"
+        >
+          {historyError}
+        </ErrorNotice>
+
+        {view === "article" && (
+          <ArticleDetail
+            {...previewProps}
+            onBack={() => changeView(archiveView)}
+            backLabel={`${archiveView === "private" ? "내 기사" : "사내 기사"} 목록`}
+          />
+        )}
+
+        {(view === "private" || view === "public") && (
+          <main className="archive-main">
+            <Archive
+              view={view}
+              articles={view === "public" ? publicArticles : articles}
+              openArticle={openArticle}
+              onDeleteArticle={setArticleToDelete}
+            />
+          </main>
+        )}
+
+        {view === "chat" &&
+          (hasActiveConversation ? (
+            <main className="split-main">
+              <ArticlePanel {...previewProps} />
+              <ChatPanel
+                key={activeConversationId}
+                messages={messages}
+                isSending={messages.some((message) => message.pending)}
+                onSendMessage={sendMessage}
+              />
+            </main>
+          ) : (
+            <main className="welcome-main">
+              <UploadForm
+                key={uploadSession}
+                onStartConversationWithFile={startConversationWithFile}
+              />
+            </main>
+          ))}
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,100 @@
+model:
+  name: Qwen/Qwen3-1.7B
+  max_sequence_length: 1400
+  dtype: float16
+
+dataset:
+  train_path: data/processed/training_dataset.json
+  validation_path: data/processed/validation_dataset.json
+  golden_path: data/processed/golden_dataset.json
+  train_size: 20000
+  validation_size: 2000
+  golden_size: 400
+  split_sizes:
+    training: 20000
+    validation: 2000
+    golden: 400
+  type_ratio:
+    span_extraction: 0.70   
+    span_inference: 0.10    
+    text_entailment: 0.15   
+    unanswerable: 0.05      
+  yes_ratio: 0.5
+  questions_per_doc: 1
+  chunk_size: 4000
+  golden_stratify_field: code
+  random_seed: 42
+  golden_exclude_ids:
+    - "4957498"   
+    - "4958792"   
+    - "4960036"   
+    - "4961193"   
+    - "5962764"   
+    - "5960539"   
+    - "5948922"   
+    - "5947081"   
+    - "5816838"   
+    - "4991787"   
+    - "5772390"   
+    - "5771309"   
+    - "5769032"   
+    - "5765460"
+
+quantization:
+  load_in_4bit: true
+  quant_type: nf4
+  double_quant: true
+  compute_dtype: float16
+
+lora:
+  rank: 8
+  alpha: 32
+  dropout: 0.1
+  target_modules: [q_proj, k_proj, v_proj, o_proj]
+  bias: none
+  task_type: CAUSAL_LM
+
+training:
+  epochs: 1
+  batch_size: 4
+  learning_rate: 0.0001
+  gradient_accumulation_steps: 4
+  logging_steps: 50
+  optim: paged_adamw_8bit
+  gradient_checkpointing: true
+  fp16: false
+  bf16: false
+  max_grad_norm: 1.0
+  dataloader_pin_memory: false
+  report_to: wandb
+  resume_from_checkpoint: null
+  completion_only_loss: true
+  disable_tqdm: false
+
+checkpoint:
+  output_dir: checkpoints
+  save_strategy: steps
+  save_steps: 250
+  save_total_limit: 5
+
+evaluation:
+  strategy: steps
+  eval_steps: 250
+  load_best_model_at_end: true
+  metric_for_best_model: eval_loss
+  greater_is_better: false
+
+generation:
+  max_new_tokens: 150
+
+paths:
+  raw_dir: null
+  processed_dir: null
+
+answers:
+  unanswerable: "주어진 기사에서 답을 찾을 수 없습니다."
+  "yes": "예"
+  "no": "아니오"
+
+normalization:
+  remove_symbols: ["△", "▲", "◆"]

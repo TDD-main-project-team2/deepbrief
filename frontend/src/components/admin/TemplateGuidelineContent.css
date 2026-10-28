@@ -1,0 +1,28 @@
+.admin-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+@media (max-width: 680px) {
+  .admin-resource-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+
+.admin-resource-count {
+  font-weight: 500;
+  color: #795c6c;
+}
+.admin-resource-create {
+  min-height: 30px;
+  padding: 0 10px;
+  gap: 5px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+.admin-resource-create > svg {
+  width: 14px;
+  height: 14px;
+}

@@ -1,0 +1,13 @@
+@import "./AuthCommonInput.css";
+
+.auth-field > input {
+  display: block;
+  width: 100%;
+  margin-top: 9px;
+  border: 1px solid #e5d8df;
+  border-radius: 7px;
+  background: #fefcfd;
+}
+.auth-field > input[aria-invalid="true"] {
+  border-color: #c47589;
+}

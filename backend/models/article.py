@@ -1,0 +1,30 @@
+from backend.models.base import Base
+from sqlalchemy import BigInteger, CheckConstraint, ForeignKey, String, Text, DateTime, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+
+
+class Article(Base):
+    __tablename__ = "articles"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "content_hash", name="uq_articles_organization_content_hash"),
+        CheckConstraint("content_hash = btrim(content_hash) AND content_hash <> ''", name="check_content_hash_not_empty"),
+        CheckConstraint("visibility IN ('private', 'public')", name="check_visibility"),
+        CheckConstraint("title = btrim(title) AND title <> ''", name="check_title_not_empty"),
+        CheckConstraint("body = btrim(body) AND body <> ''", name="check_body_not_empty"),
+        CheckConstraint("media = btrim(media) AND media <> ''", name="check_media_not_empty"),
+        CheckConstraint("author = btrim(author) AND author <> ''", name="check_author_not_empty"),
+        CheckConstraint("category = btrim(category) AND category <> ''", name="check_category_not_empty"),
+    )
+
+    organization_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("organizations.id"), nullable=False)
+    content_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    visibility: Mapped[str] = mapped_column(
+        String(20), nullable=False, server_default="private"
+    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    media: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    author: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    category: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

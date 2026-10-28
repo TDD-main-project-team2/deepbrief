@@ -1,0 +1,41 @@
+.session-loading-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+.session-loading-header {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  background: #f4eaee;
+  border-bottom: 1px solid #eadde3;
+}
+.session-loading-header .brand {
+  padding: 0;
+}
+.session-loading-main {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 40px 24px;
+}
+.session-loading-card {
+  width: 100%;
+  max-width: 360px;
+}
+.session-loading-card h1 {
+  margin: 12px 0 28px;
+  font-size: 26px;
+  letter-spacing: -0.7px;
+}
+@media (max-width: 580px) {
+  .session-loading-header {
+    min-height: 72px;
+    padding: 0 22px;
+  }
+  .session-loading-card h1 {
+    font-size: 23px;
+  }
+}

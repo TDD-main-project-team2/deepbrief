@@ -1,0 +1,238 @@
+.chat-main {
+  max-width: 860px;
+  margin: auto;
+  padding: 28px 35px 0;
+  min-height: calc(100dvh - 68px);
+  display: flex;
+  flex-direction: column;
+}
+.chat-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 0 20px;
+  overscroll-behavior: contain;
+}
+.assistant-opening,
+.assistant-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+.assistant-avatar {
+  display: grid;
+  place-items: center;
+  width: 29px;
+  height: 29px;
+  background: #f3e6ec;
+  color: var(--wine);
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+.assistant-avatar svg {
+  height: 17px;
+  width: 17px;
+}
+.assistant-opening strong,
+.assistant-message strong {
+  display: block;
+  font-size: 11px;
+  color: var(--wine);
+  padding-top: 5px;
+  font-weight: 600;
+}
+.assistant-opening h2 {
+  letter-spacing: -0.5px;
+  line-height: 1.7;
+  margin-top: 14px;
+  font-size: 15px;
+}
+.assistant-opening p {
+  color: #a795a0;
+  line-height: 1.9;
+  margin-top: 8px;
+  font-size: 11px;
+}
+.composer {
+  background: white;
+  padding: 17px 0 0;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.tools {
+  display: flex;
+  margin-bottom: 12px;
+  gap: 3px;
+}
+.tools button {
+  border-radius: 6px;
+  color: #a4909e;
+  font-size: 10px;
+  padding: 8px 10px;
+}
+.tools .selected {
+  background: #f3e6ed;
+  color: var(--wine);
+  font-weight: 600;
+}
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  gap: 6px;
+}
+.quick-actions button {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e9dee4;
+  border-radius: 6px;
+  color: #9d7f8f;
+  background: #fffcfd;
+  font-size: 9px;
+  padding: 7px 8px;
+  gap: 7px;
+}
+.quick-actions span {
+  color: #baa1af;
+}
+.composer form {
+  border: 1px solid #d8c2ce;
+  border-radius: 10px;
+  display: flex;
+  gap: 12px;
+  padding: 13px;
+  background: #fff;
+}
+.composer textarea {
+  flex: 1;
+  border: 0;
+  resize: none;
+  min-width: 0;
+  height: 53px;
+  color: #6f5867;
+  line-height: 1.8;
+  padding: 4px 6px;
+  background: none;
+  font-size: 11px;
+}
+.composer textarea::placeholder {
+  color: #b6a3b0;
+}
+.send {
+  align-self: flex-end;
+  width: 33px;
+  height: 33px;
+}
+.send svg {
+  width: 17px;
+  height: 17px;
+}
+.user-message {
+  margin-left: auto;
+  width: fit-content;
+  max-width: 85%;
+  background: #f6edf2;
+  border-radius: 10px 10px 2px 10px;
+  padding: 12px 17px;
+  line-height: 1.8;
+  margin-bottom: 22px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.assistant-message p {
+  line-height: 2;
+  color: #8c7283;
+  white-space: pre-wrap;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 800px) {
+  .chat-main {
+    padding: 24px 22px 0;
+  }
+}
+
+@media (max-width: 580px) {
+  .chat-main {
+    min-height: calc(100dvh - 108px);
+    padding: 18px 17px 0;
+  }
+}
+.split-main .chat-main {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.assistant-opening {
+  gap: 10px;
+}
+.message-pair {
+  margin-top: 24px;
+}
+.assistant-message p,
+.user-message {
+  font-size: 11px;
+}
+
+@media (max-width: 1100px) {
+  .assistant-opening h2 {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 800px) {
+  .quick-actions button {
+    font-size: 8px;
+  }
+  .tools button {
+    padding: 7px 8px;
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 680px) {
+  .split-main .chat-main {
+    min-height: 550px;
+    overflow: visible;
+  }
+}
+.chat-main > .panel-heading {
+  background: #f5e7ee;
+  color: var(--wine);
+  border-bottom-color: #e5cbd6;
+}
+.chat-main > .panel-heading > span > svg {
+  background: #f3e6ec;
+  color: var(--wine);
+}
+.chat-main > .panel-heading small {
+  background: #ffffff8c;
+  color: #995d76;
+  border: 1px solid #e5c8d5;
+}
+.split-main > .chat-main > .panel-heading {
+  border-bottom: 0;
+  border-right: 0;
+}
+
+/* Match the preview's outer inset while keeping the message area scrollable. */
+.chat-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 27px 25px;
+  overflow: hidden;
+}
+.split-main .chat-main > .panel-heading {
+  flex-shrink: 0;
+}
+@media (max-width: 1100px) {
+  .chat-body {
+    padding: 20px 15px;
+  }
+}

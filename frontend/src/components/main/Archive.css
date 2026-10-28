@@ -1,0 +1,49 @@
+.archive-main {
+  max-width: 1000px;
+  margin: auto;
+  padding: 50px 44px;
+}
+.archive-empty {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  padding: 65px 20px;
+  border-bottom: 1px solid #ece2e8;
+}
+.archive-empty > svg {
+  width: 33px;
+  height: 33px;
+  color: var(--wine);
+  margin-bottom: 22px;
+}
+.archive-empty h2 {
+  font-size: 17px;
+  font-weight: 500;
+}
+.archive-empty p {
+  font-size: 11px;
+  color: #a78d9c;
+  margin-top: 13px;
+  line-height: 1.9;
+}
+@media (max-width: 680px) {
+  .archive-main {
+    padding: 35px 28px;
+  }
+  .archive-empty h2 {
+    font-size: 15px;
+  }
+  .archive-empty {
+    padding: 50px 10px;
+  }
+}
+
+.archive-count {
+  font-weight: 500;
+  color: #795c6c;
+}
+.archive-scope {
+  font-size: 9px;
+  color: #ae96a4;
+}

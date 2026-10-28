@@ -1,0 +1,19 @@
+.admin-visibility-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: #f8f6f7;
+  color: #7a7274;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.admin-visibility-pill.public {
+  background: #efe3e9;
+  color: var(--wine);
+}
+.articles-count {
+  font-weight: 500;
+  color: #795c6c;
+}

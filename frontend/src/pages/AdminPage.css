@@ -1,0 +1,32 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap");
+
+.admin-shell {
+  --admin-ink: #252021;
+  --admin-line: #ebe7e8;
+  --admin-wine: var(--wine);
+  --admin-wine-dark: #732a40;
+  min-height: 100vh;
+  display: flex;
+  color: var(--admin-ink);
+  background: #fff;
+  font-family: "DM Sans", "Noto Sans KR", sans-serif;
+}
+.admin-main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+.admin-page-content {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 50px 44px;
+  flex: 1;
+}
+@media (max-width: 680px) {
+
+  .admin-page-content {
+    padding: 35px 28px;
+  }
+}
