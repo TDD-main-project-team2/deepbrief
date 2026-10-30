@@ -10,7 +10,7 @@
 
 # 팀원 및 역할
 
-> 개발 기간: 9/18 ~ 10/27
+> 개발 기간: 26/9/18 ~ 26/10/27
 
 <table>
   <thead>
@@ -103,57 +103,6 @@
 
 </br>
 
-# 서비스 화면
-
-### 1. 회원가입 및 로그인
-
-사용자는 회원가입 후 로그인하여 서비스를 이용합니다. 인증 토큰을 통해 로그인 상태를 관리하고, 사용자 권한에 따라 접근 가능한 화면과 기능을 구분합니다.
-
-<img width="600" alt="회원가입 화면" src="https://github.com/user-attachments/assets/dcbc5111-5d1d-42c9-acea-5dc7b475e6cf" />
-<img width="600" alt="로그인 화면" src="https://github.com/user-attachments/assets/b8a3e87b-b08e-431b-9645-330669d0ce73" />
-
-
-### 2. 문서 업로드
-
-문서를 업로드하면 텍스트 추출과 전처리를 거쳐 기사와 연결된 대화를 생성합니다.
-
-> - 지원 파일 형식: PDF, PNG, JPG, JPEG, TXT, MD
-> - 최대 업로드 크기: 20MB
-
-<img width="600" alt="문서 업로드" src="https://github.com/user-attachments/assets/cfd2b5f8-c5e5-4e3a-ae56-6e014210b250" />
-
-
-### 3. 문서 분석 및 기사 작성 지원
-
-대화 화면에서 문서 내용에 관해 질문하거나 기사 검토·추천·편집 기능을 사용할 수 있습니다.
-
-- 문서 및 사내 자료 기반 질의응답
-- 기사 중복 검토와 가이드라인 기반 평가
-- 제목·키워드·헤드라인·아이디어 추천
-- 조직별 템플릿을 활용한 기사 편집
-
-<img width="600" alt="채팅" src="https://github.com/user-attachments/assets/94a4ed57-0ed8-4791-81d9-a488a0109f39" />
-
-### 4. 개인/사내 보관함
-
-내 보관함에서 개인 기사를 확인하고, 사내 보관함에서 조직 내 공유 기사를 조회할 수 있습니다. 기존 기사를 선택해 상세 내용을 확인할 수 있습니다.
-
-<img width="600" alt="내 기사" src="https://github.com/user-attachments/assets/8afd320d-127b-41f5-84d2-34ad417820b2" />
-<img width="600" alt="사내 기사" src="https://github.com/user-attachments/assets/911570c6-975a-434c-9b73-6583d2d567e9" />
-
-### 5. 관리자 화면
-
-관리자는 조직 정보와 회원을 관리하고, 조직의 기사·템플릿·지침을 조회하거나 수정할 수 있습니다.
-
-<img width="600" alt="회원 관리" src="https://github.com/user-attachments/assets/df3b68f3-32bb-4319-8477-d87f5c2d36d1" />
-<img width="600" alt="템플릿 관리" src="https://github.com/user-attachments/assets/6325a0f2-1735-4da9-8f18-8842fdb879fb" />
-<img width="600" alt="지침 관리" src="https://github.com/user-attachments/assets/09c24eb9-eb78-48ad-be53-6e0b2e738dc3" />
-<img width="600" alt="기사 관리" src="https://github.com/user-attachments/assets/488ef52c-9899-48b3-89a2-fcef85485080" />
-<img width="600" alt="조직 관리" src="https://github.com/user-attachments/assets/61bc0887-7fbe-423e-bee8-9fc904438ba0" />
-
-</br>
-</br>
-
 # 시스템 아키텍처
 
 DeepBrief는 React 기반 프론트엔드, FastAPI 기반 백엔드, 관계형 DB 및 벡터 검색 계층으로 구성됩니다. 
@@ -207,7 +156,58 @@ flowchart LR
 
 </br>
 
+# 서비스 화면
+
+### 1. 회원가입 및 로그인
+
+사용자는 회원가입 후 로그인하여 서비스를 이용합니다. 인증 토큰을 통해 로그인 상태를 관리하고, 사용자 권한에 따라 접근 가능한 화면과 기능을 구분합니다.
+
+<img width="600" alt="회원가입 화면" src="https://github.com/user-attachments/assets/dcbc5111-5d1d-42c9-acea-5dc7b475e6cf" />
+<img width="600" alt="로그인 화면" src="https://github.com/user-attachments/assets/b8a3e87b-b08e-431b-9645-330669d0ce73" />
+
+### 2. 문서 업로드
+
+문서를 업로드하면 텍스트 추출과 전처리를 거쳐 기사와 연결된 대화를 생성합니다.
+
+> - 지원 파일 형식: PDF, PNG, JPG, JPEG, TXT, MD
+> - 최대 업로드 크기: 20MB
+
+<img width="600" alt="문서 업로드" src="https://github.com/user-attachments/assets/cfd2b5f8-c5e5-4e3a-ae56-6e014210b250" />
+
+### 3. 문서 분석 및 기사 작성 지원
+
+대화 화면에서 문서 내용에 관해 질문하거나 기사 검토·추천·편집 기능을 사용할 수 있습니다.
+
+- 문서 및 사내 자료 기반 질의응답
+- 기사 중복 검토와 가이드라인 기반 평가
+- 제목·키워드·헤드라인·아이디어 추천
+- 조직별 템플릿을 활용한 기사 편집
+
+<img width="600" alt="채팅" src="https://github.com/user-attachments/assets/94a4ed57-0ed8-4791-81d9-a488a0109f39" />
+
+### 4. 개인/사내 보관함
+
+내 보관함에서 개인 기사를 확인하고, 사내 보관함에서 조직 내 공유 기사를 조회할 수 있습니다. 기존 기사를 선택해 상세 내용을 확인할 수 있습니다.
+
+<img width="600" alt="내 기사" src="https://github.com/user-attachments/assets/8afd320d-127b-41f5-84d2-34ad417820b2" />
+<img width="600" alt="사내 기사" src="https://github.com/user-attachments/assets/911570c6-975a-434c-9b73-6583d2d567e9" />
+
+### 5. 관리자 화면
+
+관리자는 조직 정보와 회원을 관리하고, 조직의 기사·템플릿·지침을 조회하거나 수정할 수 있습니다.
+
+<img width="600" alt="회원 관리" src="https://github.com/user-attachments/assets/df3b68f3-32bb-4319-8477-d87f5c2d36d1" />
+<img width="600" alt="템플릿 관리" src="https://github.com/user-attachments/assets/6325a0f2-1735-4da9-8f18-8842fdb879fb" />
+<img width="600" alt="지침 관리" src="https://github.com/user-attachments/assets/09c24eb9-eb78-48ad-be53-6e0b2e738dc3" />
+<img width="600" alt="기사 관리" src="https://github.com/user-attachments/assets/488ef52c-9899-48b3-89a2-fcef85485080" />
+<img width="600" alt="조직 관리" src="https://github.com/user-attachments/assets/61bc0887-7fbe-423e-bee8-9fc904438ba0" />
+
+</br>
+</br>
+
 # AI 모델 및 데이터
+
+> 학습 관련 코드는 `backend/fine_tuning/summary`와 `backend/fine_tuning/qa`에서 관리합니다.
 
 ### 기능별 모델 구성
 
@@ -218,8 +218,6 @@ flowchart LR
 | LLM | Qwen3-1.7B |
 
 ### Summary / QA 파인튜닝
-
-> 학습 관련 코드는 `backend/fine_tuning/summary`와 `backend/fine_tuning/qa`에서 관리합니다.
 
 기본 모델 대신 LoRA 어댑터를 학습하며, 정답 응답 부분에만 손실을 계산합니다.​
 
@@ -357,7 +355,7 @@ npm run dev
 
 </br>
 
-# 프로젝트 구조
+# 폴더 구조
 
 ```text
 deepbrief/
